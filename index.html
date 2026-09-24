@@ -184,7 +184,9 @@ BASEMAPS.forEach(function (b) {
 function setLayer(id) {
   if (!layers[id]) id = "topo";
   if (current) map.removeLayer(current);
-  current = layers[id].addTo(map); sel.value = id; writeHash();
+  current = layers[id].addTo(map); sel.value = id;
+  if (typeof syncParcelOverlay === "function" && parcelTiles) syncParcelOverlay();
+  writeHash();
 }
 sel.addEventListener("change", function () { setLayer(sel.value); });
 
@@ -586,7 +588,7 @@ function labelPoint(geom) {
 function refreshParcelLabels() {
   parcelLabels.clearLayers();
   var z = map.getZoom();
-  if (!parcelsOn || z < 18) return;
+  if (!overlayWanted() || z < 18) return;
   var b = map.getBounds();
   if (labelAbort) labelAbort.abort();
   labelAbort = window.AbortController ? new AbortController() : null;
@@ -645,11 +647,22 @@ function parcelRows() {
   return rows;
 }
 
+// the topographic basemaps already draw parcels and street numbers, so the
+// overlay is only drawn on the others; the tap lookup works on every basemap
+var OWN_CADASTRE = { topo: true, grey: true };
+function overlayWanted() { return parcelsOn && !OWN_CADASTRE[sel.value || "topo"]; }
+function syncParcelOverlay() {
+  if (overlayWanted()) {
+    if (!map.hasLayer(parcelTiles)) parcelTiles.addTo(map);
+    if (!map.hasLayer(parcelLabels)) parcelLabels.addTo(map);
+    refreshParcelLabels();
+  } else { map.removeLayer(parcelTiles); map.removeLayer(parcelLabels); parcelLabels.clearLayers(); }
+}
 function setParcels(on) {
   parcelsOn = on; parcelsBtn.classList.toggle("on", on);
-  if (on) { parcelTiles.addTo(map); parcelLabels.addTo(map); refreshParcelLabels(); if (pin) lookupParcel(pin.getLatLng()); }
-  else { map.removeLayer(parcelTiles); map.removeLayer(parcelLabels); parcelHi.clearLayers(); parcelInfo = null;
-         if (pin) showCoords(pin.getLatLng()); }
+  syncParcelOverlay();
+  if (on) { if (pin) lookupParcel(pin.getLatLng()); }
+  else { parcelHi.clearLayers(); parcelInfo = null; if (pin) showCoords(pin.getLatLng()); }
   writeHash();
 }
 parcelsBtn.onclick = function () { setParcels(!parcelsOn); };
