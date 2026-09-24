@@ -59,6 +59,11 @@
   .on-ortho .plab { color:#fff; text-shadow:0 0 2px #000, 0 0 3px #000, 0 0 4px rgba(0,0,0,.8); }
   .plab { font:600 11px/1.1 system-ui, sans-serif; color:#4a2c00; white-space:nowrap; text-align:center;
     text-shadow:0 0 2px #fff, 0 0 2px #fff, 0 0 3px #fff; transform:translate(-50%, -50%); pointer-events:none; }
+  .wsym { display:flex; align-items:center; justify-content:center; font:700 10px/1 system-ui, sans-serif;
+    color:#fff; border:1.5px solid #fff; box-shadow:0 0 2px rgba(0,0,0,.7); box-sizing:border-box; }
+  .wsym.hyd { background:#1565c0; border-radius:50%; }
+  .wsym.tw { background:#0d3c73; border-radius:3px; }
+  .wsym.ti { background:#00796b; border-radius:3px; }
   #printhead { display:none; }
   @media print {
     @page { margin:8mm; }
@@ -79,6 +84,7 @@
   <button id="pinme" title="Drop a pin at my location">Pin me</button>
   <button id="grid" title="MGA grid with edge labels">Grid</button>
   <button id="parcels" title="Cadastral parcels and addresses (zoom in)">Parcels</button>
+  <button id="water" title="Hydrants, dams, reservoirs, tanks and pump stations">Water</button>
   <button id="print" title="Print or save this view as PDF">Print</button>
   <form id="goto" autocomplete="off">
     <input id="q" type="search" enterkeyhint="go" placeholder="Go to: address, grid ref, lon lat, MGA..."
@@ -170,7 +176,7 @@ function readHash() {
   var p = location.hash.replace(/^#/, "").split("/");
   var o = {};
   if (p.length >= 3 && !isNaN(+p[0])) { o.z = +p[0]; o.lat = +p[1]; o.lon = +p[2]; }
-  if (p[3]) { var t = p[3].split(","); o.layer = t[0]; o.grid = t.indexOf("g") > 0; o.noParcels = t.indexOf("np") > 0; }
+  if (p[3]) { var t = p[3].split(","); o.layer = t[0]; o.grid = t.indexOf("g") > 0; o.noParcels = t.indexOf("np") > 0; o.water = t.indexOf("w") > 0; }
   if (p.length >= 6) { o.pin = [+p[4], +p[5]]; }
   return o;
 }
@@ -203,7 +209,7 @@ var pin = null;
 function writeHash() {
   var c = map.getCenter();
   var h = "#" + map.getZoom() + "/" + c.lat.toFixed(5) + "/" + c.lng.toFixed(5) + "/" +
-    (sel.value || "topo") + (gridOn ? ",g" : "") + (parcelsOn ? "" : ",np");
+    (sel.value || "topo") + (gridOn ? ",g" : "") + (parcelsOn ? "" : ",np") + (waterOn ? ",w" : "");
   if (pin) { var p = pin.getLatLng(); h += "/" + p.lat.toFixed(6) + "/" + p.lng.toFixed(6); }
   history.replaceState(null, "", h);
 }
@@ -223,10 +229,10 @@ function setPin(latlng) {
     .on("drag", function () { showCoords(pin.getLatLng()); })
     .on("dragend", function () { writeHash(); lookupParcel(pin.getLatLng()); });
   else pin.setLatLng(latlng);
-  parcelInfo = null; showCoords(latlng); writeHash(); lookupParcel(latlng);
+  parcelInfo = null; featureInfo = null; showCoords(latlng); writeHash(); lookupParcel(latlng);
 }
 function showCoords(ll) {
-  lastRows = parcelRows().concat(coords(ll.lat, ll.lng));
+  lastRows = featureRows().concat(parcelRows(), coords(ll.lat, ll.lng));
   rowsEl.innerHTML = "";
   lastRows.forEach(function (r) {
     if (r.extra && !showMore) return;
@@ -244,7 +250,8 @@ function showCoords(ll) {
   panel.style.display = "block";
   if (typeof placeLabels === "function") placeLabels();
 }
-map.on("click", function (e) { setPin(e.latlng); });
+var lastFeatureClick = 0;
+map.on("click", function (e) { if (Date.now() - lastFeatureClick < 300) return; setPin(e.latlng); });
 document.getElementById("close").onclick = function () {
   panel.style.display = "none"; if (pin) { map.removeLayer(pin); pin = null; }
   parcelInfo = null; parcelHi.clearLayers(); writeHash(); placeLabels();
@@ -826,6 +833,88 @@ parcelsBtn.onclick = function () { setParcels(!parcelsOn); };
 map.on("moveend", refreshParcelLabels);
 
 // ---------------------------------------------------------------------------
+// Water: TasWater hydrants and network structures (dams, reservoirs, tanks,
+// pump stations, treatment plants) and Tasmanian Irrigation dams and pump
+// stations, all from theLIST Public/Infrastructure. Fetched for the view as
+// GeoJSON; tapping a symbol pins it and names it in the panel.
+// ---------------------------------------------------------------------------
+var INFRA = "https://services.thelist.tas.gov.au/arcgis/rest/services/Public/Infrastructure/MapServer/";
+var TW_TYPES = { 1: ["Break pressure tank", "B"], 2: ["Tank", "T"], 3: ["Treatment plant", "W"], 5: ["Treatment plant", "W"],
+  6: ["Dosing facility", "X"], 8: ["Pump station", "P"], 9: ["Pump station", "P"], 10: ["Pump station", "P"],
+  11: ["Reservoir", "R"], 12: ["Dam (storage)", "D"] };
+var WATER = [
+  { id: 2, minZoom: 16, fields: "OBJECTID,ASSETID", kind: "hyd",
+    describe: function (p) { return { what: "TasWater hydrant", sym: "H", detail: p.ASSETID ? "Asset " + p.ASSETID : "" }; } },
+  { id: 9, minZoom: 12, fields: "OBJECTID,NAME,SUBTYPECD,D_SUBTYPEC", kind: "tw",
+    describe: function (p) { var t = TW_TYPES[p.SUBTYPECD] || [p.D_SUBTYPEC || "Structure", "?"];
+      return { what: "TasWater " + t[0].toLowerCase(), sym: t[1], detail: p.NAME || "" }; } },
+  { id: 26, minZoom: 11, fields: "OBJECTID,NAME,SCHEME", kind: "ti",
+    describe: function (p) { return { what: "Tas Irrigation pump station", sym: "P",
+      detail: [p.NAME, p.SCHEME].filter(Boolean).join(", ") }; } },
+  { id: 35, minZoom: 11, fields: "OBJECTID,DAMNAME,RESERVOIRNAME,VOLUME,SCHEME", kind: "ti", polygon: true,
+    describe: function (p) { return { what: "Tas Irrigation dam", sym: "D",
+      detail: [p.DAMNAME || p.RESERVOIRNAME, p.VOLUME ? p.VOLUME + " ML" : null, p.SCHEME].filter(Boolean).join(", ") }; } }
+];
+var waterOn = false, featureInfo = null, waterBtn = document.getElementById("water");
+var waterLayer = L.layerGroup();
+WATER.forEach(function (w) { w.seen = {}; w.group = L.layerGroup().addTo(waterLayer); });
+
+function featureRows() {
+  if (!featureInfo) return [];
+  return [{ k: "Feature", v: featureInfo.what + (featureInfo.detail ? " - " + featureInfo.detail : "") }];
+}
+function pickFeature(ll, info) {
+  lastFeatureClick = Date.now();
+  setPin(ll); featureInfo = info; showCoords(ll);
+}
+function waterIcon(kind, sym) {
+  var sz = kind === "hyd" ? 16 : 18;
+  return L.divIcon({ className: "", iconSize: [sz, sz], iconAnchor: [sz / 2, sz / 2],
+    html: "<div class='wsym " + kind + "' style='width:" + sz + "px;height:" + sz + "px'>" + sym + "</div>" });
+}
+function refreshWater() {
+  if (!waterOn) return;
+  var z = map.getZoom(), b = map.getBounds().pad(0.2);
+  var env = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].map(function (v) { return v.toFixed(6); }).join(",");
+  WATER.forEach(function (w) {
+    if (z < w.minZoom) { w.group.clearLayers(); w.seen = {}; return; }
+    var url = INFRA + w.id + "/query?geometry=" + env + "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326" +
+      "&spatialRel=esriSpatialRelIntersects&outFields=" + w.fields + "&returnGeometry=true" +
+      (w.polygon ? "&maxAllowableOffset=0.00002" : "") + "&geometryPrecision=6&f=geojson";
+    fetch(url).then(function (r) { return r.json(); }).then(function (gj) {
+      if (!waterOn || map.getZoom() < w.minZoom) return;
+      (gj.features || []).forEach(function (ft) {
+        var p = ft.properties || {}, key = p.OBJECTID != null ? p.OBJECTID : JSON.stringify(ft.geometry).slice(0, 80);
+        if (w.seen[key] || !ft.geometry) return;
+        w.seen[key] = true;
+        var info = w.describe(p), lyr;
+        if (w.polygon) {
+          lyr = L.geoJSON(ft, { style: { color: "#00796b", weight: 2, fillColor: "#4db6ac", fillOpacity: 0.25 } });
+          var c = labelPoint(ft.geometry);
+          lyr.on("click", function (e) { pickFeature(c || e.latlng, info); });
+        } else {
+          var g = ft.geometry.type === "MultiPoint" ? ft.geometry.coordinates[0] : ft.geometry.coordinates;
+          var ll = L.latLng(g[1], g[0]);
+          lyr = L.marker(ll, { icon: waterIcon(w.kind, info.sym), title: info.what + (info.detail ? " - " + info.detail : ""),
+                               zIndexOffset: w.kind === "hyd" ? 0 : 100 });
+          lyr.on("click", function () { pickFeature(ll, info); });
+        }
+        w.group.addLayer(lyr);
+      });
+    }).catch(function () {});
+  });
+}
+function setWater(on) {
+  waterOn = on; waterBtn.classList.toggle("on", on);
+  if (on) { waterLayer.addTo(map); refreshWater(); }
+  else { map.removeLayer(waterLayer); WATER.forEach(function (w) { w.group.clearLayers(); w.seen = {}; }); }
+  writeHash();
+}
+waterBtn.onclick = function () { setWater(!waterOn); };
+map.on("moveend", refreshWater);
+
+// ---------------------------------------------------------------------------
+setWater(!!st.water);
 setParcels(!st.noParcels);
 setGrid(!!st.grid);
 setLayer(st.layer || "topo");
