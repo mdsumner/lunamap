@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>LIST Pin</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#c62828">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/proj4@2.12.1/dist/proj4.js"></script>
@@ -46,6 +50,18 @@
   .acts { display:flex; gap:6px; margin-top:8px; }
   .acts button { flex:1; font:inherit; font-size:14px; padding:8px; border:1px solid #999;
     border-radius:8px; background:#f5f5f5; cursor:pointer; }
+  #tools { display:contents; }
+  .bar.collapsed #tools { display:none; }
+  .sheet { position:absolute; left:10px; right:10px; bottom:22px; z-index:1001; max-width:460px; display:none;
+    background:#fff; border:1px solid #999; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.3);
+    padding:10px 12px; max-height:70vh; overflow-y:auto; }
+  .sheet h2 { margin:0 0 6px; font-size:14px; font-weight:600; color:var(--muted);
+    display:flex; justify-content:space-between; align-items:center; }
+  .sheet h2 button { border:0; background:none; font-size:20px; line-height:1; padding:0 4px; cursor:pointer; }
+  .sheet .small, .sheet label { font-size:13px; color:#333; }
+  .sheet p { margin:0 0 8px; }
+  #offbases label { display:inline-block; margin:2px 10px 2px 0; }
+  #offest, #offprog, #offstat { margin-top:6px; }
   #toast { position:absolute; left:50%; top:60px; transform:translateX(-50%); z-index:1100;
     background:#222; color:#fff; padding:6px 12px; border-radius:6px; font-size:13px; display:none; }
   #glabels { position:absolute; inset:0; z-index:650; pointer-events:none; overflow:hidden; }
@@ -69,7 +85,7 @@
   #printhead { display:none; }
   @media print {
     @page { margin:8mm; }
-    .bar, #toast, .leaflet-control-zoom, #panel .acts, #panel h2 button, .row button, #more { display:none !important; }
+    .bar, #toast, .leaflet-control-zoom, #panel .acts, #panel h2 button, .row button, #more, .sheet { display:none !important; }
     #printhead { display:block; position:absolute; top:0; left:0; right:0; z-index:1000;
       background:#fff; padding:4px 8px; font-size:12px; border-bottom:1px solid #000; }
     #panel { box-shadow:none; border:1px solid #000; bottom:8px; }
@@ -84,11 +100,15 @@
   <select id="layer" aria-label="Basemap"></select>
   <button id="locate" title="Show my location">Locate</button>
   <button id="pinme" title="Drop a pin at my location">Pin me</button>
+  <button id="moretools" title="Show or hide layer and tool buttons">More</button>
+  <span id="tools">
   <button id="grid" title="MGA grid with edge labels">Grid</button>
   <button id="parcels" title="Cadastral parcels and addresses (zoom in)">Parcels</button>
   <button id="water" title="Hydrants, dams, reservoirs, tanks and pump stations">Water</button>
   <button id="gates" title="Gates and barriers (zoom in)">Gates</button>
+  <button id="offline" title="Save maps for use without signal">Offline</button>
   <button id="print" title="Print or save this view as PDF">Print</button>
+  </span>
   <form id="goto" autocomplete="off">
     <input id="q" type="search" enterkeyhint="go" placeholder="Go to: address, grid ref, lon lat, MGA..."
       aria-label="Go to an address, grid reference or coordinate">
@@ -105,6 +125,21 @@
     <button id="share">Share link</button>
     <button id="copyall">Copy all</button>
   </div>
+</div>
+
+<div id="offsheet" class="sheet">
+  <h2><span>Offline maps</span><button id="offclose" aria-label="Close">x</button></h2>
+  <p class="small">Saves map tiles for the area in view, so the map, GPS dot, grid and coordinates
+    work without signal. Addresses, parcels, water and gates need signal, except where you have
+    already looked at them while online.</p>
+  <div id="offbases"></div>
+  <label class="small">Detail down to zoom
+    <select id="offz"><option>15</option><option>16</option><option selected>17</option><option>18</option></select>
+  </label>
+  <div id="offest" class="small"></div>
+  <div class="acts"><button id="offsave">Save this area</button><button id="offclear">Clear saved</button></div>
+  <div id="offprog" class="small"></div>
+  <div id="offstat" class="small"></div>
 </div>
 
 <div id="toast"></div>
@@ -985,6 +1020,123 @@ function findMapbook(mb) {
     "&outFields=MAPREF&returnGeometry=true&outSR=4326&f=geojson";
   return fetch(url).then(function (r) { return r.json(); }).then(function (gj) { return (gj.features || [])[0] || null; });
 }
+
+// ---------------------------------------------------------------------------
+// Toolbar: secondary buttons fold away behind "More" on narrow screens
+// ---------------------------------------------------------------------------
+var barEl = document.querySelector(".bar"), moreBtn = document.getElementById("moretools");
+function setToolsOpen(open) {
+  barEl.classList.toggle("collapsed", !open);
+  moreBtn.textContent = open ? "Less" : "More";
+  try { localStorage.setItem("lunamap.tools", open ? "1" : "0"); } catch (e) {}
+  fitControls(); placeLabels();
+}
+moreBtn.onclick = function () { setToolsOpen(barEl.classList.contains("collapsed")); };
+(function () {
+  var saved = null; try { saved = localStorage.getItem("lunamap.tools"); } catch (e) {}
+  setToolsOpen(saved !== null ? saved === "1" : window.innerWidth >= 700);
+})();
+
+// ---------------------------------------------------------------------------
+// Offline: service worker (sw.js) serves cached tiles; this saves an area.
+// ---------------------------------------------------------------------------
+var TILE_CACHE = "lunamap-tiles-v1";
+var swOK = "serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost");
+if (swOK) navigator.serviceWorker.register("sw.js").catch(function () { swOK = false; });
+window.addEventListener("offline", function () { toast("No signal - showing saved maps"); });
+window.addEventListener("online", function () { toast("Back online"); });
+
+var offSheet = document.getElementById("offsheet"), offBases = document.getElementById("offbases");
+var AVG_KB = { ortho: 35, esmb: 30, tasmap: 30, hill: 20, topo: 18, grey: 15 };
+var offSaving = false;
+BASEMAPS.forEach(function (b) {
+  var l = document.createElement("label");
+  l.innerHTML = "<input type='checkbox' value='" + b.id + "'> ";
+  l.appendChild(document.createTextNode(b.name));
+  offBases.appendChild(l);
+});
+function offChosen() {
+  return Array.prototype.slice.call(offBases.querySelectorAll("input:checked")).map(function (i) { return i.value; });
+}
+function offTiles() {
+  var zmax = +document.getElementById("offz").value, bnd = map.getBounds().pad(0.25), urls = [], kb = 0;
+  offChosen().forEach(function (id) {
+    var b = BASEMAPS.filter(function (x) { return x.id === id; })[0];
+    for (var z = 8; z <= Math.min(zmax, b.max); z++) {
+      var nw = map.project(bnd.getNorthWest(), z).divideBy(256).floor(),
+          se = map.project(bnd.getSouthEast(), z).divideBy(256).floor();
+      for (var x = nw.x; x <= se.x; x++) for (var y = nw.y; y <= se.y; y++) {
+        urls.push(LIST + b.svc + "/MapServer/tile/" + z + "/" + y + "/" + x); kb += AVG_KB[id] || 25;
+      }
+    }
+  });
+  return { urls: urls, mb: kb / 1024 };
+}
+function offEstimate() {
+  var t = offTiles(), el = document.getElementById("offest"), btn = document.getElementById("offsave");
+  if (!swOK) { el.textContent = "Offline maps need the site opened over https (for example on github.io)."; btn.disabled = true; return; }
+  if (!t.urls.length) { el.textContent = "Tick at least one basemap."; btn.disabled = true; return; }
+  var big = t.urls.length > 20000;
+  el.textContent = t.urls.length + " tiles, about " + t.mb.toFixed(t.mb < 10 ? 1 : 0) + " MB" +
+    (big ? " - too many: zoom in or choose less detail" : "");
+  btn.disabled = big || offSaving;
+}
+function offStatus() {
+  var el = document.getElementById("offstat");
+  if (!window.caches) { el.textContent = ""; return; }
+  caches.open(TILE_CACHE).then(function (c) { return c.keys(); }).then(function (k) {
+    var txt = "Saved on this device: " + k.length + " tiles";
+    if (navigator.storage && navigator.storage.estimate) {
+      navigator.storage.estimate().then(function (e) {
+        el.textContent = txt + " (" + (e.usage / 1048576).toFixed(0) + " MB used by this site)";
+      });
+    } else el.textContent = txt;
+  }).catch(function () {});
+}
+function offSave() {
+  var t = offTiles(), done = 0, failed = 0, i = 0, prog = document.getElementById("offprog");
+  if (!t.urls.length || !window.caches) return;
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+  offSaving = true; offEstimate();
+  caches.open(TILE_CACHE).then(function (c) {
+    function one() {
+      if (!offSaving || i >= t.urls.length) return Promise.resolve();
+      var u = t.urls[i++];
+      return c.match(u).then(function (hit) {
+        if (hit) return;
+        return fetch(u, { mode: "cors", credentials: "omit" }).then(function (r) {
+          if (!r.ok) throw new Error(r.status); return c.put(u, r);
+        });
+      }).catch(function () { failed++; }).then(function () {
+        done++;
+        if (done % 10 === 0 || done === t.urls.length)
+          prog.textContent = "Saving " + done + " / " + t.urls.length + (failed ? " (" + failed + " failed)" : "");
+        return one();
+      });
+    }
+    var workers = []; for (var k = 0; k < 6; k++) workers.push(one());
+    return Promise.all(workers);
+  }).then(function () {
+    var stopped = !offSaving; offSaving = false;
+    prog.textContent = (stopped ? "Stopped after " : "Saved ") + done + " tiles" + (failed ? ", " + failed + " failed" : "");
+    offEstimate(); offStatus();
+  });
+}
+document.getElementById("offline").onclick = function () {
+  var cur = offBases.querySelector("input[value='" + (sel.value || "topo") + "']");
+  if (cur && !offChosen().length) cur.checked = true;
+  offSheet.style.display = "block"; offEstimate(); offStatus();
+};
+document.getElementById("offclose").onclick = function () { offSaving = false; offSheet.style.display = "none"; };
+document.getElementById("offsave").onclick = offSave;
+document.getElementById("offclear").onclick = function () {
+  if (!window.caches || !confirm("Remove all saved map tiles from this device?")) return;
+  offSaving = false;
+  caches.delete(TILE_CACHE).then(function () { document.getElementById("offprog").textContent = "Cleared"; offStatus(); });
+};
+offBases.addEventListener("change", offEstimate);
+document.getElementById("offz").addEventListener("change", offEstimate);
+map.on("moveend", function () { if (offSheet.style.display === "block") offEstimate(); });
 
 // ---------------------------------------------------------------------------
 setOverlay("water", !!st.water);
