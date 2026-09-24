@@ -46,7 +46,7 @@
 </header>
 
 <p>A quick map of Tasmania built on theLIST: tap anywhere to get coordinates, grid references,
-map book squares and the property address, all ready to copy or share. It works on a phone,
+street atlas and map book squares and the property address, all ready to copy or share. It works on a phone,
 and can keep maps for use without signal.</p>
 
 <nav>
@@ -83,6 +83,8 @@ and can keep maps for use without signal.</p>
   <tr><td>Lon, Lat / Lat, Lon</td><td>Decimal degrees, both orders, for whichever the other end wants.</td></tr>
   <tr><td>MGA94 z55</td><td>Easting and northing on the GDA94 grid.</td></tr>
   <tr><td>Grid ref</td><td>6-figure grid reference (100 m square).</td></tr>
+  <tr><td>Street atlas</td><td>Street atlas page and square, e.g. <code>SA-188-A7</code> - the reference usually given with a callout
+    (urban and fringe areas only).</td></tr>
   <tr><td>Map book</td><td>Map book page and square, e.g. <code>MB356 C4</code>.</td></tr>
   <tr><td>More formats</td><td>MGA2020, degrees-minutes-seconds and degrees-decimal-minutes.</td></tr>
 </table>
@@ -97,6 +99,8 @@ and can keep maps for use without signal.</p>
   <tr><td><code>pillinger</code></td><td>The street; a pick list if there is more than one.</td></tr>
   <tr><td><code>265 522</code></td><td>Grid reference (4, 6, 8 or 10 figures), taken in the 100 km square nearest the map view.
     The pin goes in the centre of the square.</td></tr>
+  <tr><td><code>SA-188-B6</code>, <code>SA188B6</code>, <code>sa 188 b6</code></td><td>Street atlas square. <code>SA188</code> alone shows the whole page;
+    pages with a suffix work too (<code>SA 226E B6</code>).</td></tr>
   <tr><td><code>MB356 C4</code>, <code>356c4</code></td><td>Map book square. <code>MB356</code> alone shows the whole page.</td></tr>
   <tr><td><code>147.3257, -42.8821</code></td><td>Longitude, latitude (or the other way round - it can tell in Tasmania).</td></tr>
   <tr><td><code>526598 5252225</code></td><td>MGA easting and northing (MGA94 unless labelled MGA2020).</td></tr>
