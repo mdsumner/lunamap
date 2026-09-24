@@ -26,7 +26,7 @@
   .bar button.on { background:#1565c0; color:#fff; border-color:#1565c0; }
   #panel { position:absolute; left:10px; right:10px; bottom:22px; z-index:1000; max-width:460px;
     background:#fff; border:1px solid #999; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.3);
-    padding:10px 12px; display:none; }
+    padding:10px 12px; display:none; max-height:55vh; overflow-y:auto; }
   #panel h2 { margin:0 0 6px; font-size:14px; font-weight:600; color:var(--muted);
     display:flex; justify-content:space-between; align-items:center; }
   #panel h2 button { border:0; background:none; font-size:20px; line-height:1; padding:0 4px; cursor:pointer; }
@@ -49,6 +49,8 @@
   .glab.b { transform:translate(-50%, -100%); }
   .glab.l { transform:translate(0, -50%); }
   .glab.r { transform:translate(-100%, -50%); }
+  .plab { font:600 11px/1.1 system-ui, sans-serif; color:#4a2c00; white-space:nowrap; text-align:center;
+    text-shadow:0 0 2px #fff, 0 0 2px #fff, 0 0 3px #fff; transform:translate(-50%, -50%); pointer-events:none; }
   #printhead { display:none; }
   @media print {
     @page { margin:8mm; }
@@ -68,6 +70,7 @@
   <button id="locate" title="Show my location">Locate</button>
   <button id="pinme" title="Drop a pin at my location">Pin me</button>
   <button id="grid" title="MGA grid with edge labels">Grid</button>
+  <button id="parcels" title="Cadastral parcels and addresses (zoom in)">Parcels</button>
   <button id="print" title="Print or save this view as PDF">Print</button>
   <form id="goto" autocomplete="off">
     <input id="q" type="search" enterkeyhint="go" placeholder="Go to: grid ref, lon lat, MGA..."
@@ -158,7 +161,7 @@ function readHash() {
   var p = location.hash.replace(/^#/, "").split("/");
   var o = {};
   if (p.length >= 3 && !isNaN(+p[0])) { o.z = +p[0]; o.lat = +p[1]; o.lon = +p[2]; }
-  if (p[3]) { var t = p[3].split(","); o.layer = t[0]; o.grid = t.indexOf("g") > 0; }
+  if (p[3]) { var t = p[3].split(","); o.layer = t[0]; o.grid = t.indexOf("g") > 0; o.noParcels = t.indexOf("np") > 0; }
   if (p.length >= 6) { o.pin = [+p[4], +p[5]]; }
   return o;
 }
@@ -189,7 +192,7 @@ var pin = null;
 function writeHash() {
   var c = map.getCenter();
   var h = "#" + map.getZoom() + "/" + c.lat.toFixed(5) + "/" + c.lng.toFixed(5) + "/" +
-    (sel.value || "topo") + (gridOn ? ",g" : "");
+    (sel.value || "topo") + (gridOn ? ",g" : "") + (parcelsOn ? "" : ",np");
   if (pin) { var p = pin.getLatLng(); h += "/" + p.lat.toFixed(6) + "/" + p.lng.toFixed(6); }
   history.replaceState(null, "", h);
 }
@@ -207,12 +210,12 @@ var pinIcon = L.divIcon({ className: "", iconSize: [22, 22], iconAnchor: [11, 11
 function setPin(latlng) {
   if (!pin) pin = L.marker(latlng, { icon: pinIcon, draggable: true }).addTo(map)
     .on("drag", function () { showCoords(pin.getLatLng()); })
-    .on("dragend", writeHash);
+    .on("dragend", function () { writeHash(); lookupParcel(pin.getLatLng()); });
   else pin.setLatLng(latlng);
-  showCoords(latlng); writeHash();
+  parcelInfo = null; showCoords(latlng); writeHash(); lookupParcel(latlng);
 }
 function showCoords(ll) {
-  lastRows = coords(ll.lat, ll.lng);
+  lastRows = parcelRows().concat(coords(ll.lat, ll.lng));
   rowsEl.innerHTML = "";
   lastRows.forEach(function (r) {
     if (r.extra && !showMore) return;
@@ -232,7 +235,8 @@ function showCoords(ll) {
 }
 map.on("click", function (e) { setPin(e.latlng); });
 document.getElementById("close").onclick = function () {
-  panel.style.display = "none"; if (pin) { map.removeLayer(pin); pin = null; } writeHash(); placeLabels();
+  panel.style.display = "none"; if (pin) { map.removeLayer(pin); pin = null; }
+  parcelInfo = null; parcelHi.clearLayers(); writeHash(); placeLabels();
 };
 
 function toast(msg) {
@@ -531,6 +535,128 @@ window.addEventListener("beforeprint", placeLabels);
 window.addEventListener("afterprint", placeLabels);
 
 // ---------------------------------------------------------------------------
+// Cadastral parcels (theLIST Public/CadastreParcels, which already carries the
+// property address on each parcel).
+//   zoom >= 15  parcel outlines, drawn by the server (export as 512 px tiles)
+//   zoom 18     house numbers, zoom 19 street address, at each parcel's centroid
+//   any zoom    tapping a point looks up the parcel under the pin
+// ---------------------------------------------------------------------------
+var CAD = "https://services.thelist.tas.gov.au/arcgis/rest/services/Public/CadastreParcels/MapServer";
+var parcelsOn = true, parcelInfo = null, parcelSeq = 0;
+var parcelsBtn = document.getElementById("parcels");
+
+var ExportTiles = L.TileLayer.extend({
+  getTileUrl: function (c) {
+    var ts = this.getTileSize(), nw = c.scaleBy(ts), se = nw.add(ts);
+    var a = L.CRS.EPSG3857.project(this._map.unproject(nw, c.z)),
+        b = L.CRS.EPSG3857.project(this._map.unproject(se, c.z));
+    return CAD + "/export?bbox=" + [a.x, b.y, b.x, a.y].map(function (v) { return v.toFixed(2); }).join(",") +
+      "&bboxSR=3857&imageSR=3857&size=" + ts.x + "," + ts.y +
+      "&format=png32&transparent=true&layers=show:0&dpi=96&f=image";
+  }
+});
+var parcelTiles = new ExportTiles("", { tileSize: 512, minZoom: 15, maxZoom: 19, zIndex: 5, opacity: 0.9,
+  attribution: "Parcels &copy; State of Tasmania, theLIST" });
+var parcelLabels = L.layerGroup(), parcelHi = L.layerGroup().addTo(map);
+var labelCache = {}, labelAbort = null;
+
+function shortNumber(a) {           // "123-123A LIVERPOOL ST" -> "123-123A"
+  var m = /^\s*([0-9][0-9A-Z\/\-]*)\s/.exec(a || ""); return m ? m[1] : null;
+}
+function ringCentroid(r) {          // area centroid of a lon/lat ring; falls back to vertex mean
+  var A = 0, x = 0, y = 0;
+  for (var i = 0, j = r.length - 1; i < r.length; j = i++) {
+    var f = r[j][0] * r[i][1] - r[i][0] * r[j][1];
+    A += f; x += (r[j][0] + r[i][0]) * f; y += (r[j][1] + r[i][1]) * f;
+  }
+  if (Math.abs(A) < 1e-14) {
+    r.forEach(function (p) { x += p[0]; y += p[1]; }); return [x / r.length, y / r.length];
+  }
+  return [x / (3 * A), y / (3 * A)];
+}
+function ringArea(r) { var A = 0; for (var i = 0, j = r.length - 1; i < r.length; j = i++) A += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return Math.abs(A); }
+function labelPoint(geom) {
+  var rings = geom.type === "Polygon" ? [geom.coordinates[0]] :
+              geom.type === "MultiPolygon" ? geom.coordinates.map(function (p) { return p[0]; }) : [];
+  if (!rings.length) return null;
+  rings.sort(function (a, b) { return ringArea(b) - ringArea(a); });
+  var c = ringCentroid(rings[0]); return L.latLng(c[1], c[0]);
+}
+
+function refreshParcelLabels() {
+  parcelLabels.clearLayers();
+  var z = map.getZoom();
+  if (!parcelsOn || z < 18) return;
+  var b = map.getBounds();
+  if (labelAbort) labelAbort.abort();
+  labelAbort = window.AbortController ? new AbortController() : null;
+  var url = CAD + "/0/query?geometry=" + [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].map(function (v) { return v.toFixed(6); }).join(",") +
+    "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects" +
+    "&outFields=OBJECTID,PROP_ADD1&returnGeometry=true&maxAllowableOffset=0.00001&geometryPrecision=6&f=geojson";
+  fetch(url, labelAbort ? { signal: labelAbort.signal } : {}).then(function (r) { return r.json(); }).then(function (gj) {
+    parcelLabels.clearLayers();
+    var z2 = map.getZoom();
+    (gj.features || []).forEach(function (ft) {
+      var a = ft.properties && ft.properties.PROP_ADD1; if (!a) return;
+      var id = ft.properties.OBJECTID;
+      var p = labelCache[id] || (labelCache[id] = labelPoint(ft.geometry)); if (!p) return;
+      var txt = z2 >= 19 ? a : shortNumber(a); if (!txt) return;
+      var d = document.createElement("div"); d.textContent = txt;
+      parcelLabels.addLayer(L.marker(p, { interactive: false, keyboard: false,
+        icon: L.divIcon({ className: "", iconSize: null, html: "<div class='plab'>" + d.innerHTML + "</div>" }) }));
+    });
+  }).catch(function () {});
+}
+
+function lookupParcel(ll) {
+  var seq = ++parcelSeq; parcelHi.clearLayers();
+  if (!parcelsOn) return;
+  var url = CAD + "/0/query?geometry=" + ll.lng.toFixed(7) + "," + ll.lat.toFixed(7) +
+    "&geometryType=esriGeometryPoint&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects" +
+    "&outFields=PID,VOLUME,FOLIO,CAD_TYPE1,TENURE_TY,FEAT_NAME,PROP_NAME,PROP_ADD,COMP_AREA" +
+    "&returnGeometry=true&geometryPrecision=7&f=geojson";
+  fetch(url).then(function (r) { return r.json(); }).then(function (gj) {
+    if (seq !== parcelSeq || !pin) return;
+    var ft = (gj.features || [])[0];
+    parcelInfo = ft ? ft.properties : { none: true };
+    if (ft) parcelHi.addLayer(L.geoJSON(ft, { interactive: false,
+      style: { color: "#e65100", weight: 3, fill: true, fillOpacity: 0.08 } }));
+    showCoords(pin.getLatLng());
+  }).catch(function () {
+    if (seq !== parcelSeq || !pin) return;
+    parcelInfo = { failed: true }; showCoords(pin.getLatLng());
+  });
+}
+
+function parcelRows() {
+  if (!parcelsOn || !parcelInfo) return [];
+  if (parcelInfo.failed) return [{ k: "Address", v: "(parcel lookup failed)" }];
+  if (parcelInfo.none) return [{ k: "Address", v: "(no parcel here)" }];
+  var p = parcelInfo, rows = [];
+  var name = p.PROP_NAME || p.FEAT_NAME;
+  rows.push({ k: "Address", v: p.PROP_ADD || name || "(no address)" });
+  if (name && p.PROP_ADD) rows.push({ k: "Name", v: name, extra: true });
+  if (p.VOLUME) rows.push({ k: "Title", v: p.VOLUME + "/" + p.FOLIO, extra: true });
+  if (p.PID) rows.push({ k: "PID", v: String(p.PID), extra: true });
+  var t = [p.CAD_TYPE1, p.TENURE_TY].filter(function (x) { return x; }).join(", ");
+  if (t) rows.push({ k: "Parcel", v: t, extra: true });
+  if (p.COMP_AREA) rows.push({ k: "Area", v: p.COMP_AREA >= 10000 ? (p.COMP_AREA / 10000).toFixed(2) + " ha" :
+    Math.round(p.COMP_AREA) + " m2", extra: true });
+  return rows;
+}
+
+function setParcels(on) {
+  parcelsOn = on; parcelsBtn.classList.toggle("on", on);
+  if (on) { parcelTiles.addTo(map); parcelLabels.addTo(map); refreshParcelLabels(); if (pin) lookupParcel(pin.getLatLng()); }
+  else { map.removeLayer(parcelTiles); map.removeLayer(parcelLabels); parcelHi.clearLayers(); parcelInfo = null;
+         if (pin) showCoords(pin.getLatLng()); }
+  writeHash();
+}
+parcelsBtn.onclick = function () { setParcels(!parcelsOn); };
+map.on("moveend", refreshParcelLabels);
+
+// ---------------------------------------------------------------------------
+setParcels(!st.noParcels);
 setGrid(!!st.grid);
 setLayer(st.layer || "topo");
 if (st.pin) setPin(L.latLng(st.pin[0], st.pin[1]));
