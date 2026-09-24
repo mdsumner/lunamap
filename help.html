@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lunamap help</title>
+<link rel="icon" href="icon-192.png">
+<style>
+  :root { --fg:#1a1a1a; --muted:#555; --accent:#c62828; --blue:#1565c0; --line:#e3e3e3; --code:#f4f4f4; }
+  html { background:#fff; }
+  body { margin:0 auto; max-width:760px; padding:16px 16px 48px; color:var(--fg);
+    font:16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--line); padding-bottom:12px; }
+  header img { width:40px; height:40px; border-radius:8px; }
+  header h1 { margin:0; font-size:22px; }
+  header a.back { margin-left:auto; font-size:15px; }
+  a { color:var(--blue); }
+  h2 { font-size:18px; margin:28px 0 8px; padding-top:8px; border-top:1px solid var(--line); }
+  h3 { font-size:16px; margin:18px 0 6px; }
+  p, li { margin:6px 0; }
+  ul { padding-left:22px; }
+  code, kbd { font:14px ui-monospace, Menlo, Consolas, monospace; background:var(--code); padding:1px 5px; border-radius:4px; }
+  table { border-collapse:collapse; width:100%; font-size:15px; margin:8px 0; }
+  td, th { text-align:left; vertical-align:top; padding:6px 8px; border-bottom:1px solid var(--line); }
+  th { font-weight:600; color:var(--muted); font-size:13px; }
+  td:first-child { white-space:nowrap; }
+  nav { font-size:15px; margin:12px 0; line-height:1.9; }
+  nav a { margin-right:12px; white-space:nowrap; }
+  .sym { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
+    font:700 10px/1 system-ui, sans-serif; color:#fff; border:1.5px solid #fff; box-shadow:0 0 2px rgba(0,0,0,.7);
+    box-sizing:border-box; vertical-align:middle; }
+  .hyd { background:#1565c0; border-radius:50%; width:16px; height:16px; }
+  .tw { background:#0d3c73; border-radius:3px; }
+  .ti { background:#00796b; border-radius:3px; }
+  .gate { background:#fdd835; color:#000; border-color:#000; border-radius:2px; transform:rotate(45deg); }
+  .gate span { transform:rotate(-45deg); }
+  .note { background:#fff8e1; border-left:4px solid #f9a825; padding:8px 12px; margin:12px 0; font-size:15px; }
+  footer { margin-top:36px; font-size:13px; color:var(--muted); border-top:1px solid var(--line); padding-top:12px; }
+</style>
+</head>
+<body>
+<header>
+  <img src="icon-192.png" alt="">
+  <h1>lunamap help</h1>
+  <a class="back" href="./">Back to map</a>
+</header>
+
+<p>A quick map of Tasmania built on theLIST: tap anywhere to get coordinates, grid references,
+map book squares and the property address, all ready to copy or share. It works on a phone,
+and can keep maps for use without signal.</p>
+
+<nav>
+  <a href="#start">Getting started</a>
+  <a href="#panel">The pin panel</a>
+  <a href="#goto">Go to</a>
+  <a href="#layers">Layers</a>
+  <a href="#grid">Grid refs</a>
+  <a href="#offline">Offline</a>
+  <a href="#share">Share and print</a>
+  <a href="#install">Install</a>
+  <a href="#notes">Notes</a>
+</nav>
+
+<h2 id="start">Getting started</h2>
+<ul>
+  <li><b>Tap the map</b> to drop a pin. A panel opens with the location in several formats. Drag the pin to adjust it.</li>
+  <li><b>Locate</b> shows your GPS position as a blue dot with an accuracy circle. Tap it again to stop.</li>
+  <li><b>Pin me</b> drops the pin where you are standing.</li>
+  <li><b>Basemap</b> (the drop-down): Topographic, Emergency Services 1:50k map book, TASMAP raster, aerial photo,
+    hillshade, grey topographic.</li>
+  <li><b>More</b> shows the rest of the buttons (Grid, Parcels, Water, Gates, Offline, Print, Help). On a phone they
+    are folded away to save space; <b>Less</b> hides them again.</li>
+</ul>
+
+<h2 id="panel">The pin panel</h2>
+<p>Every row has a <b>Copy</b> button. <b>Copy all</b> copies the visible rows plus a link back to this exact view.
+<b>Share link</b> opens your phone's share sheet (message, email, etc.).</p>
+<table>
+  <tr><th>Row</th><th>What it is</th></tr>
+  <tr><td>Feature</td><td>Only when you tap a hydrant, dam, gate etc: what it is and its name or asset number.</td></tr>
+  <tr><td>Address</td><td>Property address of the land parcel under the pin (theLIST cadastre).
+    More formats adds title (volume/folio), PID, tenure and area.</td></tr>
+  <tr><td>Lon, Lat / Lat, Lon</td><td>Decimal degrees, both orders, for whichever the other end wants.</td></tr>
+  <tr><td>MGA94 z55</td><td>Easting and northing on the GDA94 grid.</td></tr>
+  <tr><td>Grid ref</td><td>6-figure grid reference (100 m square).</td></tr>
+  <tr><td>Map book</td><td>Map book page and square, e.g. <code>MB356 C4</code>.</td></tr>
+  <tr><td>More formats</td><td>MGA2020, degrees-minutes-seconds and degrees-decimal-minutes.</td></tr>
+</table>
+
+<h2 id="goto">Go to: type or paste a location</h2>
+<p>Type into the search box and press Enter (Go on a phone keyboard). It works out what you gave it:</p>
+<table>
+  <tr><th>You type</th><th>It finds</th></tr>
+  <tr><td><code>12 pillinger</code></td><td>An address. Only the start of the street name is needed; number, street type
+    and suburb are optional (<code>12 Pillinger Drive, Fern Tree</code>, <code>3/20 mount view cres</code>).
+    Several matches give a pick list, nearest first.</td></tr>
+  <tr><td><code>pillinger</code></td><td>The street; a pick list if there is more than one.</td></tr>
+  <tr><td><code>265 522</code></td><td>Grid reference (4, 6, 8 or 10 figures), taken in the 100 km square nearest the map view.
+    The pin goes in the centre of the square.</td></tr>
+  <tr><td><code>MB356 C4</code>, <code>356c4</code></td><td>Map book square. <code>MB356</code> alone shows the whole page.</td></tr>
+  <tr><td><code>147.3257, -42.8821</code></td><td>Longitude, latitude (or the other way round - it can tell in Tasmania).</td></tr>
+  <tr><td><code>526598 5252225</code></td><td>MGA easting and northing (MGA94 unless labelled MGA2020).</td></tr>
+  <tr><td><code>42 52 55.6 S 147 19 32.5 E</code></td><td>Degrees minutes seconds, or degrees and decimal minutes,
+    with or without the symbols.</td></tr>
+</table>
+<p>Lines copied from the pin panel (for example <code>Grid ref: 265 522</code> or <code>Address: ...</code>) can be pasted straight in.</p>
+<p>Misspelt street names are not matched yet - try fewer letters (<code>pill</code>).</p>
+
+<h2 id="layers">Layers</h2>
+<h3>Grid</h3>
+<p>MGA grid lines, 1 km when zoomed in (10 km and 100 km further out), labelled where each line meets the edge of the
+screen like the margin of a paper map: small leading digits, bold two-digit kilometre number.</p>
+<h3>Parcels</h3>
+<p>Property boundaries from zoom 15, house numbers at zoom 18 and street addresses at zoom 19.
+Outlines are white on the aerial photo, dark on other basemaps. Tapping the map looks up the parcel either way.</p>
+<h3>Water</h3>
+<table>
+  <tr><td><span class="sym hyd">H</span></td><td>TasWater hydrant (from zoom 16)</td></tr>
+  <tr><td><span class="sym tw">D</span> <span class="sym tw">R</span> <span class="sym tw">T</span> <span class="sym tw">P</span></td>
+    <td>TasWater dam, reservoir, tank, pump station (also B break pressure tank, W treatment plant) - from zoom 12</td></tr>
+  <tr><td><span class="sym ti">D</span> <span class="sym ti">P</span></td><td>Tasmanian Irrigation dam (with outline) and pump station - from zoom 11</td></tr>
+</table>
+<h3>Gates</h3>
+<table>
+  <tr><td><span class="sym gate"><span>G</span></span> <span class="sym gate"><span>B</span></span></td>
+    <td>Gates and barriers from zoom 13: G gate, B boom gate, o bollard, F fence barrier, X immovable barrier,
+    R removable barrier, # stock grid, ? unknown. Tap for name, status and managing authority.</td></tr>
+</table>
+<p>Tap any symbol to put the pin exactly on it.</p>
+
+<h2 id="grid">Grid references</h2>
+<p>Read eastings first, then northings. For a 6-figure reference take the bold two-digit number of the grid line to the left,
+add tenths across the square, then do the same up from the line below. The pin panel always shows the reference for the pin,
+so you can check your reading.</p>
+
+<h2 id="offline">Offline maps</h2>
+<ol>
+  <li>With signal, move the map to the area you need.</li>
+  <li><b>More</b> then <b>Offline</b>. Tick the basemaps you want and choose how much detail (zoom 17 is street level).</li>
+  <li>Check the size estimate and tap <b>Save this area</b>.</li>
+</ol>
+<p>Without signal the map, GPS dot, grid, coordinates, grid references and coordinate go-to all keep working.
+Addresses, parcels, water and gates are also remembered for places you looked at while online; new searches need signal.
+<b>Clear saved</b> removes the stored maps.</p>
+<div class="note">Test it before you rely on it: save your area, switch on flight mode, and reopen the map.</div>
+
+<h2 id="share">Share and print</h2>
+<ul>
+  <li>The web address always holds the current view, basemap, layers and pin, so any link you copy or share
+    opens the same map for someone else.</li>
+  <li><b>Print</b> prints the current view (or saves it as PDF from the print dialog) with the pin panel, a header
+    with basemap, date and extent, and the grid if it is on. It is a picture, not a georeferenced PDF.</li>
+</ul>
+
+<h2 id="install">Install on your phone</h2>
+<ul>
+  <li><b>iPhone / iPad (Safari):</b> Share, then Add to Home Screen.</li>
+  <li><b>Android (Chrome):</b> the three-dot menu, then Add to Home screen or Install app.</li>
+</ul>
+<p>It then opens full screen from its own icon, and works offline for saved areas.</p>
+
+<h2 id="notes">Notes and accuracy</h2>
+<ul>
+  <li>Coordinates are GDA2020, which matches GPS to well within a metre. MGA94 is converted with the standard
+    7-parameter transformation (about 0.15 m).</li>
+  <li>Grid references and the grid overlay are on MGA2020. The difference from MGA94 is about 1.5 m, far less than a
+    100 m grid square.</li>
+  <li>Parcel boundaries are indicative only, not survey boundaries.</li>
+  <li>Data can be incomplete (for example gates and water assets on private land) - it is only as good as the
+    public datasets behind it.</li>
+</ul>
+
+<footer>
+  Map data &copy; State of Tasmania (theLIST), used under the LIST Web Services terms: topographic and hillshade
+  CC BY 3.0 AU; aerial photo and TASMAP CC BY-NC-ND 3.0 AU. Water assets TasWater and Tasmanian Irrigation via theLIST.
+  Built with Leaflet and proj4js.
+</footer>
+</body>
+</html>
