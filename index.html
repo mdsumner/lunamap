@@ -221,8 +221,16 @@ function readHash() {
 }
 
 var st = readHash();
-var map = L.map("map", { zoomControl: true, attributionControl: true, maxZoom: 19, minZoom: 6 })
-  .setView([st.lat || -42.0, st.lon || 146.6], st.z || 7);
+// Home view: 1.5 km either side of Fern Tree fire station (7 Summerleas Rd)
+var HOME = { lat: -42.923231, lon: 147.260121, halfWidthM: 1500 };
+function homeBounds() {
+  var dLat = HOME.halfWidthM / 111320, dLon = HOME.halfWidthM / (111320 * Math.cos(HOME.lat * Math.PI / 180));
+  return L.latLngBounds([HOME.lat - dLat, HOME.lon - dLon], [HOME.lat + dLat, HOME.lon + dLon]);
+}
+var map = L.map("map", { zoomControl: true, attributionControl: true, maxZoom: 19, minZoom: 6, zoomSnap: 0.25 });
+// fit the home area exactly (fractional zoom), then go back to whole zoom steps
+if (st.z !== undefined) map.setView([st.lat, st.lon], st.z); else map.fitBounds(homeBounds());
+map.options.zoomSnap = 1;
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 
 var layers = {}, current = null;
