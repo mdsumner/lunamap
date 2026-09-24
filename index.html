@@ -23,6 +23,13 @@
     border-radius:8px; background:#fff; color:#111; box-shadow:0 1px 4px rgba(0,0,0,.25); }
   #more { display:block; width:100%; margin-top:4px; border:0; background:none; color:#1565c0;
     font:inherit; font-size:13px; text-align:left; padding:4px 0; cursor:pointer; }
+  #results { flex:1 1 100%; display:none; max-height:45vh; overflow-y:auto; background:#fff;
+    border:1px solid #999; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+  #results button { display:block; width:100%; text-align:left; border:0; border-top:1px solid #eee;
+    background:#fff; box-shadow:none; border-radius:0; padding:10px 12px; font-size:14px; }
+  #results button:first-child { border-top:0; }
+  #results button small { color:#777; }
+  #results .note { padding:6px 12px; font-size:12px; color:#777; background:#fafafa; }
   .bar button.on { background:#1565c0; color:#fff; border-color:#1565c0; }
   #panel { position:absolute; left:10px; right:10px; bottom:22px; z-index:1000; max-width:460px;
     background:#fff; border:1px solid #999; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.3);
@@ -73,9 +80,10 @@
   <button id="parcels" title="Cadastral parcels and addresses (zoom in)">Parcels</button>
   <button id="print" title="Print or save this view as PDF">Print</button>
   <form id="goto" autocomplete="off">
-    <input id="q" type="search" enterkeyhint="go" placeholder="Go to: grid ref, lon lat, MGA..."
-      aria-label="Go to a grid reference or coordinate">
+    <input id="q" type="search" enterkeyhint="go" placeholder="Go to: address, grid ref, lon lat, MGA..."
+      aria-label="Go to an address, grid reference or coordinate">
   </form>
+  <div id="results" role="listbox"></div>
 </div>
 
 <div id="printhead"></div>
@@ -325,6 +333,7 @@ function parseLocation(raw) {
   var line = String(raw).split(/\r?\n/).filter(function (x) { return x.trim(); })[0] || "";
   var hint = "", m = line.match(/^\s*([A-Za-z][^:]*):(.*)$/);
   if (m) { hint = m[1].toLowerCase(); line = m[2]; }
+  if (/[A-Za-z]{2,}/.test(line)) return null;           // words: an address, not a coordinate
   var datum = /2020/.test(hint) ? "mga2020" : "mga94";
   var zoneHint = (hint.match(/z\s*(\d{2})/) || [])[1];
   var s = line.replace(/[\u00b0\u00ba\u02da\u2032\u2033'"`:]/g, " ").replace(/[\u2212\u2013]/g, "-").toUpperCase();
@@ -408,16 +417,157 @@ function parseLocation(raw) {
   return latFirst ? ll(vals[0], vals[1], "Lat, Lon") : ll(vals[1], vals[0], "Lon, Lat");
 }
 
+// ---------------------------------------------------------------------------
+// Address search against theLIST SearchService "Address Geocodes" (layer 7).
+// Only the start of the street name is required:
+//   "pillinger"  "12 pillinger"  "12 Pillinger Drive, Fern Tree"  "3/12 pillinger dr 7054"
+// Number ranges ("10-14") match any number inside them; street type is optional
+// and matched loosely (Road = Rd); suburb is matched by its start.
+// Nearest to the current view first; one match jumps, several give a pick list.
+// ---------------------------------------------------------------------------
+var GEOCODE = "https://services.thelist.tas.gov.au/arcgis/rest/services/Public/SearchService/MapServer/7/query";
+var STREET_TYPES = {
+  ROAD: "RD", RD: "RD", STREET: "ST", ST: "ST", AVENUE: "AVE", AVE: "AVE", AV: "AVE",
+  DRIVE: "DR", DR: "DR", CRESCENT: "CRES", CRES: "CRES", CR: "CRES", COURT: "CT", CT: "CT",
+  PLACE: "PL", PL: "PL", LANE: "LANE", LN: "LANE", HIGHWAY: "HWY", HWY: "HWY", PARADE: "PDE", PDE: "PDE",
+  TERRACE: "TCE", TCE: "TCE", CLOSE: "CL", CL: "CL", GROVE: "GR", GR: "GR", WAY: "WAY", TRACK: "TRK",
+  TRK: "TRK", BOULEVARD: "BVD", BVD: "BVD", BLVD: "BVD", CIRCUIT: "CCT", CCT: "CCT", ESPLANADE: "ESP",
+  ESP: "ESP", RISE: "RISE", VIEW: "VIEW", WALK: "WALK", SQUARE: "SQ", SQ: "SQ", HILL: "HILL", GLADE: "GLDE",
+  PATH: "PATH", RIDGE: "RDGE", RDGE: "RDGE", MEWS: "MEWS", ROW: "ROW", GARDENS: "GDNS", GDNS: "GDNS"
+};
+function normType(t) { t = String(t || "").toUpperCase().replace(/\./g, ""); return STREET_TYPES[t] || t; }
+function sqlq(v) { return "'" + String(v).replace(/'/g, "''") + "'"; }
+
+function parseAddress(raw) {
+  var line = String(raw).split(/\r?\n/)[0].replace(/^\s*address\s*:/i, "");
+  var s = line.toUpperCase().replace(/[^A-Z0-9'\/\- ]+/g, " ").replace(/\s+/g, " ").trim();
+  var a = { unit: null, num: null };
+  var m = /^([0-9]+[A-Z]?)\s*\/\s*([0-9]+)[A-Z]?(?:\s*-\s*[0-9]+[A-Z]?)?\s+(.*)$/.exec(s) ||
+          /^()([0-9]+)[A-Z]?(?:\s*-\s*[0-9]+[A-Z]?)?\s+(.*)$/.exec(s);
+  if (m) { a.unit = m[1] || null; a.num = +m[2]; s = m[3]; }
+  var words = s.split(" ").filter(function (w) { return w && w !== "TAS" && w !== "TASMANIA"; });
+  var pc = words.length && /^7[0-9]{3}$/.test(words[words.length - 1]) ? +words.pop() : null;
+  a.postcode = pc;
+  // split street / locality at a street-type word if there is one
+  // every type word after the first word is a candidate split, earliest first
+  // ("MAIN RD NEW NORFOLK", and "MOUNT VIEW CRES" where VIEW is also a type)
+  a.splits = [];
+  for (var i = 1; i < words.length; i++) if (STREET_TYPES[words[i]])
+    a.splits.push({ street: words.slice(0, i).join(" "), type: normType(words[i]), loc: words.slice(i + 1).join(" ") });
+  for (var k = words.length; k >= 1; k--)            // no type word: longest street first
+    a.splits.push({ street: words.slice(0, k).join(" "), type: null, loc: words.slice(k).join(" ") });
+  return words.length ? a : null;
+}
+
+function geocodeQuery(where) {
+  var url = GEOCODE + "?where=" + encodeURIComponent(where) +
+    "&outFields=ADDRESS,UNIT_NUMBER,STREET_NUMBER_FROM,STREET_NUMBER_TO,STREET,STREET_TYPE,LOCALITY,POSTCODE" +
+    "&returnGeometry=true&outSR=4326&f=json";
+  return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+    if (j.error) throw new Error(j.error.message || "query failed");
+    return (j.features || []).filter(function (f) { return f.geometry; });
+  });
+}
+
+function addressSearch(raw) {
+  var a = parseAddress(raw);
+  if (!a) return Promise.resolve(null);
+  var c = map.getCenter();
+  function where(sp, withNum) {
+    var w = ["UPPER(STREET) LIKE " + sqlq(sp.street + "%")];
+    if (sp.loc) w.push("UPPER(LOCALITY) LIKE " + sqlq(sp.loc + "%"));
+    if (a.postcode) w.push("POSTCODE = " + a.postcode);
+    if (withNum && a.num !== null)
+      w.push("(STREET_NUMBER_FROM = " + a.num + " OR (STREET_NUMBER_FROM <= " + a.num +
+             " AND STREET_NUMBER_TO >= " + a.num + "))");
+    return w.join(" AND ");
+  }
+  function finish(feats, sp, numMatched) {
+    if (sp.type) {                                    // loose street-type filter, dropped if it empties
+      var t = feats.filter(function (f) { return normType(f.attributes.STREET_TYPE) === sp.type; });
+      if (t.length) feats = t;
+    }
+    if (numMatched && a.unit) {
+      var u = feats.filter(function (f) { return String(f.attributes.UNIT_NUMBER || "").toUpperCase() === a.unit; });
+      if (u.length) feats = u;
+    }
+    var items;
+    if (numMatched) {
+      items = feats.map(function (f) { return { label: f.attributes.ADDRESS, lat: f.geometry.y, lon: f.geometry.x }; });
+    } else {                                          // street only: one entry per street + locality
+      var g = {};
+      feats.forEach(function (f) {
+        var at = f.attributes, key = [at.STREET, at.STREET_TYPE, at.LOCALITY].join("|");
+        (g[key] = g[key] || { at: at, pts: [] }).pts.push(f.geometry);
+      });
+      items = Object.keys(g).map(function (k) {
+        var e = g[k], p = e.pts.slice().sort(function (x, y) { return x.y - y.y; })[Math.floor(e.pts.length / 2)];
+        return { label: [e.at.STREET, e.at.STREET_TYPE].filter(Boolean).join(" ") + ", " + e.at.LOCALITY,
+                 sub: e.pts.length + (e.pts.length === 1 ? " address" : " addresses"), lat: p.y, lon: p.x };
+      });
+    }
+    items.forEach(function (it) { it.d = map.distance(c, L.latLng(it.lat, it.lon)); });
+    items.sort(function (x, y) { return x.d - y.d; });
+    return { items: items, numMatched: numMatched, wanted: a.num };
+  }
+  // try each street/locality split: with the number, then without it
+  var i = 0;
+  function next() {
+    if (i >= a.splits.length) return Promise.resolve({ items: [] });
+    var sp = a.splits[i++];
+    var p = a.num !== null ? geocodeQuery(where(sp, true)) : Promise.resolve([]);
+    return p.then(function (fs) {
+      if (fs.length) return finish(fs, sp, true);
+      return geocodeQuery(where(sp, false)).then(function (fs2) {
+        return fs2.length ? finish(fs2, sp, false) : next();
+      });
+    });
+  }
+  return next();
+}
+
+var resultsEl = document.getElementById("results");
+function hideResults() { resultsEl.style.display = "none"; resultsEl.innerHTML = ""; fitControls(); }
+function goTo(latlng, msg, zoom) {
+  hideResults(); document.getElementById("q").blur();
+  map.setView(latlng, Math.max(map.getZoom(), zoom || 17));
+  setPin(latlng); if (msg) toast(msg);
+}
+function showResults(res) {
+  resultsEl.innerHTML = "";
+  if (res.wanted !== null && res.wanted !== undefined && !res.numMatched) {
+    var n = document.createElement("div"); n.className = "note";
+    n.textContent = "No number " + res.wanted + " found - showing streets"; resultsEl.appendChild(n);
+  }
+  res.items.slice(0, 12).forEach(function (it) {
+    var b = document.createElement("button"); b.type = "button";
+    b.textContent = it.label;
+    var sm = document.createElement("small");
+    sm.textContent = "  " + (it.sub ? it.sub + ", " : "") + (it.d < 1000 ? Math.round(it.d) + " m" : (it.d / 1000).toFixed(it.d < 1e4 ? 1 : 0) + " km") + " away";
+    b.appendChild(sm);
+    b.onclick = function () { goTo(L.latLng(it.lat, it.lon), null); };
+    resultsEl.appendChild(b);
+  });
+  resultsEl.style.display = "block"; fitControls();
+}
+
 document.getElementById("goto").addEventListener("submit", function (ev) {
   ev.preventDefault();
   var q = document.getElementById("q"), r = null;
   try { r = parseLocation(q.value); } catch (e) { r = null; }
-  if (!r) { toast("Could not read that location"); return; }
-  q.blur();
-  map.setView(r.latlng, Math.max(map.getZoom(), 15));
-  setPin(r.latlng);
-  toast(r.kind);
+  if (r) { goTo(r.latlng, r.kind, 15); return; }
+  if (!/[A-Za-z]{2,}/.test(q.value)) { toast("Could not read that location"); return; }
+  toast("Searching addresses...");
+  addressSearch(q.value).then(function (res) {
+    if (!res || !res.items.length) { toast("No address found"); return; }
+    var one = res.items.length === 1 && (res.numMatched || res.wanted === null);
+    if (one) { var it = res.items[0]; goTo(L.latLng(it.lat, it.lon), it.label, res.numMatched ? 17 : 16); return; }
+    document.getElementById("toast").style.display = "none";
+    showResults(res);
+  }).catch(function (e) { toast("Address search failed: " + e.message); });
 });
+document.getElementById("q").addEventListener("input", function () { if (!this.value) hideResults(); });
+map.on("click", hideResults);
 
 // ---------------------------------------------------------------------------
 // MGA2020 grid, labelled where each line meets the edge of the current view
