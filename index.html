@@ -805,10 +805,7 @@ function parcelRows() {
   return rows;
 }
 
-// the topographic basemaps already draw parcels and street numbers, so the
-// overlay is only drawn on the others; the tap lookup works on every basemap
-var OWN_CADASTRE = { topo: true, grey: true };
-function overlayWanted() { return parcelsOn && !OWN_CADASTRE[sel.value || "topo"]; }
+function overlayWanted() { return parcelsOn; }
 function syncParcelOverlay() {
   map.getContainer().classList.toggle("on-ortho", sel.value === "ortho");
   if (map.hasLayer(parcelTiles)) parcelTiles.redraw();
