@@ -56,6 +56,7 @@
   .glab.b { transform:translate(-50%, -100%); }
   .glab.l { transform:translate(0, -50%); }
   .glab.r { transform:translate(-100%, -50%); }
+  .on-ortho .plab { color:#fff; text-shadow:0 0 2px #000, 0 0 3px #000, 0 0 4px rgba(0,0,0,.8); }
   .plab { font:600 11px/1.1 system-ui, sans-serif; color:#4a2c00; white-space:nowrap; text-align:center;
     text-shadow:0 0 2px #fff, 0 0 2px #fff, 0 0 3px #fff; transform:translate(-50%, -50%); pointer-events:none; }
   #printhead { display:none; }
@@ -704,9 +705,16 @@ var ExportTiles = L.TileLayer.extend({
         b = L.CRS.EPSG3857.project(this._map.unproject(se, c.z));
     return CAD + "/export?bbox=" + [a.x, b.y, b.x, a.y].map(function (v) { return v.toFixed(2); }).join(",") +
       "&bboxSR=3857&imageSR=3857&size=" + ts.x + "," + ts.y +
-      "&format=png32&transparent=true&layers=show:0&dpi=96&f=image";
+      "&format=png32&transparent=true&dpi=96&f=image&dynamicLayers=" + encodeURIComponent(parcelStyle());
   }
 });
+// outline colour per basemap: near-white on the aerial photo, dark elsewhere
+function parcelStyle() {
+  var col = sel.value === "ortho" ? [255, 255, 255, 230] : [40, 40, 40, 220];
+  return JSON.stringify([{ id: 0, source: { type: "mapLayer", mapLayerId: 0 }, drawingInfo: { renderer: {
+    type: "simple", symbol: { type: "esriSFS", style: "esriSFSNull",
+      outline: { type: "esriSLS", style: "esriSLSSolid", color: col, width: sel.value === "ortho" ? 1.2 : 1 } } } } }]);
+}
 var parcelTiles = new ExportTiles("", { tileSize: 512, minZoom: 15, maxZoom: 19, zIndex: 5, opacity: 0.9,
   attribution: "Parcels &copy; State of Tasmania, theLIST" });
 var parcelLabels = L.layerGroup(), parcelHi = L.layerGroup().addTo(map);
@@ -802,6 +810,8 @@ function parcelRows() {
 var OWN_CADASTRE = { topo: true, grey: true };
 function overlayWanted() { return parcelsOn && !OWN_CADASTRE[sel.value || "topo"]; }
 function syncParcelOverlay() {
+  map.getContainer().classList.toggle("on-ortho", sel.value === "ortho");
+  if (map.hasLayer(parcelTiles)) parcelTiles.redraw();
   if (overlayWanted()) {
     if (!map.hasLayer(parcelTiles)) parcelTiles.addTo(map);
     if (!map.hasLayer(parcelLabels)) parcelLabels.addTo(map);
