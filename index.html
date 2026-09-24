@@ -213,10 +213,11 @@ function showCoords(ll) {
     rowsEl.appendChild(d);
   });
   panel.style.display = "block";
+  if (typeof placeLabels === "function") placeLabels();
 }
 map.on("click", function (e) { setPin(e.latlng); });
 document.getElementById("close").onclick = function () {
-  panel.style.display = "none"; if (pin) { map.removeLayer(pin); pin = null; } writeHash();
+  panel.style.display = "none"; if (pin) { map.removeLayer(pin); pin = null; } writeHash(); placeLabels();
 };
 
 function toast(msg) {
@@ -360,7 +361,16 @@ function placeLabels() {
   var sz = map.getSize();
   var bar = document.querySelector(".bar").getBoundingClientRect();
   var top = bar.bottom - map.getContainer().getBoundingClientRect().top + 4;
-  var bottom = sz.y - 4, left = 4, right = sz.x - 4;
+  // bottom margin sits just above whatever occupies the bottom edge:
+  // the attribution/scale controls, and the coordinate panel when it is open
+  var mapTop = map.getContainer().getBoundingClientRect().top, bottom = sz.y - 4;
+  var occ = Array.prototype.slice.call(document.querySelectorAll(".leaflet-bottom .leaflet-control"));
+  if (panel.style.display === "block") occ.push(panel);
+  occ.forEach(function (el) {
+    var r = el.getBoundingClientRect();
+    if (r.height > 0) bottom = Math.min(bottom, r.top - mapTop - 3);
+  });
+  var left = 4, right = sz.x - 4;
   var html = [];
   function add(cls, p, txt) {
     html.push("<div class='glab " + cls + "' style='left:" + p.x.toFixed(1) + "px;top:" + p.y.toFixed(1) + "px'>" + txt + "</div>");
@@ -372,8 +382,8 @@ function placeLabels() {
       var p1 = crossing(pts, "y", top);    if (p1 && p1.x > 20 && p1.x < sz.x - 20) add("t", p1, txt);
       var p2 = crossing(pts, "y", bottom); if (p2 && p2.x > 20 && p2.x < sz.x - 20) add("b", p2, txt);
     } else {
-      var p3 = crossing(pts, "x", left);  if (p3 && p3.y > top + 20 && p3.y < sz.y - 20) add("l", p3, txt);
-      var p4 = crossing(pts, "x", right); if (p4 && p4.y > top + 20 && p4.y < sz.y - 20) add("r", p4, txt);
+      var p3 = crossing(pts, "x", left);  if (p3 && p3.y > top + 20 && p3.y < bottom - 20) add("l", p3, txt);
+      var p4 = crossing(pts, "x", right); if (p4 && p4.y > top + 20 && p4.y < bottom - 20) add("r", p4, txt);
     }
   });
   glabels.innerHTML = html.join("");
