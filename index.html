@@ -53,7 +53,7 @@
   .row .v { flex:1; font-family:ui-monospace, Menlo, Consolas, monospace; font-size:14px; user-select:all; }
   .row button { flex:none; font-size:12px; padding:4px 8px; border:1px solid #bbb; border-radius:6px;
     background:#f5f5f5; cursor:pointer; }
-  .acts { display:flex; gap:6px; margin-top:8px; }
+  .acts { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .acts button { flex:1; font:inherit; font-size:14px; padding:8px; border:1px solid #999;
     border-radius:8px; background:#f5f5f5; cursor:pointer; }
   #tools { display:contents; }
@@ -134,6 +134,7 @@
     <button id="copyall">Copy all</button>
     <button id="route" title="Road route from the nearest main-road junction to the pin">Route</button>
     <button id="bigger" title="Route from the next bigger road instead">Bigger road</button>
+    <button id="gmaps" title="Open driving directions in Google Maps">Google Maps</button>
   </div>
 </div>
 
@@ -1396,6 +1397,17 @@ routeBtn.onclick = function () {
   else findRoute();
 };
 biggerBtn.onclick = seekBigger;
+
+// Google Maps directions: from the route's junction to the pin when a route is
+// shown, otherwise from wherever the phone is (Google's default) to the pin.
+// Uses the documented Maps URLs format, which opens the app on phones.
+document.getElementById("gmaps").onclick = function () {
+  if (!pin) return;
+  var p = pin.getLatLng(), url = "https://www.google.com/maps/dir/?api=1&travelmode=driving" +
+    "&destination=" + p.lat.toFixed(6) + "," + p.lng.toFixed(6);
+  if (routeInfo && routeInfo.ok) url += "&origin=" + routeInfo.jc[1].toFixed(6) + "," + routeInfo.jc[0].toFixed(6);
+  window.open(url, "_blank", "noopener");
+};
 
 // ---------------------------------------------------------------------------
 // Toolbar: secondary buttons fold away behind "More" on narrow screens
