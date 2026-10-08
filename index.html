@@ -1094,17 +1094,26 @@ function findMapbook(mb) {
 // until one is reachable; Dijkstra runs in the browser. Traffic direction is
 // ignored, so the same route serves "to here" and "from here".
 // ---------------------------------------------------------------------------
-var ROADS = LISTPUB + "TopographyAndRelief/MapServer/8/query";
+var TOPO = LISTPUB + "TopographyAndRelief/MapServer/";
 var HWY = { "National/State Highway": 1 };
 var ART = { "National/State Highway": 1, "Arterial Road": 1, "Sub Arterial Road": 1 };
 var COL = { "National/State Highway": 1, "Arterial Road": 1, "Sub Arterial Road": 1, "Collector Road": 1 };
+// Road data comes in three tiers, all views of the same LIST transport segments
+// (same OBJECTIDs and vertices, so they join up): every road and track near the
+// pin, highways + arterials further out, and highways only for the long reach.
+var TIERS = {
+  local: { layer: 8, radii: [1200, 3000, 7000, 15000] },
+  major: { layer: 5, radii: [15000, 30000, 60000] },
+  hwy:   { layer: 4, radii: [60000, 100000, 150000] }
+};
+// Highway "intersection": a node where three or more highway segments meet,
+// so a highway that only changes its name through a town does not count.
 var ROUTE_LEVELS = [
-  { label: "collector road", cls: COL, maxR: 15000 },
-  { label: "main road", cls: ART, maxR: 15000 },
-  { label: "highway", cls: HWY, maxR: 60000 },
-  { label: "highway intersection", cls: HWY, two: true, maxR: 60000 }
+  { label: "collector road", cls: COL, reach: { local: 15000 } },
+  { label: "main road", cls: ART, reach: { local: 15000 } },
+  { label: "highway", cls: HWY, reach: { local: 7000, major: 60000 } },
+  { label: "highway intersection", cls: HWY, three: true, reach: { local: 7000, major: 30000, hwy: 150000 } }
 ];
-var RADII = [1200, 3000, 7000, 15000, 30000, 60000];
 var routeInfo = null, routeSeq = 0, routeLayer = L.layerGroup().addTo(map), routeCache = null;
 var routeBtn = document.getElementById("route"), biggerBtn = document.getElementById("bigger");
 
@@ -1123,17 +1132,18 @@ function lineLen(c) { var d = 0; for (var i = 1; i < c.length; i++) d += hav(c[i
 function fmtDist(m) { return m < 1000 ? Math.round(m / 10) * 10 + " m" : (m / 1000).toFixed(m < 10000 ? 1 : 0) + " km"; }
 
 // fetch segments in a box; split into quarters when the server truncates
-function fetchSegments(w, s, e, n, depth) {
-  var url = ROADS + "?geometry=" + [w, s, e, n].map(function (v) { return v.toFixed(6); }).join(",") +
+function fetchSegments(layer, w, s, e, n, depth) {
+  var url = TOPO + layer + "/query?geometry=" + [w, s, e, n].map(function (v) { return v.toFixed(6); }).join(",") +
     "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects" +
     "&outFields=OBJECTID,PRI_NAME,TRAN_CLASS,SURFACE_TY,STATUS,TSEG_FEAT&returnGeometry=true&geometryPrecision=7&f=json";
   return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
     if (j.error) throw new Error(j.error.message || "road query failed");
     var feats = j.features || [];
-    if (j.exceededTransferLimit && depth < 5) {
+    if (j.exceededTransferLimit) {
+      if (depth >= 6) throw new Error("too much road data - try a smaller road size");
       var mx = (w + e) / 2, my = (s + n) / 2;
-      return Promise.all([fetchSegments(w, s, mx, my, depth + 1), fetchSegments(mx, s, e, my, depth + 1),
-                          fetchSegments(w, my, mx, n, depth + 1), fetchSegments(mx, my, e, n, depth + 1)])
+      return Promise.all([fetchSegments(layer, w, s, mx, my, depth + 1), fetchSegments(layer, mx, s, e, my, depth + 1),
+                          fetchSegments(layer, w, my, mx, n, depth + 1), fetchSegments(layer, mx, my, e, n, depth + 1)])
         .then(function (parts) { return [].concat.apply([], parts); });
     }
     return feats;
@@ -1168,9 +1178,9 @@ function junctionNames(m) {
 }
 function isJunction(m, L) {
   if (junctionNames(m).length < 2) return false;
-  var big = {}, any = false;
-  m.inc.forEach(function (e) { if (L.cls[e.cls]) { any = true; if (e.name) big[e.name] = 1; } });
-  return L.two ? Object.keys(big).length >= 2 : any;
+  var n = 0;
+  m.inc.forEach(function (e) { if (L.cls[e.cls]) n++; });
+  return L.three ? n >= 3 : n > 0;
 }
 
 // nearest point on the network to p ([lon, lat])
@@ -1281,15 +1291,26 @@ function describeRoute(G, res, sn, level) {
 // find the route for one level; reuses segments already fetched for this pin
 function computeRoute(P, level) {
   var L = ROUTE_LEVELS[level], key = P[0].toFixed(6) + "," + P[1].toFixed(6);
-  if (!routeCache || routeCache.key !== key) routeCache = { key: key, feats: [], r: 0 };
+  if (!routeCache || routeCache.key !== key) routeCache = { key: key, feats: [], ids: {}, r: { local: 0, major: 0, hwy: 0 } };
   var cache = routeCache;
   function attempt() {
     var hit = solve(); if (hit) return Promise.resolve(hit);
-    var r = RADII.filter(function (x) { return x > cache.r; })[0];
-    if (!r || r > L.maxR) return Promise.resolve(null);
+    // next fetch: the innermost tier this level may still widen
+    var tier = null, r = null;
+    ["local", "major", "hwy"].some(function (t) {
+      var max = L.reach[t]; if (!max) return false;
+      var nr = TIERS[t].radii.filter(function (x) { return x > cache.r[t] && x <= max; })[0];
+      if (nr) { tier = t; r = nr; return true; }
+      return false;
+    });
+    if (!tier) return Promise.resolve(null);
     var dLat = r / 111320, dLon = r / (111320 * Math.cos(P[1] * Math.PI / 180));
-    return fetchSegments(P[0] - dLon, P[1] - dLat, P[0] + dLon, P[1] + dLat, 0).then(function (fs) {
-      cache.feats = cache.feats.concat(fs); cache.r = r;
+    return fetchSegments(TIERS[tier].layer, P[0] - dLon, P[1] - dLat, P[0] + dLon, P[1] + dLat, 0).then(function (fs) {
+      fs.forEach(function (f) {
+        var id = f.attributes && f.attributes.OBJECTID;
+        if (id == null || !cache.ids[id]) { if (id != null) cache.ids[id] = 1; cache.feats.push(f); }
+      });
+      cache.r[tier] = r;
       return attempt();
     });
   }
@@ -1345,8 +1366,8 @@ function findRoute(opts) {
   showCoords(pin.getLatLng());
   computeRoute(P, level).then(function (info) {
     if (seq !== routeSeq) return;
-    if (!info) { routeInfo = { ok: false, msg: "(no " + ROUTE_LEVELS[level].label + " junction within " +
-      fmtDist(ROUTE_LEVELS[level].maxR) + " by road)" }; showCoords(pin.getLatLng()); return; }
+    if (!info) { routeInfo = { ok: false, msg: "(no " + ROUTE_LEVELS[level].label + " junction within reach)" };
+      showCoords(pin.getLatLng()); return; }
     applyRoute(info, fit);
   }).catch(function (e) {
     if (seq !== routeSeq) return;
