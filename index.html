@@ -125,6 +125,7 @@
   <div class="acts">
     <button id="share">Share link</button>
     <button id="copyall">Copy all</button>
+    <button id="route" title="Road route from the nearest main-road junction to the pin">Route</button>
   </div>
 </div>
 
@@ -215,7 +216,7 @@ function readHash() {
   var p = location.hash.replace(/^#/, "").split("/");
   var o = {};
   if (p.length >= 3 && !isNaN(+p[0])) { o.z = +p[0]; o.lat = +p[1]; o.lon = +p[2]; }
-  if (p[3]) { var t = p[3].split(","); o.layer = t[0]; o.grid = t.indexOf("g") > 0; o.noParcels = t.indexOf("np") > 0; o.water = t.indexOf("w") > 0; o.gates = t.indexOf("b") > 0; }
+  if (p[3]) { var t = p[3].split(","); o.layer = t[0]; o.grid = t.indexOf("g") > 0; o.noParcels = t.indexOf("np") > 0; o.water = t.indexOf("w") > 0; o.gates = t.indexOf("b") > 0; o.route = t.indexOf("r") > 0; }
   if (p.length >= 6) { o.pin = [+p[4], +p[5]]; }
   return o;
 }
@@ -257,7 +258,7 @@ function writeHash() {
   var c = map.getCenter();
   var h = "#" + map.getZoom() + "/" + c.lat.toFixed(5) + "/" + c.lng.toFixed(5) + "/" +
     (sel.value || "topo") + (gridOn ? ",g" : "") + (parcelsOn ? "" : ",np") +
-    (OVERLAYS && OVERLAYS.water && OVERLAYS.water.on ? ",w" : "") + (OVERLAYS && OVERLAYS.gates && OVERLAYS.gates.on ? ",b" : "");
+    (OVERLAYS && OVERLAYS.water && OVERLAYS.water.on ? ",w" : "") + (OVERLAYS && OVERLAYS.gates && OVERLAYS.gates.on ? ",b" : "") + (routeInfo && routeInfo.ok ? ",r" : "");
   if (pin) { var p = pin.getLatLng(); h += "/" + p.lat.toFixed(6) + "/" + p.lng.toFixed(6); }
   history.replaceState(null, "", h);
 }
@@ -275,14 +276,15 @@ var pinIcon = L.divIcon({ className: "", iconSize: [22, 22], iconAnchor: [11, 11
 function setPin(latlng) {
   if (!pin) pin = L.marker(latlng, { icon: pinIcon, draggable: true }).addTo(map)
     .on("drag", function () { showCoords(pin.getLatLng()); })
+    .on("dragstart", function () { clearRoute(); })
     .on("dragend", function () { writeHash(); lookupParcel(pin.getLatLng()); lookupMapbook(pin.getLatLng()); });
   else pin.setLatLng(latlng);
-  parcelInfo = null; featureInfo = null; showCoords(latlng); writeHash();
+  clearRoute(); parcelInfo = null; featureInfo = null; showCoords(latlng); writeHash();
   lookupParcel(latlng); lookupMapbook(latlng);
 }
 function showCoords(ll) {
   var cr = coords(ll.lat, ll.lng), gi = 4;
-  lastRows = featureRows().concat(parcelRows(), cr.slice(0, gi), mapbookRows(), cr.slice(gi));
+  lastRows = featureRows().concat(parcelRows(), routeRows(), cr.slice(0, gi), mapbookRows(), cr.slice(gi));
   rowsEl.innerHTML = "";
   lastRows.forEach(function (r) {
     if (r.extra && !showMore) return;
@@ -304,7 +306,7 @@ var lastFeatureClick = 0;
 map.on("click", function (e) { if (Date.now() - lastFeatureClick < 300) return; setPin(e.latlng); });
 document.getElementById("close").onclick = function () {
   panel.style.display = "none"; if (pin) { map.removeLayer(pin); pin = null; }
-  parcelInfo = null; parcelHi.clearLayers(); writeHash(); placeLabels();
+  clearRoute(); parcelInfo = null; parcelHi.clearLayers(); writeHash(); placeLabels();
 };
 
 function toast(msg) {
@@ -1062,6 +1064,245 @@ function findMapbook(mb) {
 }
 
 // ---------------------------------------------------------------------------
+// Route: from the nearest main-road junction to the pin, along theLIST
+// transport network (TopographyAndRelief "All Transport", layer 8), which
+// includes vehicular tracks and fire trails and is noded at intersections.
+//   main-road junction = a node on a highway / arterial / sub-arterial road
+//                        where at least two differently named roads meet
+// Segments are fetched for a box around the pin that grows until a junction
+// is reachable; Dijkstra runs in the browser. Traffic direction is ignored,
+// so the same route serves "to here" and "from here".
+// ---------------------------------------------------------------------------
+var ROADS = LISTPUB + "TopographyAndRelief/MapServer/8/query";
+var MAJOR = { "National/State Highway": 1, "Arterial Road": 1, "Sub Arterial Road": 1 };
+var routeInfo = null, routeSeq = 0, routeLayer = L.layerGroup().addTo(map);
+var routeBtn = document.getElementById("route");
+
+function hav(a, b) {                       // metres between [lon, lat] points
+  var R = 6371008.8, r = Math.PI / 180, dLat = (b[1] - a[1]) * r, dLon = (b[0] - a[0]) * r;
+  var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(a[1] * r) * Math.cos(b[1] * r) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function bearing(a, b) {
+  var r = Math.PI / 180, y = Math.sin((b[0] - a[0]) * r) * Math.cos(b[1] * r),
+      x = Math.cos(a[1] * r) * Math.sin(b[1] * r) - Math.sin(a[1] * r) * Math.cos(b[1] * r) * Math.cos((b[0] - a[0]) * r);
+  return (Math.atan2(y, x) / r + 360) % 360;
+}
+function lineLen(c) { var d = 0; for (var i = 1; i < c.length; i++) d += hav(c[i - 1], c[i]); return d; }
+function fmtDist(m) { return m < 1000 ? Math.round(m / 10) * 10 + " m" : (m / 1000).toFixed(m < 10000 ? 1 : 0) + " km"; }
+
+// fetch segments in a box; split into quarters when the server truncates
+function fetchSegments(w, s, e, n, depth) {
+  var url = ROADS + "?geometry=" + [w, s, e, n].map(function (v) { return v.toFixed(6); }).join(",") +
+    "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects" +
+    "&outFields=OBJECTID,PRI_NAME,TRAN_CLASS,SURFACE_TY,STATUS,TSEG_FEAT&returnGeometry=true&geometryPrecision=7&f=json";
+  return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+    if (j.error) throw new Error(j.error.message || "road query failed");
+    var feats = j.features || [];
+    if (j.exceededTransferLimit && depth < 4) {
+      var mx = (w + e) / 2, my = (s + n) / 2;
+      return Promise.all([fetchSegments(w, s, mx, my, depth + 1), fetchSegments(mx, s, e, my, depth + 1),
+                          fetchSegments(w, my, mx, n, depth + 1), fetchSegments(mx, my, e, n, depth + 1)])
+        .then(function (parts) { return [].concat.apply([], parts); });
+    }
+    return feats;
+  });
+}
+
+function buildGraph(feats) {
+  var nodes = {}, adj = [], meta = [], seen = {};
+  function node(c) {
+    var k = c[0].toFixed(7) + "," + c[1].toFixed(7);
+    if (nodes[k] === undefined) { nodes[k] = adj.length; adj.push([]); meta.push({ c: c, names: {}, major: false }); }
+    return nodes[k];
+  }
+  var edges = [];
+  feats.forEach(function (f) {
+    var a = f.attributes || {}, g = f.geometry;
+    if (!g || !g.paths || seen[a.OBJECTID]) return;
+    seen[a.OBJECTID] = true;
+    var st = String(a.STATUS || "");
+    if (/closed|proposed/i.test(st) || /ferry/i.test(String(a.TSEG_FEAT || ""))) return;
+    g.paths.forEach(function (c) {
+      if (c.length < 2) return;
+      var u = node(c[0]), v = node(c[c.length - 1]), len = lineLen(c);
+      var ed = { u: u, v: v, c: c, len: len, name: a.PRI_NAME || null, cls: a.TRAN_CLASS || "", surf: a.SURFACE_TY || "" };
+      edges.push(ed);
+      adj[u].push({ to: v, e: ed, fwd: true }); adj[v].push({ to: u, e: ed, fwd: false });
+      [u, v].forEach(function (n) {
+        if (ed.name) meta[n].names[ed.name] = true;
+        if (MAJOR[ed.cls]) meta[n].major = true;
+      });
+    });
+  });
+  return { nodes: nodes, adj: adj, meta: meta, edges: edges };
+}
+function isJunction(m) { return m.major && Object.keys(m.names).length >= 2; }
+
+// nearest point on the network to p ([lon, lat])
+function snapTo(G, p) {
+  var kx = Math.cos(p[1] * Math.PI / 180), best = null;
+  G.edges.forEach(function (ed) {
+    for (var i = 1; i < ed.c.length; i++) {
+      var a = ed.c[i - 1], b = ed.c[i];
+      var ax = (a[0] - p[0]) * kx, ay = a[1] - p[1], bx = (b[0] - p[0]) * kx, by = b[1] - p[1];
+      var dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+      var t = L2 > 0 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / L2)) : 0;
+      var qx = ax + t * dx, qy = ay + t * dy, d2 = qx * qx + qy * qy;
+      if (!best || d2 < best.d2) best = { d2: d2, ed: ed, i: i, t: t, pt: [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])] };
+    }
+  });
+  if (!best) return null;
+  var ed = best.ed, head = ed.c.slice(0, best.i).concat([best.pt]), tail = [best.pt].concat(ed.c.slice(best.i));
+  best.toU = { c: head.slice().reverse(), len: lineLen(head) };     // snap point -> ed.u
+  best.toV = { c: tail, len: lineLen(tail) };                       // snap point -> ed.v
+  best.off = hav(p, best.pt);
+  return best;
+}
+
+// Dijkstra from the snap point to the first main-road junction reached
+function nearestJunction(G, sn) {
+  var n = G.adj.length, dist = new Float64Array(n).fill(Infinity), prev = new Array(n), done = new Uint8Array(n);
+  var heap = [];
+  function push(d, i) { heap.push([d, i]); var k = heap.length - 1;
+    while (k > 0) { var p = (k - 1) >> 1; if (heap[p][0] <= heap[k][0]) break; var t = heap[p]; heap[p] = heap[k]; heap[k] = t; k = p; } }
+  function pop() { var top = heap[0], last = heap.pop();
+    if (heap.length) { heap[0] = last; var k = 0;
+      for (;;) { var l = 2 * k + 1, r = l + 1, m = k;
+        if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+        if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+        if (m === k) break; var t = heap[m]; heap[m] = heap[k]; heap[k] = t; k = m; } }
+    return top; }
+  var e = sn.ed;
+  [[e.u, sn.toU], [e.v, sn.toV]].forEach(function (x) {
+    if (x[1].len < dist[x[0]]) { dist[x[0]] = x[1].len; prev[x[0]] = { start: true, c: x[1].c, e: e }; push(dist[x[0]], x[0]); }
+  });
+  while (heap.length) {
+    var it = pop(), u = it[1];
+    if (done[u]) continue; done[u] = 1;
+    if (isJunction(G.meta[u])) return { node: u, dist: dist[u], prev: prev };
+    G.adj[u].forEach(function (a) {
+      var nd = dist[u] + a.e.len;
+      if (nd < dist[a.to]) { dist[a.to] = nd; prev[a.to] = { from: u, e: a.e, fwd: a.fwd }; push(nd, a.to); }
+    });
+  }
+  return null;
+}
+
+// legs from the junction to the pin, as edges oriented in travel direction
+function legsFromJunction(G, res) {
+  var legs = [], k = res.node;
+  while (true) {
+    var p = res.prev[k];
+    if (p.start) { legs.push({ c: p.c.slice().reverse(), e: p.e }); break; }   // node -> snap point
+    var c = p.fwd ? p.e.c.slice().reverse() : p.e.c.slice();                    // k -> p.from
+    legs.push({ c: c, e: p.e }); k = p.from;
+  }
+  return legs;
+}
+
+function roadLabel(e) {
+  if (e.name) return e.name;
+  var c = String(e.cls || "road").toLowerCase();
+  return "unnamed " + (c === "vehicular track" ? "track" : c);
+}
+function describeRoute(G, res, sn) {
+  var legs = legsFromJunction(G, res);
+  // group consecutive legs on the same road
+  var groups = [];
+  legs.forEach(function (l) {
+    var lab = roadLabel(l.e), g = groups[groups.length - 1];
+    if (g && g.label === l.e.name && l.e.name) { g.c = g.c.concat(l.c.slice(1)); g.len += lineLen(l.c); g.cls[l.e.cls] = 1; g.surf[l.e.surf] = 1; }
+    else if (g && !l.e.name && !g.named && g.label === lab) { g.c = g.c.concat(l.c.slice(1)); g.len += lineLen(l.c); }
+    else groups.push({ label: lab, named: !!l.e.name, c: l.c.slice(), len: lineLen(l.c), cls: (function (o) { o[l.e.cls] = 1; return o; })({}),
+                       surf: (function (o) { o[l.e.surf] = 1; return o; })({}) });
+  });
+  var jm = G.meta[res.node], jnames = Object.keys(jm.names).sort();
+  var parts = [], total = 0;
+  groups.forEach(function (g, i) {
+    total += g.len;
+    var note = [];
+    if (g.cls["Vehicular Track"]) note.push("track");
+    if (g.surf["4WD required"]) note.push("4WD");
+    else if (g.surf["Unsealed"]) note.push("unsealed");
+    var what = g.label + (note.length ? " (" + note.join(", ") + ")" : "") + " " + fmtDist(g.len);
+    if (i === 0) { parts.push("take " + what); return; }
+    var pc = groups[i - 1].c, a = pc[Math.max(0, pc.length - 2)], b = pc[pc.length - 1], c2 = g.c[Math.min(1, g.c.length - 1)];
+    var d = ((bearing(b, c2) - bearing(a, b) + 540) % 360) - 180;
+    var turn = Math.abs(d) < 30 ? "continue onto" : Math.abs(d) > 150 ? "turn back onto" :
+               (d > 0 ? (d > 110 ? "sharp right onto" : "right onto") : (d < -110 ? "sharp left onto" : "left onto"));
+    parts.push(turn + " " + what);
+  });
+  var text = "From " + jnames.join(" / ") + ": " + parts.join(", then ");
+  if (sn.off > 25) text += "; the pin is " + fmtDist(sn.off) + " off the road";
+  text += ". Total " + fmtDist(total + sn.off) + ".";
+  var path = []; groups.forEach(function (g, i) { path = path.concat(i ? g.c.slice(1) : g.c); });
+  return { ok: true, junction: jnames.join(" / "), jc: jm.c, text: text, path: path, snap: sn.pt, total: total + sn.off };
+}
+
+function drawRoute(r, fit) {
+  routeLayer.clearLayers();
+  var ll = r.path.map(function (c) { return L.latLng(c[1], c[0]); });
+  routeLayer.addLayer(L.polyline(ll, { color: "#fff", weight: 8, opacity: 0.9, interactive: false }));
+  routeLayer.addLayer(L.polyline(ll, { color: "#d84315", weight: 4.5, opacity: 0.95, interactive: false }));
+  if (pin && r.snap) routeLayer.addLayer(L.polyline([L.latLng(r.snap[1], r.snap[0]), pin.getLatLng()],
+    { color: "#d84315", weight: 3, dashArray: "4 6", interactive: false }));
+  routeLayer.addLayer(L.marker(L.latLng(r.jc[1], r.jc[0]), { interactive: false,
+    icon: L.divIcon({ className: "", iconSize: [20, 20], iconAnchor: [10, 10],
+      html: "<div class='wsym' style='width:20px;height:20px;background:#d84315;border-radius:3px'><span>J</span></div>" }) }));
+  if (fit) {
+    var b = L.latLngBounds(ll); if (pin) b.extend(pin.getLatLng());
+    var bottomPad = panel.style.display === "block" ? Math.min(panel.offsetHeight + 30, map.getSize().y * 0.6) : 30;
+    var topPad = document.querySelector(".bar").getBoundingClientRect().bottom + 10;
+    map.fitBounds(b, { paddingTopLeft: [30, topPad], paddingBottomRight: [30, bottomPad], maxZoom: 17 });
+  }
+}
+
+function clearRoute() {
+  routeSeq++; routeInfo = null; routeLayer.clearLayers();
+  if (routeBtn) routeBtn.textContent = "Route";
+}
+function routeRows() {
+  if (!routeInfo) return [];
+  if (!routeInfo.ok) return [{ k: "Route", v: routeInfo.msg }];
+  return [{ k: "Route", v: routeInfo.text }];
+}
+
+function findRoute(opts) {
+  if (!pin) return;
+  var fit = !opts || opts.fit !== false;
+  var seq = ++routeSeq, P = [pin.getLatLng().lng, pin.getLatLng().lat];
+  routeInfo = { ok: false, msg: "finding the nearest main-road junction..." }; showCoords(pin.getLatLng());
+  var radii = [1200, 3000, 7000, 15000], feats = [];
+  function attempt(i) {
+    if (seq !== routeSeq) return;
+    if (i >= radii.length) { routeInfo = { ok: false, msg: "(no main-road junction within 15 km by road)" }; showCoords(pin.getLatLng()); return; }
+    var r = radii[i], dLat = r / 111320, dLon = r / (111320 * Math.cos(P[1] * Math.PI / 180));
+    fetchSegments(P[0] - dLon, P[1] - dLat, P[0] + dLon, P[1] + dLat, 0).then(function (fs) {
+      if (seq !== routeSeq) return;
+      feats = feats.concat(fs);
+      var G = buildGraph(feats), sn = snapTo(G, P);
+      if (!sn) return attempt(i + 1);
+      var res = nearestJunction(G, sn);
+      if (!res) return attempt(i + 1);
+      routeInfo = describeRoute(G, res, sn);
+      routeBtn.textContent = "Clear route";
+      showCoords(pin.getLatLng());           // panel at its final height before fitting
+      drawRoute(routeInfo, fit); writeHash();
+    }).catch(function (e) {
+      if (seq !== routeSeq) return;
+      routeInfo = { ok: false, msg: "(route lookup failed: " + e.message + ")" }; showCoords(pin.getLatLng());
+    });
+  }
+  attempt(0);
+}
+routeBtn.onclick = function () {
+  if (routeInfo && routeInfo.ok) { clearRoute(); showCoords(pin.getLatLng()); writeHash(); }
+  else findRoute();
+};
+
+// ---------------------------------------------------------------------------
 // Toolbar: secondary buttons fold away behind "More" on narrow screens
 // ---------------------------------------------------------------------------
 var barEl = document.querySelector(".bar"), moreBtn = document.getElementById("moretools");
@@ -1184,7 +1425,7 @@ setOverlay("gates", !!st.gates);
 setParcels(!st.noParcels);
 setGrid(!!st.grid);
 setLayer(st.layer || "topo");
-if (st.pin) setPin(L.latLng(st.pin[0], st.pin[1]));
+if (st.pin) { setPin(L.latLng(st.pin[0], st.pin[1])); if (st.route) findRoute({ fit: false }); }
 </script>
 </body>
 </html>

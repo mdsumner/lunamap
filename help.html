@@ -53,6 +53,7 @@ and can keep maps for use without signal.</p>
   <a href="#start">Getting started</a>
   <a href="#panel">The pin panel</a>
   <a href="#goto">Go to</a>
+  <a href="#route">Route</a>
   <a href="#layers">Layers</a>
   <a href="#grid">Grid refs</a>
   <a href="#offline">Offline</a>
@@ -109,6 +110,19 @@ and can keep maps for use without signal.</p>
 </table>
 <p>Lines copied from the pin panel (for example <code>Grid ref: 265 522</code> or <code>Address: ...</code>) can be pasted straight in.</p>
 <p>Misspelt street names are not matched yet - try fewer letters (<code>pill</code>).</p>
+
+<h2 id="route">Route from the nearest main road</h2>
+<p>With a pin down, tap <b>Route</b> in the panel. It finds the nearest junction on a main road (a highway, arterial or
+sub-arterial road where two differently named roads meet) by road distance, draws the route from there to the pin,
+and zooms out to show both. The <b>Route</b> row reads like a radio description, for example:</p>
+<p><code>From Huon Road / Summerleas Road: take Summerleas Road 470 m, then right onto Middle Track (track, 4WD) 610 m;
+the pin is 50 m off the road. Total 1.1 km.</code></p>
+<ul>
+  <li>It starts from that junction, not from where you are, so it works for directing someone else in.</li>
+  <li>It uses theLIST road network, which includes vehicular tracks and fire trails, and notes tracks, 4WD and unsealed sections.</li>
+  <li>One-way streets, gates and seasonal closures are not taken into account - check before relying on it.</li>
+  <li>The route is kept in the share link. Tap <b>Clear route</b> to remove it.</li>
+</ul>
 
 <h2 id="layers">Layers</h2>
 <h3>Grid</h3>
