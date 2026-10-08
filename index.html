@@ -41,6 +41,12 @@
   #panel h2 { margin:0 0 6px; font-size:14px; font-weight:600; color:var(--muted);
     display:flex; justify-content:space-between; align-items:center; }
   #panel h2 button { border:0; background:none; font-size:20px; line-height:1; padding:0 4px; cursor:pointer; }
+  #panel h2 button.fold { font-size:13px; color:#1565c0; padding:2px 10px; margin-right:6px; border:1px solid #bbb; border-radius:6px; }
+  #summary { display:none; font-size:14px; line-height:1.3; margin:0 0 2px; }
+  #panel.collapsed #summary { display:block; }
+  #panel.collapsed #rows { display:none; }
+  #bigger { display:none; }
+  #panel.routed #bigger { display:block; }
   .row { display:flex; align-items:center; gap:8px; padding:5px 0; border-top:1px solid var(--line); }
   .row:first-of-type { border-top:0; }
   .row .k { width:92px; flex:none; font-size:12px; color:var(--muted); }
@@ -120,12 +126,14 @@
 <div id="printhead"></div>
 
 <div id="panel">
-  <h2><span>Pinned location</span><button id="close" aria-label="Close">x</button></h2>
+  <h2><span>Pinned location</span><span><button id="fold" class="fold" title="Hide or show the details">Hide</button><button id="close" aria-label="Close">x</button></span></h2>
+  <div id="summary"></div>
   <div id="rows"></div>
   <div class="acts">
     <button id="share">Share link</button>
     <button id="copyall">Copy all</button>
     <button id="route" title="Road route from the nearest main-road junction to the pin">Route</button>
+    <button id="bigger" title="Route from the next bigger road instead">Bigger road</button>
   </div>
 </div>
 
@@ -216,7 +224,7 @@ function readHash() {
   var p = location.hash.replace(/^#/, "").split("/");
   var o = {};
   if (p.length >= 3 && !isNaN(+p[0])) { o.z = +p[0]; o.lat = +p[1]; o.lon = +p[2]; }
-  if (p[3]) { var t = p[3].split(","); o.layer = t[0]; o.grid = t.indexOf("g") > 0; o.noParcels = t.indexOf("np") > 0; o.water = t.indexOf("w") > 0; o.gates = t.indexOf("b") > 0; o.route = t.indexOf("r") > 0; }
+  if (p[3]) { var t = p[3].split(","); o.layer = t[0]; o.grid = t.indexOf("g") > 0; o.noParcels = t.indexOf("np") > 0; o.water = t.indexOf("w") > 0; o.gates = t.indexOf("b") > 0; t.forEach(function (x, i) { var m = /^r(\d?)$/.exec(x); if (i > 0 && m) { o.route = true; o.routeLevel = m[1] ? +m[1] : 1; } }); }
   if (p.length >= 6) { o.pin = [+p[4], +p[5]]; }
   return o;
 }
@@ -258,7 +266,7 @@ function writeHash() {
   var c = map.getCenter();
   var h = "#" + map.getZoom() + "/" + c.lat.toFixed(5) + "/" + c.lng.toFixed(5) + "/" +
     (sel.value || "topo") + (gridOn ? ",g" : "") + (parcelsOn ? "" : ",np") +
-    (OVERLAYS && OVERLAYS.water && OVERLAYS.water.on ? ",w" : "") + (OVERLAYS && OVERLAYS.gates && OVERLAYS.gates.on ? ",b" : "") + (routeInfo && routeInfo.ok ? ",r" : "");
+    (OVERLAYS && OVERLAYS.water && OVERLAYS.water.on ? ",w" : "") + (OVERLAYS && OVERLAYS.gates && OVERLAYS.gates.on ? ",b" : "") + (routeInfo && routeInfo.ok ? ",r" + routeInfo.level : "");
   if (pin) { var p = pin.getLatLng(); h += "/" + p.lat.toFixed(6) + "/" + p.lng.toFixed(6); }
   history.replaceState(null, "", h);
 }
@@ -279,7 +287,7 @@ function setPin(latlng) {
     .on("dragstart", function () { clearRoute(); })
     .on("dragend", function () { writeHash(); lookupParcel(pin.getLatLng()); lookupMapbook(pin.getLatLng()); });
   else pin.setLatLng(latlng);
-  clearRoute(); parcelInfo = null; featureInfo = null; showCoords(latlng); writeHash();
+  clearRoute(); setFolded(false); parcelInfo = null; featureInfo = null; showCoords(latlng); writeHash();
   lookupParcel(latlng); lookupMapbook(latlng);
 }
 function showCoords(ll) {
@@ -299,9 +307,20 @@ function showCoords(ll) {
   m.textContent = showMore ? "Fewer formats" : "More formats (MGA2020, DMS, deg min)";
   m.onclick = function () { showMore = !showMore; showCoords(ll); };
   rowsEl.appendChild(m);
+  var sum = routeInfo && routeInfo.ok ? routeInfo.short :
+            routeInfo ? "Route: " + routeInfo.msg :
+            lastRows.length ? lastRows[0].k + ": " + lastRows[0].v : "";
+  document.getElementById("summary").textContent = sum;
+  panel.classList.toggle("routed", !!(routeInfo && routeInfo.ok));
   panel.style.display = "block";
   if (typeof placeLabels === "function") placeLabels();
 }
+function setFolded(f) {
+  panel.classList.toggle("collapsed", f);
+  document.getElementById("fold").textContent = f ? "Show" : "Hide";
+  if (typeof placeLabels === "function") placeLabels();
+}
+document.getElementById("fold").onclick = function () { setFolded(!panel.classList.contains("collapsed")); };
 var lastFeatureClick = 0;
 map.on("click", function (e) { if (Date.now() - lastFeatureClick < 300) return; setPin(e.latlng); });
 document.getElementById("close").onclick = function () {
@@ -1064,19 +1083,30 @@ function findMapbook(mb) {
 }
 
 // ---------------------------------------------------------------------------
-// Route: from the nearest main-road junction to the pin, along theLIST
-// transport network (TopographyAndRelief "All Transport", layer 8), which
-// includes vehicular tracks and fire trails and is noded at intersections.
-//   main-road junction = a node on a highway / arterial / sub-arterial road
-//                        where at least two differently named roads meet
-// Segments are fetched for a box around the pin that grows until a junction
-// is reachable; Dijkstra runs in the browser. Traffic direction is ignored,
-// so the same route serves "to here" and "from here".
+// Route: from the nearest road junction of a chosen size to the pin, along
+// theLIST transport network (TopographyAndRelief "All Transport", layer 8),
+// which includes vehicular tracks and fire trails and is noded at intersections.
+// Junction sizes ("Bigger road" steps up):
+//   0 collector road or bigger, 1 sub-arterial/arterial/highway (default),
+//   2 highway, 3 two highways meeting
+// A junction is a node on a road of that size where at least two differently
+// named roads meet. Segments are fetched for a box around the pin that grows
+// until one is reachable; Dijkstra runs in the browser. Traffic direction is
+// ignored, so the same route serves "to here" and "from here".
 // ---------------------------------------------------------------------------
 var ROADS = LISTPUB + "TopographyAndRelief/MapServer/8/query";
-var MAJOR = { "National/State Highway": 1, "Arterial Road": 1, "Sub Arterial Road": 1 };
-var routeInfo = null, routeSeq = 0, routeLayer = L.layerGroup().addTo(map);
-var routeBtn = document.getElementById("route");
+var HWY = { "National/State Highway": 1 };
+var ART = { "National/State Highway": 1, "Arterial Road": 1, "Sub Arterial Road": 1 };
+var COL = { "National/State Highway": 1, "Arterial Road": 1, "Sub Arterial Road": 1, "Collector Road": 1 };
+var ROUTE_LEVELS = [
+  { label: "collector road", cls: COL, maxR: 15000 },
+  { label: "main road", cls: ART, maxR: 15000 },
+  { label: "highway", cls: HWY, maxR: 60000 },
+  { label: "highway intersection", cls: HWY, two: true, maxR: 60000 }
+];
+var RADII = [1200, 3000, 7000, 15000, 30000, 60000];
+var routeInfo = null, routeSeq = 0, routeLayer = L.layerGroup().addTo(map), routeCache = null;
+var routeBtn = document.getElementById("route"), biggerBtn = document.getElementById("bigger");
 
 function hav(a, b) {                       // metres between [lon, lat] points
   var R = 6371008.8, r = Math.PI / 180, dLat = (b[1] - a[1]) * r, dLon = (b[0] - a[0]) * r;
@@ -1100,7 +1130,7 @@ function fetchSegments(w, s, e, n, depth) {
   return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
     if (j.error) throw new Error(j.error.message || "road query failed");
     var feats = j.features || [];
-    if (j.exceededTransferLimit && depth < 4) {
+    if (j.exceededTransferLimit && depth < 5) {
       var mx = (w + e) / 2, my = (s + n) / 2;
       return Promise.all([fetchSegments(w, s, mx, my, depth + 1), fetchSegments(mx, s, e, my, depth + 1),
                           fetchSegments(w, my, mx, n, depth + 1), fetchSegments(mx, my, e, n, depth + 1)])
@@ -1111,34 +1141,37 @@ function fetchSegments(w, s, e, n, depth) {
 }
 
 function buildGraph(feats) {
-  var nodes = {}, adj = [], meta = [], seen = {};
+  var nodes = {}, adj = [], meta = [], seen = {}, edges = [];
   function node(c) {
     var k = c[0].toFixed(7) + "," + c[1].toFixed(7);
-    if (nodes[k] === undefined) { nodes[k] = adj.length; adj.push([]); meta.push({ c: c, names: {}, major: false }); }
+    if (nodes[k] === undefined) { nodes[k] = adj.length; adj.push([]); meta.push({ c: c, k: k, inc: [] }); }
     return nodes[k];
   }
-  var edges = [];
   feats.forEach(function (f) {
     var a = f.attributes || {}, g = f.geometry;
     if (!g || !g.paths || seen[a.OBJECTID]) return;
     seen[a.OBJECTID] = true;
-    var st = String(a.STATUS || "");
-    if (/closed|proposed/i.test(st) || /ferry/i.test(String(a.TSEG_FEAT || ""))) return;
+    if (/closed|proposed/i.test(String(a.STATUS || "")) || /ferry/i.test(String(a.TSEG_FEAT || ""))) return;
     g.paths.forEach(function (c) {
       if (c.length < 2) return;
-      var u = node(c[0]), v = node(c[c.length - 1]), len = lineLen(c);
-      var ed = { u: u, v: v, c: c, len: len, name: a.PRI_NAME || null, cls: a.TRAN_CLASS || "", surf: a.SURFACE_TY || "" };
+      var u = node(c[0]), v = node(c[c.length - 1]);
+      var ed = { u: u, v: v, c: c, len: lineLen(c), name: a.PRI_NAME || null, cls: a.TRAN_CLASS || "", surf: a.SURFACE_TY || "" };
       edges.push(ed);
       adj[u].push({ to: v, e: ed, fwd: true }); adj[v].push({ to: u, e: ed, fwd: false });
-      [u, v].forEach(function (n) {
-        if (ed.name) meta[n].names[ed.name] = true;
-        if (MAJOR[ed.cls]) meta[n].major = true;
-      });
+      meta[u].inc.push(ed); if (v !== u) meta[v].inc.push(ed);
     });
   });
-  return { nodes: nodes, adj: adj, meta: meta, edges: edges };
+  return { adj: adj, meta: meta, edges: edges };
 }
-function isJunction(m) { return m.major && Object.keys(m.names).length >= 2; }
+function junctionNames(m) {
+  var n = {}; m.inc.forEach(function (e) { if (e.name) n[e.name] = 1; }); return Object.keys(n).sort();
+}
+function isJunction(m, L) {
+  if (junctionNames(m).length < 2) return false;
+  var big = {}, any = false;
+  m.inc.forEach(function (e) { if (L.cls[e.cls]) { any = true; if (e.name) big[e.name] = 1; } });
+  return L.two ? Object.keys(big).length >= 2 : any;
+}
 
 // nearest point on the network to p ([lon, lat])
 function snapTo(G, p) {
@@ -1150,7 +1183,7 @@ function snapTo(G, p) {
       var dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
       var t = L2 > 0 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / L2)) : 0;
       var qx = ax + t * dx, qy = ay + t * dy, d2 = qx * qx + qy * qy;
-      if (!best || d2 < best.d2) best = { d2: d2, ed: ed, i: i, t: t, pt: [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])] };
+      if (!best || d2 < best.d2) best = { d2: d2, ed: ed, i: i, pt: [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])] };
     }
   });
   if (!best) return null;
@@ -1161,8 +1194,8 @@ function snapTo(G, p) {
   return best;
 }
 
-// Dijkstra from the snap point to the first main-road junction reached
-function nearestJunction(G, sn) {
+// Dijkstra from the snap point to the first junction of level L
+function nearestJunction(G, sn, L) {
   var n = G.adj.length, dist = new Float64Array(n).fill(Infinity), prev = new Array(n), done = new Uint8Array(n);
   var heap = [];
   function push(d, i) { heap.push([d, i]); var k = heap.length - 1;
@@ -1179,9 +1212,9 @@ function nearestJunction(G, sn) {
     if (x[1].len < dist[x[0]]) { dist[x[0]] = x[1].len; prev[x[0]] = { start: true, c: x[1].c, e: e }; push(dist[x[0]], x[0]); }
   });
   while (heap.length) {
-    var it = pop(), u = it[1];
+    var u = pop()[1];
     if (done[u]) continue; done[u] = 1;
-    if (isJunction(G.meta[u])) return { node: u, dist: dist[u], prev: prev };
+    if (isJunction(G.meta[u], L)) return { node: u, dist: dist[u], prev: prev };
     G.adj[u].forEach(function (a) {
       var nd = dist[u] + a.e.len;
       if (nd < dist[a.to]) { dist[a.to] = nd; prev[a.to] = { from: u, e: a.e, fwd: a.fwd }; push(nd, a.to); }
@@ -1191,39 +1224,40 @@ function nearestJunction(G, sn) {
 }
 
 // legs from the junction to the pin, as edges oriented in travel direction
-function legsFromJunction(G, res) {
+function legsFromJunction(res) {
   var legs = [], k = res.node;
-  while (true) {
+  for (;;) {
     var p = res.prev[k];
     if (p.start) { legs.push({ c: p.c.slice().reverse(), e: p.e }); break; }   // node -> snap point
-    var c = p.fwd ? p.e.c.slice().reverse() : p.e.c.slice();                    // k -> p.from
-    legs.push({ c: c, e: p.e }); k = p.from;
+    legs.push({ c: p.fwd ? p.e.c.slice().reverse() : p.e.c.slice(), e: p.e }); // k -> p.from
+    k = p.from;
   }
   return legs;
 }
 
-function roadLabel(e) {
-  if (e.name) return e.name;
-  var c = String(e.cls || "road").toLowerCase();
+function unnamedLabel(cls) {
+  var c = String(cls || "road").toLowerCase();
   return "unnamed " + (c === "vehicular track" ? "track" : c);
 }
-function describeRoute(G, res, sn) {
-  var legs = legsFromJunction(G, res);
-  // group consecutive legs on the same road
+function describeRoute(G, res, sn, level) {
   var groups = [];
-  legs.forEach(function (l) {
-    var lab = roadLabel(l.e), g = groups[groups.length - 1];
-    if (g && g.label === l.e.name && l.e.name) { g.c = g.c.concat(l.c.slice(1)); g.len += lineLen(l.c); g.cls[l.e.cls] = 1; g.surf[l.e.surf] = 1; }
-    else if (g && !l.e.name && !g.named && g.label === lab) { g.c = g.c.concat(l.c.slice(1)); g.len += lineLen(l.c); }
-    else groups.push({ label: lab, named: !!l.e.name, c: l.c.slice(), len: lineLen(l.c), cls: (function (o) { o[l.e.cls] = 1; return o; })({}),
-                       surf: (function (o) { o[l.e.surf] = 1; return o; })({}) });
+  legsFromJunction(res).forEach(function (l) {
+    var e = l.e, g = groups[groups.length - 1], len = lineLen(l.c);
+    var same = g && (e.name ? g.name === e.name : !g.name);          // consecutive unnamed pieces merge
+    if (same) {
+      g.c = g.c.concat(l.c.slice(1)); g.len += len; g.cls[e.cls] = 1; g.surf[e.surf] = 1;
+      if (!e.name && g.label !== unnamedLabel(e.cls)) g.label = "unnamed tracks and roads";
+    } else {
+      var cls = {}, surf = {}; cls[e.cls] = 1; surf[e.surf] = 1;
+      groups.push({ name: e.name, label: e.name || unnamedLabel(e.cls), c: l.c.slice(), len: len, cls: cls, surf: surf });
+    }
   });
-  var jm = G.meta[res.node], jnames = Object.keys(jm.names).sort();
+  var jm = G.meta[res.node], jnames = junctionNames(jm);
   var parts = [], total = 0;
   groups.forEach(function (g, i) {
     total += g.len;
     var note = [];
-    if (g.cls["Vehicular Track"]) note.push("track");
+    if (g.cls["Vehicular Track"] && g.name) note.push("track");
     if (g.surf["4WD required"]) note.push("4WD");
     else if (g.surf["Unsealed"]) note.push("unsealed");
     var what = g.label + (note.length ? " (" + note.join(", ") + ")" : "") + " " + fmtDist(g.len);
@@ -1234,11 +1268,39 @@ function describeRoute(G, res, sn) {
                (d > 0 ? (d > 110 ? "sharp right onto" : "right onto") : (d < -110 ? "sharp left onto" : "left onto"));
     parts.push(turn + " " + what);
   });
-  var text = "From " + jnames.join(" / ") + ": " + parts.join(", then ");
+  var jlabel = jnames.join(" / ");
+  var text = "From " + jlabel + ": " + parts.join(", then ");
   if (sn.off > 25) text += "; the pin is " + fmtDist(sn.off) + " off the road";
   text += ". Total " + fmtDist(total + sn.off) + ".";
   var path = []; groups.forEach(function (g, i) { path = path.concat(i ? g.c.slice(1) : g.c); });
-  return { ok: true, junction: jnames.join(" / "), jc: jm.c, text: text, path: path, snap: sn.pt, total: total + sn.off };
+  return { ok: true, level: level, junction: jlabel, jkey: jm.k, jc: jm.c, text: text, path: path, snap: sn.pt,
+           total: total + sn.off,
+           short: fmtDist(total + sn.off) + " by road from " + jlabel + " (" + ROUTE_LEVELS[level].label + ")" };
+}
+
+// find the route for one level; reuses segments already fetched for this pin
+function computeRoute(P, level) {
+  var L = ROUTE_LEVELS[level], key = P[0].toFixed(6) + "," + P[1].toFixed(6);
+  if (!routeCache || routeCache.key !== key) routeCache = { key: key, feats: [], r: 0 };
+  var cache = routeCache;
+  function attempt() {
+    var hit = solve(); if (hit) return Promise.resolve(hit);
+    var r = RADII.filter(function (x) { return x > cache.r; })[0];
+    if (!r || r > L.maxR) return Promise.resolve(null);
+    var dLat = r / 111320, dLon = r / (111320 * Math.cos(P[1] * Math.PI / 180));
+    return fetchSegments(P[0] - dLon, P[1] - dLat, P[0] + dLon, P[1] + dLat, 0).then(function (fs) {
+      cache.feats = cache.feats.concat(fs); cache.r = r;
+      return attempt();
+    });
+  }
+  function solve() {
+    if (!cache.feats.length) return null;
+    var G = buildGraph(cache.feats), sn = snapTo(G, P);
+    if (!sn) return null;
+    var res = nearestJunction(G, sn, L);
+    return res ? describeRoute(G, res, sn, level) : null;
+  }
+  return attempt();
 }
 
 function drawRoute(r, fit) {
@@ -1265,42 +1327,54 @@ function clearRoute() {
 }
 function routeRows() {
   if (!routeInfo) return [];
-  if (!routeInfo.ok) return [{ k: "Route", v: routeInfo.msg }];
-  return [{ k: "Route", v: routeInfo.text }];
+  return [{ k: "Route", v: routeInfo.ok ? routeInfo.text : routeInfo.msg }];
+}
+function applyRoute(info, fit) {
+  routeInfo = info; routeBtn.textContent = "Clear route";
+  setFolded(true);                       // keep the map visible; "Show" brings the directions back
+  showCoords(pin.getLatLng());           // panel at its final height before fitting
+  drawRoute(info, fit); writeHash();
 }
 
 function findRoute(opts) {
   if (!pin) return;
-  var fit = !opts || opts.fit !== false;
+  opts = opts || {};
+  var fit = opts.fit !== false, level = opts.level !== undefined ? opts.level : 1;
   var seq = ++routeSeq, P = [pin.getLatLng().lng, pin.getLatLng().lat];
-  routeInfo = { ok: false, msg: "finding the nearest main-road junction..." }; showCoords(pin.getLatLng());
-  var radii = [1200, 3000, 7000, 15000], feats = [];
-  function attempt(i) {
+  routeInfo = { ok: false, msg: "finding the nearest " + ROUTE_LEVELS[level].label + " junction..." };
+  showCoords(pin.getLatLng());
+  computeRoute(P, level).then(function (info) {
     if (seq !== routeSeq) return;
-    if (i >= radii.length) { routeInfo = { ok: false, msg: "(no main-road junction within 15 km by road)" }; showCoords(pin.getLatLng()); return; }
-    var r = radii[i], dLat = r / 111320, dLon = r / (111320 * Math.cos(P[1] * Math.PI / 180));
-    fetchSegments(P[0] - dLon, P[1] - dLat, P[0] + dLon, P[1] + dLat, 0).then(function (fs) {
-      if (seq !== routeSeq) return;
-      feats = feats.concat(fs);
-      var G = buildGraph(feats), sn = snapTo(G, P);
-      if (!sn) return attempt(i + 1);
-      var res = nearestJunction(G, sn);
-      if (!res) return attempt(i + 1);
-      routeInfo = describeRoute(G, res, sn);
-      routeBtn.textContent = "Clear route";
-      showCoords(pin.getLatLng());           // panel at its final height before fitting
-      drawRoute(routeInfo, fit); writeHash();
-    }).catch(function (e) {
-      if (seq !== routeSeq) return;
-      routeInfo = { ok: false, msg: "(route lookup failed: " + e.message + ")" }; showCoords(pin.getLatLng());
-    });
-  }
-  attempt(0);
+    if (!info) { routeInfo = { ok: false, msg: "(no " + ROUTE_LEVELS[level].label + " junction within " +
+      fmtDist(ROUTE_LEVELS[level].maxR) + " by road)" }; showCoords(pin.getLatLng()); return; }
+    applyRoute(info, fit);
+  }).catch(function (e) {
+    if (seq !== routeSeq) return;
+    routeInfo = { ok: false, msg: "(route lookup failed: " + e.message + ")" }; showCoords(pin.getLatLng());
+  });
 }
+
+// step out to the next bigger road whose junction differs from the current one
+function seekBigger() {
+  if (!pin || !routeInfo || !routeInfo.ok) return;
+  var cur = routeInfo, seq = ++routeSeq, P = [pin.getLatLng().lng, pin.getLatLng().lat];
+  toast("Looking for a bigger road...");
+  function next(level) {
+    if (level >= ROUTE_LEVELS.length) { routeSeq = seq; toast("No bigger road junction within reach"); return; }
+    computeRoute(P, level).then(function (info) {
+      if (seq !== routeSeq) return;
+      if (info && info.jkey !== cur.jkey) { applyRoute(info, true); toast("From the nearest " + ROUTE_LEVELS[level].label); return; }
+      next(level + 1);
+    }).catch(function (e) { if (seq === routeSeq) toast("Route lookup failed: " + e.message); });
+  }
+  next(cur.level + 1);
+}
+
 routeBtn.onclick = function () {
-  if (routeInfo && routeInfo.ok) { clearRoute(); showCoords(pin.getLatLng()); writeHash(); }
+  if (routeInfo && routeInfo.ok) { clearRoute(); setFolded(false); showCoords(pin.getLatLng()); writeHash(); }
   else findRoute();
 };
+biggerBtn.onclick = seekBigger;
 
 // ---------------------------------------------------------------------------
 // Toolbar: secondary buttons fold away behind "More" on narrow screens
@@ -1425,7 +1499,7 @@ setOverlay("gates", !!st.gates);
 setParcels(!st.noParcels);
 setGrid(!!st.grid);
 setLayer(st.layer || "topo");
-if (st.pin) { setPin(L.latLng(st.pin[0], st.pin[1])); if (st.route) findRoute({ fit: false }); }
+if (st.pin) { setPin(L.latLng(st.pin[0], st.pin[1])); if (st.route) findRoute({ fit: false, level: st.routeLevel }); }
 </script>
 </body>
 </html>
