@@ -16,7 +16,7 @@ jobs:
   harvest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Query Overpass
         run: |
           cat > q.overpassql <<'Q'
@@ -29,6 +29,8 @@ jobs:
             --data-urlencode "data@q.overpassql" https://overpass-api.de/api/interpreter -o raw.json
       - name: Compact
         run: |
+          head -c 300 raw.json; echo
+          mkdir -p data
           python3 - <<'PY'
           import json, datetime
           raw = json.load(open("raw.json"))
