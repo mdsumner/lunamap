@@ -16,7 +16,8 @@ var CDN = [
 self.addEventListener("install", function (e) {
   self.skipWaiting();
   e.waitUntil(caches.open(SHELL).then(function (c) {
-    return c.addAll(["./", "help.html"].concat(CDN)).catch(function () {});
+    return c.addAll(["./", "help.html", "app.css", "js/core.js", "js/search.js", "js/grid.js",
+      "js/layers.js", "js/route.js", "js/app.js"].concat(CDN)).catch(function () {});
   }));
 });
 
