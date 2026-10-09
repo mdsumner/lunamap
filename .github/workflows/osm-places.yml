@@ -1,0 +1,54 @@
+# Harvest OpenStreetMap place nodes for Tasmania (id, name, position, place type).
+# The Bureau of Meteorology's location pages are keyed by OSM node id
+# (bom.gov.au/location/.../o<node id>-<name>), so this public, ODbL-licensed list
+# lets the map link a pin to the nearest BOM location without using BOM data.
+name: osm-places
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 1 * *"   # monthly
+
+permissions:
+  contents: write
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Query Overpass
+        run: |
+          cat > q.overpassql <<'Q'
+          [out:json][timeout:180];
+          area["ISO3166-2"="AU-TAS"][admin_level=4]->.tas;
+          node["place"~"^(city|town|village|hamlet|suburb|locality|neighbourhood|isolated_dwelling)$"]["name"](area.tas);
+          out;
+          Q
+          curl -sS --fail --retry 3 --retry-delay 20 -A "lunamap (github.com/mdsumner/lunamap)" \
+            --data-urlencode "data@q.overpassql" https://overpass-api.de/api/interpreter -o raw.json
+      - name: Compact
+        run: |
+          python3 - <<'PY'
+          import json, datetime
+          raw = json.load(open("raw.json"))
+          rows = sorted([[e["id"], e["tags"]["name"], round(e["lat"], 5), round(e["lon"], 5), e["tags"]["place"]]
+                         for e in raw["elements"] if e.get("type") == "node" and "name" in e.get("tags", {})])
+          out = {
+            "source": "OpenStreetMap place nodes in Tasmania, via Overpass API",
+            "licence": "Open Database License (ODbL) 1.0 - (c) OpenStreetMap contributors - https://www.openstreetmap.org/copyright",
+            "harvested": datetime.date.today().isoformat(),
+            "fields": ["osm_node_id", "name", "lat", "lon", "place"],
+            "places": rows,
+          }
+          s = json.dumps(out, ensure_ascii=True, separators=(",", ":"))
+          open("data/osm-places-tas.json", "w").write(s + "\n")
+          print(len(rows), "places")
+          PY
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/osm-places-tas.json
+          git diff --cached --quiet || git commit -m "Update OSM places for Tasmania"
+          git push
