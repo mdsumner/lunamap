@@ -85,14 +85,13 @@ function lookupParcel(ll) {
   if (!parcelsOn) return;
   var url = CAD + "/0/query?geometry=" + ll.lng.toFixed(7) + "," + ll.lat.toFixed(7) +
     "&geometryType=esriGeometryPoint&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects" +
-    "&outFields=PID,VOLUME,FOLIO,CAD_TYPE1,TENURE_TY,FEAT_NAME,PROP_NAME,PROP_ADD,COMP_AREA" +
+    "&outFields=PID,VOLUME,FOLIO,CAD_TYPE1,TENURE_TY,FEAT_NAME,PROP_NAME,PROP_ADD,PROP_ADD2,COMP_AREA" +
     "&returnGeometry=true&geometryPrecision=7&f=geojson";
   fetch(url).then(function (r) { return r.json(); }).then(function (gj) {
     if (seq !== parcelSeq || !pin) return;
     var ft = (gj.features || [])[0];
     parcelInfo = ft ? ft.properties : { none: true };
-    if (ft) parcelHi.addLayer(L.geoJSON(ft, { interactive: false,
-      style: { color: "#e65100", weight: 3, fill: true, fillOpacity: 0.08 } }));
+    if (ft) { parcelHi.addLayer(L.geoJSON(ft, { interactive: false, style: parcelHiStyle() })); }
     showCoords(pin.getLatLng());
   }).catch(function () {
     if (seq !== parcelSeq || !pin) return;
@@ -100,6 +99,14 @@ function lookupParcel(ll) {
   });
 }
 
+// parcel outline: orange normally, thick grey dashed while a route (also
+// orange-red) is on the map so the two are easy to tell apart
+function parcelHiStyle() {
+  return (typeof routeInfo !== "undefined" && routeInfo && routeInfo.ok) ?
+    { color: "#555", weight: 5, opacity: 0.85, dashArray: "10 8", fill: true, fillColor: "#777", fillOpacity: 0.06 } :
+    { color: "#e65100", weight: 3, opacity: 1, dashArray: null, fill: true, fillColor: "#e65100", fillOpacity: 0.08 };
+}
+function restyleParcelHi() { parcelHi.eachLayer(function (g) { if (g.setStyle) g.setStyle(parcelHiStyle()); }); }
 function parcelRows() {
   if (!parcelsOn || !parcelInfo) return [];
   if (parcelInfo.failed) return [{ k: "Address", v: "(parcel lookup failed)" }];

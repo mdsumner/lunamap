@@ -262,13 +262,14 @@ function drawRoute(r, fit) {
 function clearRoute() {
   routeSeq++; routeInfo = null; routeLayer.clearLayers();
   if (routeBtn) routeBtn.textContent = "Route";
+  restyleParcelHi();
 }
 function routeRows() {
   if (!routeInfo) return [];
   return [{ k: "Route", v: routeInfo.ok ? routeInfo.text : routeInfo.msg }];
 }
 function applyRoute(info, fit) {
-  routeInfo = info; routeBtn.textContent = "Clear route";
+  routeInfo = info; routeBtn.textContent = "Clear route"; restyleParcelHi();
   setFolded(true);                       // keep the map visible; "Show" brings the directions back
   showCoords(pin.getLatLng());           // panel at its final height before fitting
   drawRoute(info, fit); writeHash();
@@ -317,6 +318,30 @@ biggerBtn.onclick = seekBigger;
 // Google Maps directions: from the route's junction to the pin when a route is
 // shown, otherwise from wherever the phone is (Google's default) to the pin.
 // Uses the documented Maps URLs format, which opens the app on phones.
+// BOM weather: the Bureau's location pages are keyed by a 7-character geohash
+// (the name part of the address is cosmetic), so the pin's own geohash opens
+// the forecast for the nearest BOM location. No BOM data is fetched here.
+function geohash(lat, lon, len) {
+  var B = "0123456789bcdefghjkmnpqrstuvwxyz", la = [-90, 90], lo = [-180, 180], h = "", bit = 0, ch = 0, even = true;
+  while (h.length < len) {
+    var r = even ? lo : la, v = even ? lon : lat, mid = (r[0] + r[1]) / 2;
+    if (v >= mid) { ch = ch * 2 + 1; r[0] = mid; } else { ch = ch * 2; r[1] = mid; }
+    even = !even;
+    if (++bit === 5) { h += B[ch]; bit = 0; ch = 0; }
+  }
+  return h;
+}
+function placeSlug() {
+  // locality from the parcel's address line 2, e.g. "FERN TREE TAS 7054"
+  var a2 = parcelInfo && parcelInfo.PROP_ADD2, m = a2 && /^(.*?)\s+TAS\b/.exec(String(a2));
+  return (m ? m[1] : "location").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+}
+document.getElementById("bom").onclick = function () {
+  if (!pin) return;
+  var p = pin.getLatLng();
+  window.open("https://weather.bom.gov.au/location/" + geohash(p.lat, p.lng, 7) + "-" + placeSlug(), "_blank", "noopener");
+};
+
 document.getElementById("gmaps").onclick = function () {
   if (!pin) return;
   var p = pin.getLatLng(), url = "https://www.google.com/maps/dir/?api=1&travelmode=driving" +
