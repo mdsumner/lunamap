@@ -318,11 +318,26 @@ biggerBtn.onclick = seekBigger;
 // Google Maps directions: from the route's junction to the pin when a route is
 // shown, otherwise from wherever the phone is (Google's default) to the pin.
 // Uses the documented Maps URLs format, which opens the app on phones.
-// BOM weather: the Bureau's new location pages use internal ids that cannot be
-// derived from coordinates, so this opens the Bureau's own site search for the
-// pin's locality (one more tap there picks the forecast). The locality comes
-// from the parcel address, or else the nearest LIST address point within 5 km.
-// No BOM data is fetched here.
+// BOM weather: the Bureau's location pages are keyed by OpenStreetMap node id,
+// bom.gov.au/location/australia/tasmania/<district>/o<node id>-<name>, and the
+// district part is not checked. data/osm-places-tas.json (harvested monthly by
+// a GitHub Action, ODbL) gives the nearest town / suburb / village / hamlet to
+// the pin. No BOM data is fetched. If the list cannot be loaded, fall back to
+// the Bureau's site search for the pin's locality.
+var BOM_TYPES = { city: 1, town: 1, village: 1, suburb: 1, hamlet: 1 };
+var osmPlaces = null;
+function loadPlaces() {
+  if (!osmPlaces) osmPlaces = fetch("data/osm-places-tas.json").then(function (r) { return r.json(); })
+    .then(function (d) { return d.places.filter(function (p) { return BOM_TYPES[p[4]]; }); })
+    .catch(function (e) { osmPlaces = null; throw e; });
+  return osmPlaces;
+}
+function nearestPlace(places, p) {
+  var best = null, bd = Infinity, here = [p.lng, p.lat];
+  places.forEach(function (q) { var d = hav(here, [q[3], q[2]]); if (d < bd) { bd = d; best = q; } });
+  return best ? { id: best[0], name: best[1], dist: bd } : null;
+}
+function bomSlug(name) { return String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
 function pinLocality(p) {
   var a2 = parcelInfo && parcelInfo.PROP_ADD2, m = a2 && /^(.*?)\s+TAS\b/.exec(String(a2));
   if (m && m[1]) return Promise.resolve(m[1]);
@@ -331,19 +346,27 @@ function pinLocality(p) {
     "&outFields=LOCALITY&returnGeometry=false&f=json";
   return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
     var n = {}; (j.features || []).forEach(function (f) { var l = f.attributes.LOCALITY; if (l) n[l] = (n[l] || 0) + 1; });
-    var best = Object.keys(n).sort(function (x, y) { return n[y] - n[x]; })[0];
-    return best || null;
+    return Object.keys(n).sort(function (x, y) { return n[y] - n[x]; })[0] || null;
   }).catch(function () { return null; });
 }
 function titleWords(s) { return String(s).toLowerCase().replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }); }
 document.getElementById("bom").onclick = function () {
   if (!pin) return;
-  var w = window.open("about:blank", "_blank");        // open now so pop-up blockers allow it
-  pinLocality(pin.getLatLng()).then(function (loc) {
-    var q = loc ? titleWords(loc) : "Tasmania";
-    var url = "https://www.bom.gov.au/search?query=" + encodeURIComponent(q);
+  var p = pin.getLatLng(), w = window.open("about:blank", "_blank");   // open now so pop-up blockers allow it
+  function go(url, msg) {
     if (w) { try { w.opener = null; } catch (e) {} w.location.href = url; } else location.href = url;
-    toast("BOM search for " + q);
+    toast(msg);
+  }
+  loadPlaces().then(function (places) {
+    var n = nearestPlace(places, p);
+    if (!n) throw new Error("no places");
+    go("https://www.bom.gov.au/location/australia/tasmania/local/o" + n.id + "-" + bomSlug(n.name),
+       "BOM forecast for " + n.name + " (" + fmtDist(n.dist) + " away)");
+  }).catch(function () {
+    pinLocality(p).then(function (loc) {
+      var q = loc ? titleWords(loc) : "Tasmania";
+      go("https://www.bom.gov.au/search?query=" + encodeURIComponent(q), "BOM search for " + q);
+    });
   });
 };
 

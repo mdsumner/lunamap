@@ -17,7 +17,7 @@ self.addEventListener("install", function (e) {
   self.skipWaiting();
   e.waitUntil(caches.open(SHELL).then(function (c) {
     return c.addAll(["./", "help.html", "app.css", "js/core.js", "js/search.js", "js/grid.js",
-      "js/layers.js", "js/route.js", "js/app.js", "js/draw.js"].concat(CDN)).catch(function () {});
+      "js/layers.js", "js/route.js", "js/app.js", "js/draw.js", "data/osm-places-tas.json"].concat(CDN)).catch(function () {});
   }));
 });
 
