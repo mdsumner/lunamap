@@ -318,28 +318,33 @@ biggerBtn.onclick = seekBigger;
 // Google Maps directions: from the route's junction to the pin when a route is
 // shown, otherwise from wherever the phone is (Google's default) to the pin.
 // Uses the documented Maps URLs format, which opens the app on phones.
-// BOM weather: the Bureau's location pages are keyed by a 7-character geohash
-// (the name part of the address is cosmetic), so the pin's own geohash opens
-// the forecast for the nearest BOM location. No BOM data is fetched here.
-function geohash(lat, lon, len) {
-  var B = "0123456789bcdefghjkmnpqrstuvwxyz", la = [-90, 90], lo = [-180, 180], h = "", bit = 0, ch = 0, even = true;
-  while (h.length < len) {
-    var r = even ? lo : la, v = even ? lon : lat, mid = (r[0] + r[1]) / 2;
-    if (v >= mid) { ch = ch * 2 + 1; r[0] = mid; } else { ch = ch * 2; r[1] = mid; }
-    even = !even;
-    if (++bit === 5) { h += B[ch]; bit = 0; ch = 0; }
-  }
-  return h;
-}
-function placeSlug() {
-  // locality from the parcel's address line 2, e.g. "FERN TREE TAS 7054"
+// BOM weather: the Bureau's new location pages use internal ids that cannot be
+// derived from coordinates, so this opens the Bureau's own site search for the
+// pin's locality (one more tap there picks the forecast). The locality comes
+// from the parcel address, or else the nearest LIST address point within 5 km.
+// No BOM data is fetched here.
+function pinLocality(p) {
   var a2 = parcelInfo && parcelInfo.PROP_ADD2, m = a2 && /^(.*?)\s+TAS\b/.exec(String(a2));
-  return (m ? m[1] : "location").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+  if (m && m[1]) return Promise.resolve(m[1]);
+  var url = LISTPUB + "SearchService/MapServer/7/query?geometry=" + p.lng.toFixed(6) + "," + p.lat.toFixed(6) +
+    "&geometryType=esriGeometryPoint&inSR=4326&distance=5000&units=esriSRUnit_Meter&spatialRel=esriSpatialRelIntersects" +
+    "&outFields=LOCALITY&returnGeometry=false&f=json";
+  return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+    var n = {}; (j.features || []).forEach(function (f) { var l = f.attributes.LOCALITY; if (l) n[l] = (n[l] || 0) + 1; });
+    var best = Object.keys(n).sort(function (x, y) { return n[y] - n[x]; })[0];
+    return best || null;
+  }).catch(function () { return null; });
 }
+function titleWords(s) { return String(s).toLowerCase().replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }); }
 document.getElementById("bom").onclick = function () {
   if (!pin) return;
-  var p = pin.getLatLng();
-  window.open("https://weather.bom.gov.au/location/" + geohash(p.lat, p.lng, 7) + "-" + placeSlug(), "_blank", "noopener");
+  var w = window.open("about:blank", "_blank");        // open now so pop-up blockers allow it
+  pinLocality(pin.getLatLng()).then(function (loc) {
+    var q = loc ? titleWords(loc) : "Tasmania";
+    var url = "https://www.bom.gov.au/search?query=" + encodeURIComponent(q);
+    if (w) { try { w.opener = null; } catch (e) {} w.location.href = url; } else location.href = url;
+    toast("BOM search for " + q);
+  });
 };
 
 document.getElementById("gmaps").onclick = function () {
