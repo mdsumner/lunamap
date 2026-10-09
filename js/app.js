@@ -147,7 +147,14 @@ document.getElementById("draw").onclick = function () {
 };
 (function () {
   var saved = null; try { saved = localStorage.getItem("lunamap.drawings"); } catch (e) {}
-  if (saved && saved.indexOf('"features":[]') < 0) loadDraw().catch(function () { drawLoading = null; });
+  var sketch = new URLSearchParams(location.search).get("s");
+  if (sketch) {
+    // a shared sketch: add it to this device's drawings, then drop it from the
+    // address so a reload does not add it again
+    history.replaceState(null, "", location.pathname + location.hash);
+    loadDraw().then(function () { return window.receiveSketch(sketch); })
+      .catch(function (e) { drawLoading = null; toast("Could not open the sketch: " + e.message); });
+  } else if (saved && saved.indexOf('"features":[]') < 0) loadDraw().catch(function () { drawLoading = null; });
 })();
 
 // ---------------------------------------------------------------------------

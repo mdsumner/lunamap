@@ -274,4 +274,82 @@ document.getElementById("dclear").onclick = function () {
   drawn.clearLayers(); drawSel = null; saveDrawings(); showDrawSheet();
 };
 
+// ---- sketch in a link ------------------------------------------------------
+// The drawings travel in the link as ?s=<code>, with the map view in the hash
+// as usual. Code: version "1", "z" (deflate) or "r" (raw), then base64url of
+//   per shape: kind (0 point, 1 line, 2 polygon outer ring), vertex count,
+//   vertices as zigzag varint deltas at 1e-5 degrees (about 1 m),
+//   label as UTF-8 bytes with a length prefix.
+function sketchBytes(gj) {
+  var out = [], last = [0, 0];
+  function uv(n) { while (n > 127) { out.push((n & 127) | 128); n = Math.floor(n / 128); } out.push(n); }
+  function sv(n) { uv(n < 0 ? -2 * n - 1 : 2 * n); }
+  function pts(a) { uv(a.length); a.forEach(function (p) {
+    var x = Math.round(p[0] * 1e5), y = Math.round(p[1] * 1e5); sv(x - last[0]); sv(y - last[1]); last = [x, y]; }); }
+  gj.features.forEach(function (f) {
+    var g = f.geometry, lab = new TextEncoder().encode(f.properties.label || "");
+    if (g.type === "Point") { out.push(0); pts([g.coordinates]); }
+    else if (g.type === "LineString") { out.push(1); pts(g.coordinates); }
+    else if (g.type === "Polygon") { out.push(2); pts(g.coordinates[0].slice(0, -1)); }
+    else return;
+    uv(lab.length); for (var i = 0; i < lab.length; i++) out.push(lab[i]);
+  });
+  return new Uint8Array(out);
+}
+function sketchFeatures(bytes) {
+  var i = 0, last = [0, 0], feats = [];
+  function uv() { var n = 0, m = 1, b; do { b = bytes[i++]; if (b === undefined) throw new Error("sketch link is cut short");
+    n += (b & 127) * m; m *= 128; } while (b & 128); return n; }
+  function sv() { var n = uv(); return n % 2 ? -(n + 1) / 2 : n / 2; }
+  function pts() { var n = uv(), a = []; for (var k = 0; k < n; k++) { last = [last[0] + sv(), last[1] + sv()];
+    a.push([last[0] / 1e5, last[1] / 1e5]); } return a; }
+  while (i < bytes.length) {
+    var kind = bytes[i++], c = pts(), ll = uv(), label = new TextDecoder().decode(bytes.slice(i, i + ll)); i += ll;
+    var geom = kind === 0 ? { type: "Point", coordinates: c[0] } : kind === 1 ? { type: "LineString", coordinates: c } :
+               { type: "Polygon", coordinates: [c.concat([c[0]])] };
+    feats.push({ type: "Feature", properties: { label: label }, geometry: geom });
+  }
+  return { type: "FeatureCollection", features: feats };
+}
+function b64url(bytes) { var s = ""; for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function unb64url(t) { var s = atob(t.replace(/-/g, "+").replace(/_/g, "/")), b = new Uint8Array(s.length);
+  for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return b; }
+function streamBytes(bytes, stream) {
+  return new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer().then(function (ab) { return new Uint8Array(ab); });
+}
+function encodeSketch(gj) {
+  var raw = sketchBytes(gj);
+  if (!window.CompressionStream) return Promise.resolve("1r" + b64url(raw));
+  return streamBytes(raw, new CompressionStream("deflate-raw")).then(function (z) {
+    return z.length < raw.length ? "1z" + b64url(z) : "1r" + b64url(raw);
+  });
+}
+function decodeSketch(code) {
+  var v = code.slice(0, 2), bytes = unb64url(code.slice(2));
+  if (v === "1r") return Promise.resolve(sketchFeatures(bytes));
+  if (v !== "1z") return Promise.reject(new Error("unknown sketch format"));
+  if (!window.DecompressionStream) return Promise.reject(new Error("this browser cannot open compressed sketches"));
+  return streamBytes(bytes, new DecompressionStream("deflate-raw")).then(sketchFeatures);
+}
+function shareSketch() {
+  var gj = drawingsGeoJSON();
+  if (!gj.features.length) { toast("Nothing drawn yet"); return; }
+  encodeSketch(gj).then(function (code) {
+    var url = location.origin + location.pathname + "?s=" + code + location.hash;
+    if (url.length > 8000) { toast("Sketch too big for a link (" + url.length + " characters) - export a file instead"); return; }
+    var text = "Map sketch (" + gj.features.length + (gj.features.length === 1 ? " shape)" : " shapes)");
+    if (navigator.share) navigator.share({ title: "Map sketch", text: text, url: url }).catch(function () {});
+    else copy(url);
+  }).catch(function (e) { toast("Could not make the link: " + e.message); });
+}
+window.receiveSketch = function (code) {
+  return decodeSketch(code).then(function (gj) {
+    var n = addGeoJSON(gj); saveDrawings();
+    toast(n ? "Sketch received: " + n + (n === 1 ? " shape" : " shapes") + " added to your drawings" : "The sketch was empty");
+    return n;
+  });
+};
+document.getElementById("dshare").onclick = shareSketch;
+
 loadDrawings();
