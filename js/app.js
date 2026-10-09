@@ -117,6 +117,40 @@ document.getElementById("offz").addEventListener("change", offEstimate);
 map.on("moveend", function () { if (offSheet.style.display === "block") offEstimate(); });
 
 // ---------------------------------------------------------------------------
+// Draw: loaded on first use (Leaflet-Geoman + js/draw.js); also loaded at
+// start-up when this device has saved drawings, so they show on the map.
+// ---------------------------------------------------------------------------
+var GEOMAN = "https://cdn.jsdelivr.net/npm/@geoman-io/leaflet-geoman-free@2.20.2/dist/";
+function loadScript(src) {
+  return new Promise(function (ok, fail) {
+    if (document.querySelector("script[src='" + src + "']")) return ok();
+    var el = document.createElement("script"); el.src = src; el.onload = function () { ok(); };
+    el.onerror = function () { fail(new Error("could not load " + src.split("/").pop())); };
+    document.head.appendChild(el);
+  });
+}
+function loadCSS(href) {
+  if (document.querySelector("link[href='" + href + "']")) return;
+  var el = document.createElement("link"); el.rel = "stylesheet"; el.href = href; document.head.appendChild(el);
+}
+var drawLoading = null;
+function loadDraw() {
+  if (!drawLoading) {
+    loadCSS(GEOMAN + "leaflet-geoman.css");
+    drawLoading = loadScript(GEOMAN + "leaflet-geoman.min.js").then(function () { return loadScript("js/draw.js"); });
+  }
+  return drawLoading;
+}
+document.getElementById("draw").onclick = function () {
+  loadDraw().then(function () { window.toggleDraw(); })
+    .catch(function (e) { drawLoading = null; toast("Drawing tools unavailable: " + e.message); });
+};
+(function () {
+  var saved = null; try { saved = localStorage.getItem("lunamap.drawings"); } catch (e) {}
+  if (saved && saved.indexOf('"features":[]') < 0) loadDraw().catch(function () { drawLoading = null; });
+})();
+
+// ---------------------------------------------------------------------------
 setOverlay("water", !!st.water);
 setOverlay("gates", !!st.gates);
 setParcels(!st.noParcels);

@@ -26,6 +26,7 @@
   <button id="parcels" title="Cadastral parcels and addresses (zoom in)">Parcels</button>
   <button id="water" title="Hydrants, dams, reservoirs, tanks and pump stations">Water</button>
   <button id="gates" title="Gates and barriers (zoom in)">Gates</button>
+  <button id="draw" title="Draw points, lines and polygons; export or import">Draw</button>
   <button id="offline" title="Save maps for use without signal">Offline</button>
   <button id="print" title="Print or save this view as PDF">Print</button>
   <button id="help" title="How to use this map" onclick="location.href='help.html'">Help</button>
@@ -65,6 +66,23 @@
   <div class="acts"><button id="offsave">Save this area</button><button id="offclear">Clear saved</button></div>
   <div id="offprog" class="small"></div>
   <div id="offstat" class="small"></div>
+</div>
+
+<div id="drawsheet" class="sheet">
+  <h2><span>Draw</span><button id="dclose" aria-label="Close">x</button></h2>
+  <p class="small">Use the tools on the left: point, line, polygon, then edit, move or delete.
+    Tap a shape to label it.</p>
+  <div id="dsel">
+    <div class="small"><b id="dkind"></b> - <span id="dmeasure"></span></div>
+    <label class="small dfield">Label <input id="dlabel" type="text" maxlength="80" placeholder="optional"></label>
+    <div class="acts"><button id="ddelete">Delete shape</button></div>
+  </div>
+  <div id="dcount" class="small"></div>
+  <div class="acts">
+    <button id="dexp-geojson">GeoJSON</button><button id="dexp-kml">KML</button><button id="dexp-gpx">GPX</button>
+    <button id="dimport">Import...</button><button id="dclear">Clear all</button>
+  </div>
+  <input id="dfile" type="file" accept=".geojson,.json,.kml,.gpx" hidden>
 </div>
 
 <div id="toast"></div>

@@ -56,6 +56,7 @@ and can keep maps for use without signal.</p>
   <a href="#route">Route</a>
   <a href="#layers">Layers</a>
   <a href="#grid">Grid refs</a>
+  <a href="#draw">Draw</a>
   <a href="#offline">Offline</a>
   <a href="#share">Share and print</a>
   <a href="#install">Install</a>
@@ -69,7 +70,7 @@ and can keep maps for use without signal.</p>
   <li><b>Pin me</b> drops the pin where you are standing.</li>
   <li><b>Basemap</b> (the drop-down): Topographic, Emergency Services 1:50k map book, TASMAP raster, aerial photo,
     hillshade, grey topographic.</li>
-  <li><b>More</b> shows the rest of the buttons (Grid, Parcels, Water, Gates, Offline, Print, Help). On a phone they
+  <li><b>More</b> shows the rest of the buttons (Grid, Parcels, Water, Gates, Draw, Offline, Print, Help). On a phone they
     are folded away to save space; <b>Less</b> hides them again.</li>
 </ul>
 
@@ -157,6 +158,18 @@ Outlines are white on the aerial photo, dark on other basemaps. Tapping the map 
 <p>Read eastings first, then northings. For a 6-figure reference take the bold two-digit number of the grid line to the left,
 add tenths across the square, then do the same up from the line below. The pin panel always shows the reference for the pin,
 so you can check your reading.</p>
+
+<h2 id="draw">Draw, export and import</h2>
+<p><b>More</b> then <b>Draw</b> opens the drawing tools on the left: line, polygon and point, then edit (move vertices),
+move whole shapes, and delete. While drawing, tapping the map does not drop the pin.</p>
+<ul>
+  <li>Tap a shape to select it: the Draw panel shows its length, or area and perimeter (points show coordinates and grid ref),
+    and a <b>Label</b> field. Labels show on the map.</li>
+  <li>Shapes are saved on this device and come back next time you open the map. Nothing is uploaded.</li>
+  <li><b>Export</b> as GeoJSON, KML (Google Earth, Avenza) or GPX (GPS units; polygons become closed tracks).</li>
+  <li><b>Import</b> GeoJSON, KML or GPX files - for example a track from someone's GPS. Names in the file become labels.</li>
+  <li><b>Clear all</b> deletes every drawn shape on this device.</li>
+</ul>
 
 <h2 id="offline">Offline maps</h2>
 <ol>

@@ -166,7 +166,10 @@ function setFolded(f) {
 }
 document.getElementById("fold").onclick = function () { setFolded(!panel.classList.contains("collapsed")); };
 var lastFeatureClick = 0;
-map.on("click", function (e) { if (Date.now() - lastFeatureClick < 300) return; setPin(e.latlng); });
+map.on("click", function (e) {
+  if (Date.now() - lastFeatureClick < 300 || (window.drawBusy && window.drawBusy())) return;
+  setPin(e.latlng);
+});
 document.getElementById("close").onclick = function () {
   panel.style.display = "none"; if (pin) { map.removeLayer(pin); pin = null; }
   clearRoute(); parcelInfo = null; parcelHi.clearLayers(); writeHash(); placeLabels();
