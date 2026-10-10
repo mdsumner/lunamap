@@ -1,0 +1,110 @@
+HDR: HTTP/2 206 
+HDR: date: Sat, 10 Oct 2026 00:29:45 GMT
+HDR: content-type: image/tiff
+HDR: content-length: 1024
+HDR: content-range: bytes 0-1023/95158170064
+HDR: cf-ray: a48183342de79398-DFW
+HDR: cf-cache-status: DYNAMIC
+HDR: accept-ranges: bytes
+HDR: access-control-allow-origin: *
+HDR: cache-control: no-cache, no-transform
+HDR: etag: "5a34ece2ace7a74a7f0bf4c8a868acc3-5672"
+HDR: last-modified: Wed, 29 Nov 2023 03:50:05 GMT
+HDR: server: cloudflare
+HDR: access-control-allow-headers: *
+HDR: access-control-allow-methods: GET, HEAD, PUT, POST, DELETE, OPTIONS
+HDR: access-control-expose-headers: *
+HDR: access-control-max-age: 7200
+HDR: server-timing: total;dur=645, dispatch;dur=645, backend;dur=89
+HDR: x-amz-id-2: vgAU3z8+VTRbk/6tBD/t/4PGvzMvI5y+TgPIkXDuZNzeM6IOd7uDj7yGF80M4n6LWnW61YQJcu4=
+HDR: x-amz-request-id: 9PA6NEGKTNANGAF0
+HDR: x-amz-server-side-encryption: AES256
+HDR: x-amz-version-id: Tz0TsEXsJ9Sf3lnP0F_eIN9mens6Zk4Q
+HDR: x-request-id: a48183342de79398
+HDR: speculation-rules: "/cdn-cgi/speculation"
+HDR: report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=7Os0Cp58sQnV%2Bd%2BDejbbZ4xLfNoPCdJLg2oaOOuzMjbLd9SgHoZWyIjvKA%2B9nuSTNsdhSPAVVX%2B6bKwpd6A2O964R%2BpOMu0f8%2BQchugBOdZ5CP832Cx9FoxkwzRABFhEPxyh"}]}
+HDR: nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+HDR: alt-svc: h3=":443"; ma=86400
+HDR: 
+
+Running kernel seems to be up-to-date.
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+GDAL 3.8.4, released 2024/02/08
+INFO: Driver: GTiff/GeoTIFF
+INFO: Files: /vsicurl/https://data.source.coop/alexgleith/tasmania-dem-2m/Tasmania_Statewide_2m_DEM_14-08-2021.tif
+INFO: Size is 457618, 284791
+INFO: Coordinate System is:
+INFO: PROJCRS["GDA94 / MGA zone 55",
+INFO:     BASEGEOGCRS["GDA94",
+INFO:         DATUM["Geocentric Datum of Australia 1994",
+INFO:             ELLIPSOID["GRS 1980",6378137,298.257222101,
+INFO:                 LENGTHUNIT["metre",1]]],
+INFO:         PRIMEM["Greenwich",0,
+INFO:             ANGLEUNIT["degree",0.0174532925199433]],
+INFO:         ID["EPSG",4283]],
+INFO:     CONVERSION["Map Grid of Australia zone 55",
+INFO:         METHOD["Transverse Mercator",
+INFO:             ID["EPSG",9807]],
+INFO:         PARAMETER["Latitude of natural origin",0,
+INFO:             ANGLEUNIT["degree",0.0174532925199433],
+INFO:             ID["EPSG",8801]],
+INFO:         PARAMETER["Longitude of natural origin",147,
+INFO:             ANGLEUNIT["degree",0.0174532925199433],
+INFO:             ID["EPSG",8802]],
+INFO:         PARAMETER["Scale factor at natural origin",0.9996,
+INFO:             SCALEUNIT["unity",1],
+INFO:             ID["EPSG",8805]],
+INFO:         PARAMETER["False easting",500000,
+INFO:             LENGTHUNIT["metre",1],
+INFO:             ID["EPSG",8806]],
+INFO:         PARAMETER["False northing",10000000,
+INFO:             LENGTHUNIT["metre",1],
+INFO:             ID["EPSG",8807]]],
+INFO:     CS[Cartesian,2],
+INFO:         AXIS["(E)",east,
+INFO:             ORDER[1],
+INFO:             LENGTHUNIT["metre",1]],
+INFO:         AXIS["(N)",north,
+INFO:             ORDER[2],
+INFO:             LENGTHUNIT["metre",1]],
+INFO:     USAGE[
+INFO:         SCOPE["Engineering survey, topographic mapping."],
+INFO:         AREA["Australia - onshore and offshore between 144°E and 150°E."],
+INFO:         BBOX[-50.89,144,-9.23,150.01]],
+INFO:     ID["EPSG",28355]]
+INFO: Data axis to CRS axis mapping: 1,2
+INFO: Origin = (-30597.398268200195162,5687852.900000001303852)
+INFO: Pixel Size = (2.000000000000000,-2.000000000000000)
+INFO: Metadata:
+INFO:   AREA_OR_POINT=Area
+INFO:   DataType=Generic
+INFO: Image Structure Metadata:
+INFO:   COMPRESSION=LZW
+INFO:   INTERLEAVE=BAND
+INFO:   LAYOUT=COG
+INFO: Corner Coordinates:
+INFO: Upper Left  (  -30597.398, 5687852.900) (140d53'32.05"E, 38d47'53.72"S)
+INFO: Lower Left  (  -30597.398, 5118270.900) (140d23'37.96"E, 43d53'50.45"S)
+INFO: Upper Right (  884638.602, 5687852.900) (151d25'59.44"E, 38d52'26.50"S)
+INFO: Lower Right (  884638.602, 5118270.900) (151d47'46.93"E, 43d59'16.62"S)
+INFO: Center      (  427020.602, 5403061.900) (146d 7'31.19"E, 41d31'14.73"S)
+INFO: Band 1 Block=512x512 Type=Float32, ColorInterp=Gray
+INFO:   Min=-284.828 Max=1612.849 
+INFO:   Minimum=-284.828, Maximum=1612.849, Mean=357.540, StdDev=299.769
+INFO:   NoData Value=-3.402823e+38
+INFO:   Overviews: 228809x142396, 114405x71198, 57203x35599, 28602x17800, 14301x8900, 7151x4450, 3576x2225, 1788x1113, 894x557, 447x279
+INFO:   Metadata:
+INFO:     RepresentationType=ATHEMATIC
+INFO:     STATISTICS_MAXIMUM=1612.8489990234
+INFO:     STATISTICS_MEAN=357.5400821701
+INFO:     STATISTICS_MINIMUM=-284.82818603516
+INFO:     STATISTICS_STDDEV=299.76878041574
+FERNTREE: 445.767242431641
+SW: 61.9357490539551
