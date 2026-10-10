@@ -82,6 +82,13 @@ then open <http://localhost:8000/>. Opening `index.html` as a file mostly works,
 
 No data is copied from BOM; the weather button only links to bom.gov.au.
 
+## Licence
+
+Code: MIT (see `LICENSE`). Map data and other content keep their own licences (above).
+
+`listmap-print1990700725757339362.pdf` is a LISTmap print kept as an example of its georeferenced-PDF
+output (GDAL cannot derive a geotransform from it: the LPTS are transposed relative to GPTS).
+
 ## Notes for maintainers
 
 - The URL hash holds the state: `#zoom/lat/lon/basemap,flags[/pinlat/pinlon]`, and `?s=` carries a
