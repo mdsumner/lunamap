@@ -1,10 +1,13 @@
 name: probe-dem
 on: { push: { branches: [probe-dem] } }
+permissions: { contents: write }
 jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
       - run: |
+          exec > probe.txt 2>&1
           U=https://data.source.coop/alexgleith/tasmania-dem-2m/Tasmania_Statewide_2m_DEM_14-08-2021.tif
           curl -sS -I -H "Origin: https://mdsumner.github.io" -r 0-1023 "$U" | sed 's/^/HDR: /'
           sudo apt-get -qq update >/dev/null && sudo apt-get -qq install -y gdal-bin >/dev/null
@@ -12,3 +15,6 @@ jobs:
           gdalinfo /vsicurl/$U | sed 's/^/INFO: /' | head -80
           gdallocationinfo -valonly -wgs84 /vsicurl/$U 147.26 -42.92 | sed 's/^/FERNTREE: /'
           gdallocationinfo -valonly -wgs84 /vsicurl/$U 146.0 -43.4 | sed 's/^/SW: /'
+      - run: |
+          git config user.name bot; git config user.email bot@example.com
+          git add probe.txt; git commit -m "probe output"; git push
