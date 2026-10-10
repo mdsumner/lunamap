@@ -1,0 +1,14 @@
+name: probe-dem
+on: { push: { branches: [probe-dem] } }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          U=https://data.source.coop/alexgleith/tasmania-dem-2m/Tasmania_Statewide_2m_DEM_14-08-2021.tif
+          curl -sS -I -H "Origin: https://mdsumner.github.io" -r 0-1023 "$U" | sed 's/^/HDR: /'
+          sudo apt-get -qq update >/dev/null && sudo apt-get -qq install -y gdal-bin >/dev/null
+          gdalinfo --version
+          gdalinfo /vsicurl/$U | sed 's/^/INFO: /' | head -80
+          gdallocationinfo -valonly -wgs84 /vsicurl/$U 147.26 -42.92 | sed 's/^/FERNTREE: /'
+          gdallocationinfo -valonly -wgs84 /vsicurl/$U 146.0 -43.4 | sed 's/^/SW: /'
