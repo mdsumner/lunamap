@@ -20,21 +20,27 @@
   <select id="layer" aria-label="Basemap"></select>
   <button id="locate" title="Show my location">Locate</button>
   <button id="pinme" title="Drop a pin at my location">Pin me</button>
-  <button id="moretools" title="Show or hide layer and tool buttons">More</button>
-  <span id="tools">
-  <button id="grid" title="MGA grid with edge labels">Grid</button>
-  <button id="parcels" title="Cadastral parcels and addresses (zoom in)">Parcels</button>
-  <button id="water" title="Hydrants, dams, reservoirs, tanks and pump stations">Water</button>
-  <button id="gates" title="Gates and barriers (zoom in)">Gates</button>
-  <button id="stations" title="Fire, ambulance, police and SES stations">Stations</button>
-  <button id="danger" title="BOM fire danger ratings">Danger</button>
-  <button id="warnings" title="Current TasALERT warnings">Warnings</button>
-  <button id="history" title="Fire history (bushfires and planned burns)">Fire history</button>
-  <button id="draw" title="Draw points, lines and polygons; export or import">Draw</button>
-  <button id="offline" title="Save maps for use without signal">Offline</button>
-  <button id="print" title="Print or save this view as PDF">Print</button>
-  <button id="help" title="How to use this map" onclick="location.href='help.html'">Help</button>
-  </span>
+  <button id="layersbtn" title="Map layers">Layers</button>
+  <button id="toolsbtn" title="Draw, offline maps, print, help">Tools</button>
+  <div id="layerbox" class="menubox">
+    <span class="mhead">Reference</span>
+    <button id="grid" title="MGA grid with edge labels">Grid</button>
+    <button id="parcels" title="Cadastral parcels and addresses (zoom in)">Parcels</button>
+    <span class="mhead">Infrastructure</span>
+    <button id="water" title="Hydrants, dams, reservoirs, tanks and pump stations">Water</button>
+    <button id="gates" title="Gates and barriers (zoom in)">Gates</button>
+    <button id="stations" title="Fire, ambulance, police and SES stations, meeting points, evacuation centres">Stations</button>
+    <span class="mhead">Fire</span>
+    <button id="danger" title="BOM fire danger ratings">Danger</button>
+    <button id="warnings" title="Current TasALERT warnings">Warnings</button>
+    <button id="history" title="Fire history (bushfires and planned burns)">Fire history</button>
+  </div>
+  <div id="toolbox" class="menubox">
+    <button id="draw" title="Draw points, lines and polygons; export or import">Draw</button>
+    <button id="offline" title="Save maps for use without signal">Offline</button>
+    <button id="print" title="Print or save this view as PDF">Print</button>
+    <button id="help" title="How to use this map" onclick="location.href='help.html'">Help</button>
+  </div>
   <form id="goto" autocomplete="off">
     <input id="q" type="search" enterkeyhint="go" placeholder="Go to: address, grid ref, lon lat, MGA..."
       aria-label="Go to an address, grid reference or coordinate">

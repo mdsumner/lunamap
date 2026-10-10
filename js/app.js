@@ -1,19 +1,33 @@
 // lunamap - app.js (classic script; shares globals with the other js/ files, loaded in order)
 // ---------------------------------------------------------------------------
-// Toolbar: secondary buttons fold away behind "More" on narrow screens
+// Toolbar: map layers and tools live in two drop-down boxes under the bar
 // ---------------------------------------------------------------------------
-var barEl = document.querySelector(".bar"), moreBtn = document.getElementById("moretools");
-function setToolsOpen(open) {
-  barEl.classList.toggle("collapsed", !open);
-  moreBtn.textContent = open ? "Less" : "More";
-  try { localStorage.setItem("lunamap.tools", open ? "1" : "0"); } catch (e) {}
+var barEl = document.querySelector(".bar");
+var menus = { layers: ["layersbtn", "layerbox"], tools: ["toolsbtn", "toolbox"] };
+function setMenu(name) {                     // name: "layers", "tools" or null (close both)
+  Object.keys(menus).forEach(function (k) {
+    var open = k === name;
+    document.getElementById(menus[k][1]).classList.toggle("open", open);
+    document.getElementById(menus[k][0]).classList.toggle("open", open);
+  });
   fitControls(); placeLabels();
 }
-moreBtn.onclick = function () { setToolsOpen(barEl.classList.contains("collapsed")); };
-(function () {
-  var saved = null; try { saved = localStorage.getItem("lunamap.tools"); } catch (e) {}
-  setToolsOpen(saved !== null ? saved === "1" : window.innerWidth >= 700);
-})();
+Object.keys(menus).forEach(function (k) {
+  document.getElementById(menus[k][0]).onclick = function () {
+    setMenu(document.getElementById(menus[k][1]).classList.contains("open") ? null : k);
+  };
+});
+map.on("click", function () { setMenu(null); });
+// the Layers button shows how many layers are on
+function updateLayerCount() {
+  var n = document.querySelectorAll("#layerbox button.on").length;
+  document.getElementById("layersbtn").textContent = n ? "Layers (" + n + ")" : "Layers";
+}
+new MutationObserver(updateLayerCount).observe(document.getElementById("layerbox"), { subtree: true, attributes: true, attributeFilter: ["class"] });
+// tools close the box once chosen
+["draw", "offline", "print"].forEach(function (id) {
+  document.getElementById(id).addEventListener("click", function () { setMenu(null); });
+});
 
 // ---------------------------------------------------------------------------
 // Offline: service worker (sw.js) serves cached tiles; this saves an area.

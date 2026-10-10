@@ -138,13 +138,43 @@ function setPin(latlng) {
   if (typeof lookupHazards === "function") lookupHazards(latlng);
   if (typeof lookupExtras === "function") lookupExtras(latlng);
 }
+// Pin panel: a short view (what most taps need) and a full view grouped by kind.
+var PANEL_GROUPS = [
+  ["", ["Feature", "Route"]],
+  ["Property", ["Address", "Name", "Title", "PID", "Parcel", "Area"]],
+  ["Location", ["Lon, Lat", "Lat, Lon", "MGA94", "Grid ref", "Elevation", "MGA2020", "DMS", "Deg min"]],
+  ["Map references", ["Street atlas", "Map book"]],
+  ["Fire", ["Fire danger", "Fire history", "Nearest fire station"]]
+];
+var PANEL_SHORT = ["Feature", "Address", "Route", "Lon, Lat", "Grid ref", "Fire danger", "Nearest fire station"];
+function rowBase(k) { return String(k).replace(/ z\d+$/, ""); }
+function panelLayout(rows) {          // -> [{head} | row] in display order for the current view
+  var byKey = {}; rows.forEach(function (r) { (byKey[rowBase(r.k)] = byKey[rowBase(r.k)] || []).push(r); });
+  var out = [], used = {};
+  if (!showMore) {
+    PANEL_SHORT.forEach(function (k) { (byKey[k] || []).forEach(function (r) { out.push(r); }); });
+    return out;
+  }
+  PANEL_GROUPS.forEach(function (g) {
+    var rs = []; g[1].forEach(function (k) { (byKey[k] || []).forEach(function (r) { rs.push(r); used[k] = 1; }); });
+    if (rs.length && g[0]) out.push({ head: g[0] });
+    out = out.concat(rs);
+  });
+  var rest = rows.filter(function (r) { return !used[rowBase(r.k)]; });
+  if (rest.length) out = out.concat([{ head: "Other" }], rest);
+  return out;
+}
 function showCoords(ll) {
-  var cr = coords(ll.lat, ll.lng), gi = 4;
-  lastRows = featureRows().concat(parcelRows(), typeof hazardRows === "function" ? hazardRows() : [], routeRows(), cr.slice(0, gi), mapbookRows(), typeof extraRows === "function" ? extraRows() : [], cr.slice(gi));
+  var cr = coords(ll.lat, ll.lng);
+  var all = featureRows().concat(parcelRows(), typeof hazardRows === "function" ? hazardRows() : [], routeRows(), cr,
+    mapbookRows(), typeof extraRows === "function" ? extraRows() : []);
+  var layout = panelLayout(all);
+  lastRows = layout.filter(function (r) { return !r.head; });
   rowsEl.innerHTML = "";
-  lastRows.forEach(function (r) {
-    if (r.extra && !showMore) return;
-    var d = document.createElement("div"); d.className = "row";
+  layout.forEach(function (r) {
+    var d = document.createElement("div");
+    if (r.head) { d.className = "rhead"; d.textContent = r.head; rowsEl.appendChild(d); return; }
+    d.className = "row";
     d.innerHTML = "<span class='k'></span><span class='v'></span><button>Copy</button>";
     d.querySelector(".k").textContent = r.k;
     d.querySelector(".v").textContent = r.v;
@@ -152,7 +182,7 @@ function showCoords(ll) {
     rowsEl.appendChild(d);
   });
   var m = document.createElement("button"); m.id = "more";
-  m.textContent = showMore ? "Fewer formats" : "More formats (MGA2020, DMS, deg min)";
+  m.textContent = showMore ? "Less" : "More: all formats, map references, property and fire details";
   m.onclick = function () { showMore = !showMore; showCoords(ll); };
   rowsEl.appendChild(m);
   var sum = routeInfo && routeInfo.ok ? routeInfo.short :
@@ -195,7 +225,7 @@ function copy(text) {
   }
 }
 function allText() {
-  return lastRows.filter(function (r) { return showMore || !r.extra; }).map(function (r) { return r.k + ": " + r.v; }).join("\n") + "\n" + location.href;
+  return lastRows.map(function (r) { return r.k + ": " + r.v; }).join("\n") + "\n" + location.href;
 }
 document.getElementById("copyall").onclick = function () { copy(allText()); };
 document.getElementById("share").onclick = function () {

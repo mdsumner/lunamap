@@ -71,18 +71,21 @@ and can keep maps for use without signal.</p>
   <li><b>Pin me</b> drops the pin where you are standing.</li>
   <li><b>Basemap</b> (the drop-down): Topographic, Emergency Services 1:50k map book, TASMAP raster, aerial photo,
     hillshade, grey topographic.</li>
-  <li><b>More</b> shows the rest of the buttons (Grid, Parcels, Water, Gates, Draw, Offline, Print, Help). On a phone they
-    are folded away to save space; <b>Less</b> hides them again.</li>
+  <li><b>Layers</b> opens the map layers, grouped: Reference (Grid, Parcels), Infrastructure (Water, Gates, Stations)
+    and Fire (Danger, Warnings, Fire history). The button shows how many are on. Tap the map to close the box.</li>
+  <li><b>Tools</b> opens Draw, Offline, Print and Help.</li>
 </ul>
 
 <h2 id="panel">The pin panel</h2>
-<p>Every row has a <b>Copy</b> button. <b>Copy all</b> copies the visible rows plus a link back to this exact view.
-<b>Share</b> opens your phone's share sheet (message, email, etc.).</p>
+<p>The panel starts short: address, lon/lat, grid reference, plus any feature you tapped, the route, and the fire
+danger and nearest fire station when those layers are on. <b>More</b> shows everything, grouped into Property, Location,
+Map references and Fire; <b>Less</b> goes back. Every row has a <b>Copy</b> button. <b>Copy all</b> copies the rows on
+show plus a link back to this exact view. <b>Share</b> opens your phone's share sheet (message, email, etc.).</p>
 <table>
   <tr><th>Row</th><th>What it is</th></tr>
   <tr><td>Feature</td><td>Only when you tap a hydrant, dam, gate etc: what it is and its name or asset number.</td></tr>
   <tr><td>Address</td><td>Property address of the land parcel under the pin (theLIST cadastre).
-    More formats adds title (volume/folio), PID, tenure and area.</td></tr>
+    The full view adds title (volume/folio), PID, tenure and area.</td></tr>
   <tr><td>Lon, Lat / Lat, Lon</td><td>Decimal degrees, both orders, for whichever the other end wants.</td></tr>
   <tr><td>MGA94 z55</td><td>Easting and northing on the GDA94 grid.</td></tr>
   <tr><td>Grid ref</td><td>6-figure grid reference (100 m square).</td></tr>
@@ -91,7 +94,7 @@ and can keep maps for use without signal.</p>
   <tr><td>Elevation</td><td>Height at the pin in metres above sea level (AHD), from the Tasmania 2 m elevation model.
     Needs signal; reads a small piece of the model for each new area.</td></tr>
   <tr><td>Map book</td><td>Map book page and square, e.g. <code>MB356 C4</code>.</td></tr>
-  <tr><td>More formats</td><td>MGA2020, degrees-minutes-seconds and degrees-decimal-minutes.</td></tr>
+  <tr><td>MGA2020, DMS, Deg min</td><td>In the full view: MGA2020, degrees-minutes-seconds and degrees-decimal-minutes.</td></tr>
 </table>
 
 <h2 id="goto">Go to: type or paste a location</h2>
@@ -190,7 +193,7 @@ add tenths across the square, then do the same up from the line below. The pin p
 so you can check your reading.</p>
 
 <h2 id="draw">Draw, export and import</h2>
-<p><b>More</b> then <b>Draw</b> opens the drawing tools on the left: line, polygon and point, then edit (move vertices),
+<p><b>Tools</b> then <b>Draw</b> opens the drawing tools on the left: line, polygon and point, then edit (move vertices),
 move whole shapes, and delete. While drawing, tapping the map does not drop the pin.</p>
 <ul>
   <li>Tap a shape to select it: the Draw panel shows its length, or area and perimeter (points show coordinates and grid ref),
@@ -213,7 +216,7 @@ move whole shapes, and delete. While drawing, tapping the map does not drop the 
 <h2 id="offline">Offline maps</h2>
 <ol>
   <li>With signal, move the map to the area you need.</li>
-  <li><b>More</b> then <b>Offline</b>. Tick the basemaps you want and choose how much detail (zoom 17 is street level).</li>
+  <li><b>Tools</b> then <b>Offline</b>. Tick the basemaps you want and choose how much detail (zoom 17 is street level).</li>
   <li>Check the size estimate and tap <b>Save this area</b>.</li>
 </ol>
 <p>Without signal the map, GPS dot, grid, coordinates, grid references and coordinate go-to all keep working.
