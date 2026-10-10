@@ -60,6 +60,10 @@ body.drawing #panel { display:none !important; }
 .dfield { display:flex; align-items:center; gap:8px; margin-top:6px; }
 .dfield input { flex:1; min-width:0; font:inherit; font-size:16px; padding:6px 8px; border:1px solid #999; border-radius:6px; }
 #dcount { margin-top:6px; }
+#dprof { display:none; margin-top:6px; }
+#dprof svg { display:block; touch-action:none; background:#fafafa; border:1px solid var(--line); border-radius:6px; }
+#dprofread { min-height:1.3em; color:#e65100; font-weight:600; }
+#dprofcredit { color:#777; font-size:11px; margin-top:4px; }
 .leaflet-tooltip.dlab { background:rgba(255,255,255,.85); border:1px solid #6a1b9a; color:#3a0e4a; font:600 12px/1.2 system-ui, sans-serif;
   padding:1px 5px; box-shadow:none; }
 .leaflet-tooltip.dlab:before { display:none; }

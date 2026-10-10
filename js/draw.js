@@ -84,12 +84,84 @@ function adopt(layer, props) {
     if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
     selectDrawn(layer);
   });
-  layer.on("pm:edit pm:dragend pm:markerdragend", function () { saveDrawings(); if (drawSel === layer) showDrawSheet(); });
+  layer.on("pm:edit pm:dragend pm:markerdragend", function () {
+    saveDrawings(); if (drawSel === layer) { clearProfile(); showDrawSheet(); } });
   applyLabel(layer);
   drawn.addLayer(layer);
   return layer;
 }
+// ---- elevation: profile along a line, height of a point -------------------------
+var GEOTIFF_JS = "https://cdn.jsdelivr.net/npm/geotiff@3.0.5/dist-browser/geotiff.js";
+var profCursor = L.circleMarker([0, 0], { radius: 6, color: "#fff", weight: 2, fillColor: "#e65100", fillOpacity: 1, interactive: false });
+var profData = null, profSeq = 0;
+function clearProfile() {
+  profSeq++; profData = null;
+  document.getElementById("dprof").style.display = "none";
+  if (map.hasLayer(profCursor)) map.removeLayer(profCursor);
+}
+function loadProfileTools() {
+  return loadScript(GEOTIFF_JS).then(function () { return loadScript("js/profile.js"); });
+}
+function lineLonLats(layer) {
+  var ll = layer.getLatLngs(); if (Array.isArray(ll[0])) ll = [].concat.apply([], ll);
+  return ll.map(function (p) { return [p.lng, p.lat]; });
+}
+function runProfile() {
+  var layer = drawSel; if (!layer) return;
+  var k = kindOf(layer), seq = ++profSeq, btn = document.getElementById("dprofile");
+  btn.disabled = true; btn.textContent = "Reading elevation...";
+  loadProfileTools().then(function () {
+    var P = window.lunamapProfile;
+    var ll = k === "point" ? [[layer.getLatLng().lng, layer.getLatLng().lat]] : lineLonLats(layer);
+    var s = P.samplePoints(ll, 500);
+    return P.sampleDEM(s.pts, s.spacing).then(function (info) {
+      if (seq !== profSeq || drawSel !== layer) return;
+      if (k === "point") {
+        var z = s.pts[0].z;
+        document.getElementById("dmeasure").textContent = measure(layer) + "  - elevation " + (z === null ? "n/a" : z.toFixed(1) + " m");
+        toast(z === null ? "No elevation here (outside the DEM)" : "Elevation " + z.toFixed(1) + " m (AHD)");
+        return;
+      }
+      var st = P.profileStats(s.pts);
+      if (!st) { toast("No elevation along this line (outside the DEM)"); return; }
+      profData = { pts: s.pts, layer: layer };
+      document.getElementById("dprofchart").innerHTML = P.profileSVG(s.pts, st);
+      document.getElementById("dprofstats").textContent =
+        "Start " + (st.start === null ? "n/a" : Math.round(st.start) + " m") + ", end " + (st.end === null ? "n/a" : Math.round(st.end) + " m") +
+        ". Lowest " + Math.round(st.min) + " m, highest " + Math.round(st.max) + " m. Climb +" + Math.round(st.up) +
+        " m / -" + Math.round(st.down) + " m. Steepest " + Math.round(st.steep * 100) + "%. Samples every " +
+        (s.spacing < 10 ? s.spacing.toFixed(1) + " m" : fmtDist(s.spacing)) + " (" + (info.cell < 2.5 ? "2 m" : Math.round(info.cell) + " m") + " cells).";
+      document.getElementById("dprofcredit").textContent = P.credit;
+      document.getElementById("dprofread").textContent = "Touch the profile to find a spot on the line";
+      document.getElementById("dprof").style.display = "block";
+      wireProfileCursor();
+    });
+  }).catch(function (e) { toast("Elevation unavailable: " + e.message); })
+    .then(function () { btn.disabled = false; btn.textContent = kindOf(layer) === "point" ? "Elevation" : "Profile"; });
+}
+function wireProfileCursor() {
+  var svg = document.getElementById("dprofsvg"); if (!svg || !profData) return;
+  function at(ev) {
+    var r = svg.getBoundingClientRect(), cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+    var vb = 600, L0 = 38, R0 = 8, fx = (cx / r.width * vb - L0) / (vb - L0 - R0);
+    var pts = profData.pts, D = pts[pts.length - 1].d, d = Math.max(0, Math.min(1, fx)) * D, best = pts[0];
+    pts.forEach(function (p) { if (Math.abs(p.d - d) < Math.abs(best.d - d)) best = p; });
+    var cur = document.getElementById("dprofcur"), xv = L0 + (vb - L0 - R0) * (D ? best.d / D : 0);
+    cur.setAttribute("x1", xv); cur.setAttribute("x2", xv); cur.setAttribute("visibility", "visible");
+    profCursor.setLatLng([best.lat, best.lon]); if (!map.hasLayer(profCursor)) profCursor.addTo(map);
+    document.getElementById("dprofread").textContent = fmtDist(best.d) + " along: " + (best.z === null ? "no data" : best.z.toFixed(1) + " m");
+    if (ev.cancelable) ev.preventDefault();
+  }
+  ["mousemove", "touchstart", "touchmove", "click"].forEach(function (t) { svg.addEventListener(t, at, { passive: false }); });
+}
+document.getElementById("dprofile").onclick = runProfile;
+document.getElementById("dprofcsv").onclick = function () {
+  if (!profData) return;
+  download(window.lunamapProfile.profileCSV(profData.pts), "csv", "text/csv");
+};
+
 function selectDrawn(layer) {
+  if (layer !== drawSel) clearProfile();
   if (drawSel && drawSel !== layer && drawSel.setStyle) drawSel.setStyle(kindOf(drawSel) === "point" ? POINT_STYLE : DRAW_STYLE);
   drawSel = layer;
   if (layer && layer.setStyle) layer.setStyle(kindOf(layer) === "point" ? { color: "#ffeb3b", weight: 3 } : { color: "#ffb300" });
@@ -219,10 +291,14 @@ function showDrawSheet() {
     sel.style.display = "block";
     var k = kindOf(drawSel);
     document.getElementById("dkind").textContent = k.charAt(0).toUpperCase() + k.slice(1);
-    document.getElementById("dmeasure").textContent = measure(drawSel);
+    if (!profData || profData.layer !== drawSel) document.getElementById("dmeasure").textContent = measure(drawSel);
+    var pb = document.getElementById("dprofile");
+    pb.style.display = k === "polygon" ? "none" : "block";
+    if (!pb.disabled) pb.textContent = k === "point" ? "Elevation" : "Profile";
     var inp = document.getElementById("dlabel");
     if (document.activeElement !== inp) inp.value = drawSel.feature.properties.label || "";
   } else { sel.style.display = "none"; drawSel = null; }
+  document.getElementById("dintro").style.display = drawSel ? "none" : "block";   // room for the profile
   refreshDrawCount();
   drawSheet.style.display = "block";
 }

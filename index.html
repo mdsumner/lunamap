@@ -71,12 +71,19 @@
 
 <div id="drawsheet" class="sheet">
   <h2><span>Draw</span><button id="dclose" aria-label="Close">x</button></h2>
-  <p class="small">Use the tools on the left: point, line, polygon, then edit, move or delete.
+  <p class="small" id="dintro">Use the tools on the left: point, line, polygon, then edit, move or delete.
     Tap a shape to label it.</p>
   <div id="dsel">
     <div class="small"><b id="dkind"></b> - <span id="dmeasure"></span></div>
     <label class="small dfield">Label <input id="dlabel" type="text" maxlength="80" placeholder="optional"></label>
-    <div class="acts"><button id="ddelete">Delete shape</button></div>
+    <div class="acts"><button id="dprofile">Profile</button><button id="ddelete">Delete shape</button></div>
+    <div id="dprof">
+      <div id="dprofchart"></div>
+      <div id="dprofread" class="small"></div>
+      <div id="dprofstats" class="small"></div>
+      <div class="acts"><button id="dprofcsv">Profile CSV</button></div>
+      <div id="dprofcredit" class="small"></div>
+    </div>
   </div>
   <div id="dcount" class="small"></div>
   <div class="acts">
