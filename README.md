@@ -89,6 +89,12 @@ Code: MIT (see `LICENSE`). Map data and other content keep their own licences (a
 `listmap-print1990700725757339362.pdf` is a LISTmap print kept as an example of its georeferenced-PDF
 output (GDAL cannot derive a geotransform from it: the LPTS are transposed relative to GPTS).
 
+## Licence
+
+Code: MIT (see `LICENSE`). Map and other data keep their own licences (above).
+`listmap-print1990700725757339362.pdf` is a sample LISTmap print kept as an example of its
+non-standard geospatial PDF output.
+
 ## Notes for maintainers
 
 - The URL hash holds the state: `#zoom/lat/lon/basemap,flags[/pinlat/pinlon]`, and `?s=` carries a
