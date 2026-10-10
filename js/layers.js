@@ -173,6 +173,22 @@ var OVERLAYS = {
       describe: function (p) { return { what: "Tas Irrigation dam", sym: "D",
         detail: joinBits([p.DAMNAME || p.RESERVOIRNAME, p.VOLUME ? p.VOLUME + " ML" : null, p.SCHEME]) }; } }
   ] },
+  stations: { flag: "s", btn: "stations", layers: [
+    { url: "EmergencyManagementPublic/MapServer/6", minZoom: 8, kind: "fire",
+      fields: "OBJECTID,BRIGADE,BRIG_NUMBER,STATION_TYPE,DISTRICT,ADDRESS",
+      describe: function (p) { return { what: "Fire station", sym: "F",
+        detail: joinBits([p.BRIGADE ? titleCase(p.BRIGADE) + (/brigade/i.test(p.BRIGADE) ? "" : " brigade") : null,
+                          p.STATION_TYPE, p.ADDRESS]) }; } },
+    { url: "EmergencyManagementPublic/MapServer/4", minZoom: 8, kind: "amb",
+      fields: "OBJECTID,STATION,STATION_TYPE,ADDRESS",
+      describe: function (p) { return { what: "Ambulance station", sym: "A", detail: joinBits([p.STATION, p.STATION_TYPE, p.ADDRESS]) }; } },
+    { url: "EmergencyManagementPublic/MapServer/5", minZoom: 8, kind: "pol",
+      fields: "OBJECTID,STATION,STATION_TYPE,SITE_ADDRESS",
+      describe: function (p) { return { what: "Police station", sym: "P", detail: joinBits([p.STATION, p.STATION_TYPE, p.SITE_ADDRESS]) }; } },
+    { url: "EmergencyManagementPublic/MapServer/7", minZoom: 8, kind: "ses",
+      fields: "OBJECTID,SITE_NAME,UNIT,SITE_ADDRESS",
+      describe: function (p) { return { what: "SES", sym: "S", detail: joinBits([p.UNIT || p.SITE_NAME, p.SITE_ADDRESS]) }; } }
+  ] },
   gates: { flag: "b", btn: "gates", layers: [
     { url: "TopographyAndRelief/MapServer/59", minZoom: 13, kind: "gate",
       fields: "OBJECTID,BARRIER_TY,STATUS,AUTHORITY,PRI_NAME,SEC_NAME",
@@ -228,7 +244,7 @@ function refreshOverlay(o) {
           var g = ft.geometry.type === "MultiPoint" ? ft.geometry.coordinates[0] : ft.geometry.coordinates;
           var ll = L.latLng(g[1], g[0]);
           lyr = L.marker(ll, { icon: symIcon(w.kind, info.sym), title: info.what + (info.detail ? " - " + info.detail : ""),
-                               zIndexOffset: w.kind === "hyd" ? 0 : 100 });
+                               zIndexOffset: w.kind === "hyd" ? 0 : (/^(fire|amb|pol|ses)$/.test(w.kind) ? 300 : 100) });
           lyr.on("click", function () { pickFeature(ll, info); });
         }
         w.group.addLayer(lyr);

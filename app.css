@@ -7,10 +7,10 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
   display:flex; gap:6px; flex-wrap:wrap; pointer-events:none; }
 .bar > * { pointer-events:auto; }
 .bar select { max-width:44vw; }
-.bar select, .bar button { font:inherit; font-size:15px; padding:9px 10px; border:1px solid #999;
-  border-radius:8px; background:#fff; color:#111; box-shadow:0 1px 4px rgba(0,0,0,.25); }
+.bar select, .bar button { font:inherit; font-size:14px; padding:6px 9px; border:1px solid #999;
+  border-radius:7px; background:#fff; color:#111; box-shadow:0 1px 4px rgba(0,0,0,.25); }
 #goto { flex:1 1 170px; display:flex; margin:0; }
-#goto input { flex:1; min-width:0; font:inherit; font-size:16px; padding:8px 10px; border:1px solid #999;
+#goto input { flex:1; min-width:0; font:inherit; font-size:16px; padding:5px 9px; border:1px solid #999;
   border-radius:8px; background:#fff; color:#111; box-shadow:0 1px 4px rgba(0,0,0,.25); }
 #more { display:block; width:100%; margin-top:4px; border:0; background:none; color:#1565c0;
   font:inherit; font-size:13px; text-align:left; padding:4px 0; cursor:pointer; }
@@ -41,7 +41,7 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
 .row button { flex:none; font-size:12px; padding:4px 8px; border:1px solid #bbb; border-radius:6px;
   background:#f5f5f5; cursor:pointer; }
 .acts { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-.acts button { flex:1; font:inherit; font-size:14px; padding:8px; border:1px solid #999;
+.acts button { flex:1; font:inherit; font-size:13px; padding:6px; border:1px solid #999;
   border-radius:8px; background:#f5f5f5; cursor:pointer; }
 #tools { display:contents; }
 .bar.collapsed #tools { display:none; }
@@ -87,6 +87,10 @@ body.drawing #panel { display:none !important; }
 .wsym.ti { background:#00796b; border-radius:3px; }
 .wsym.gate { background:#fdd835; color:#000; border-color:#000; border-radius:2px; transform:rotate(45deg); }
 .wsym.gate > * { transform:rotate(-45deg); }
+.wsym.fire { background:#c62828; border-radius:3px; }
+.wsym.amb { background:#2e7d32; border-radius:3px; }
+.wsym.pol { background:#1a237e; border-radius:3px; }
+.wsym.ses { background:#ef6c00; border-radius:3px; }
 #printhead { display:none; }
 @media print {
   @page { margin:8mm; }
