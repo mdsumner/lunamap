@@ -68,7 +68,7 @@ function readHash() {
   var p = location.hash.replace(/^#/, "").split("/");
   var o = {};
   if (p.length >= 3 && !isNaN(+p[0])) { o.z = +p[0]; o.lat = +p[1]; o.lon = +p[2]; }
-  if (p[3]) { var t = p[3].split(","); o.layer = t[0]; o.grid = t.indexOf("g") > 0; o.noParcels = t.indexOf("np") > 0; o.water = t.indexOf("w") > 0; o.gates = t.indexOf("b") > 0; o.stations = t.indexOf("s") > 0; t.forEach(function (x, i) { var m = /^r(\d?)$/.exec(x); if (i > 0 && m) { o.route = true; o.routeLevel = m[1] ? +m[1] : 1; } }); }
+  if (p[3]) { var t = p[3].split(","); o.layer = t[0]; o.grid = t.indexOf("g") > 0; o.noParcels = t.indexOf("np") > 0; o.water = t.indexOf("w") > 0; o.gates = t.indexOf("b") > 0; o.stations = t.indexOf("s") > 0; o.danger = t.indexOf("fd") > 0; o.warnings = t.indexOf("tw") > 0; o.history = t.indexOf("fh") > 0; t.forEach(function (x, i) { var m = /^r(\d?)$/.exec(x); if (i > 0 && m) { o.route = true; o.routeLevel = m[1] ? +m[1] : 1; } }); }
   if (p.length >= 6) { o.pin = [+p[4], +p[5]]; }
   return o;
 }
@@ -110,7 +110,7 @@ function writeHash() {
   var c = map.getCenter();
   var h = "#" + map.getZoom() + "/" + c.lat.toFixed(5) + "/" + c.lng.toFixed(5) + "/" +
     (sel.value || "topo") + (gridOn ? ",g" : "") + (parcelsOn ? "" : ",np") +
-    (OVERLAYS && OVERLAYS.water && OVERLAYS.water.on ? ",w" : "") + (OVERLAYS && OVERLAYS.gates && OVERLAYS.gates.on ? ",b" : "") + (OVERLAYS && OVERLAYS.stations && OVERLAYS.stations.on ? ",s" : "") + (routeInfo && routeInfo.ok ? ",r" + routeInfo.level : "");
+    (OVERLAYS && OVERLAYS.water && OVERLAYS.water.on ? ",w" : "") + (OVERLAYS && OVERLAYS.gates && OVERLAYS.gates.on ? ",b" : "") + (OVERLAYS && OVERLAYS.stations && OVERLAYS.stations.on ? ",s" : "") + (typeof hazardFlags === "function" ? hazardFlags() : "") + (routeInfo && routeInfo.ok ? ",r" + routeInfo.level : "");
   if (pin) { var p = pin.getLatLng(); h += "/" + p.lat.toFixed(6) + "/" + p.lng.toFixed(6); }
   history.replaceState(null, "", h);
 }
@@ -129,14 +129,16 @@ function setPin(latlng) {
   if (!pin) pin = L.marker(latlng, { icon: pinIcon, draggable: true }).addTo(map)
     .on("drag", function () { showCoords(pin.getLatLng()); })
     .on("dragstart", function () { clearRoute(); })
-    .on("dragend", function () { writeHash(); lookupParcel(pin.getLatLng()); lookupMapbook(pin.getLatLng()); });
+    .on("dragend", function () { writeHash(); lookupParcel(pin.getLatLng()); lookupMapbook(pin.getLatLng());
+      if (typeof lookupHazards === "function") lookupHazards(pin.getLatLng()); });
   else pin.setLatLng(latlng);
   clearRoute(); setFolded(false); parcelInfo = null; featureInfo = null; showCoords(latlng); writeHash();
   lookupParcel(latlng); lookupMapbook(latlng);
+  if (typeof lookupHazards === "function") lookupHazards(latlng);
 }
 function showCoords(ll) {
   var cr = coords(ll.lat, ll.lng), gi = 4;
-  lastRows = featureRows().concat(parcelRows(), routeRows(), cr.slice(0, gi), mapbookRows(), cr.slice(gi));
+  lastRows = featureRows().concat(parcelRows(), typeof hazardRows === "function" ? hazardRows() : [], routeRows(), cr.slice(0, gi), mapbookRows(), cr.slice(gi));
   rowsEl.innerHTML = "";
   lastRows.forEach(function (r) {
     if (r.extra && !showMore) return;

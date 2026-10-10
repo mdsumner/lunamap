@@ -161,6 +161,9 @@ document.getElementById("draw").onclick = function () {
 setOverlay("water", !!st.water);
 setOverlay("gates", !!st.gates);
 setOverlay("stations", !!st.stations);
+if (st.danger) setHazard("danger", true);
+if (st.warnings) setHazard("warnings", true);
+if (st.history) setHazard("history", true);
 setParcels(!st.noParcels);
 setGrid(!!st.grid);
 setLayer(st.layer || "topo");
