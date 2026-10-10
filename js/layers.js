@@ -185,6 +185,16 @@ var OVERLAYS = {
     { url: "EmergencyManagementPublic/MapServer/5", minZoom: 8, kind: "pol",
       fields: "OBJECTID,STATION,STATION_TYPE,SITE_ADDRESS",
       describe: function (p) { return { what: "Police station", sym: "P", detail: joinBits([p.STATION, p.STATION_TYPE, p.SITE_ADDRESS]) }; } },
+    { url: "EmergencyManagementPublic/MapServer/20", minZoom: 10, kind: "emp",
+      fields: "OBJECTID,EMP_NAME,EMP_NO,LOC_DESC,HELI_ACCESS,GSM,NEXTG",
+      describe: function (p) { return { what: "Emergency meeting point", sym: "M",
+        detail: joinBits([p.EMP_NAME, p.EMP_NO ? "EMP " + p.EMP_NO : null, p.LOC_DESC,
+                          p.HELI_ACCESS ? "helicopter: " + p.HELI_ACCESS : null,
+                          (p.GSM || p.NEXTG) ? "mobile: " + joinBits([p.GSM, p.NEXTG]) : null]) }; } },
+    { url: "EmergencyManagementPublic/MapServer/63", minZoom: 6, kind: "evac",
+      fields: "OBJECTID,FACILTY_NAME,FACILTY_ADDRESS,STATUS_PETS",
+      describe: function (p) { return { what: "Evacuation centre (activated)", sym: "E",
+        detail: joinBits([p.FACILTY_NAME, p.FACILTY_ADDRESS, p.STATUS_PETS ? "pets: " + p.STATUS_PETS : null]) }; } },
     { url: "EmergencyManagementPublic/MapServer/7", minZoom: 8, kind: "ses",
       fields: "OBJECTID,SITE_NAME,UNIT,SITE_ADDRESS",
       describe: function (p) { return { what: "SES", sym: "S", detail: joinBits([p.UNIT || p.SITE_NAME, p.SITE_ADDRESS]) }; } }
@@ -244,7 +254,7 @@ function refreshOverlay(o) {
           var g = ft.geometry.type === "MultiPoint" ? ft.geometry.coordinates[0] : ft.geometry.coordinates;
           var ll = L.latLng(g[1], g[0]);
           lyr = L.marker(ll, { icon: symIcon(w.kind, info.sym), title: info.what + (info.detail ? " - " + info.detail : ""),
-                               zIndexOffset: w.kind === "hyd" ? 0 : (/^(fire|amb|pol|ses)$/.test(w.kind) ? 300 : 100) });
+                               zIndexOffset: w.kind === "hyd" ? 0 : (/^(fire|amb|pol|ses|emp|evac)$/.test(w.kind) ? 300 : 100) });
           lyr.on("click", function () { pickFeature(ll, info); });
         }
         w.group.addLayer(lyr);
@@ -257,6 +267,7 @@ function setOverlay(name, on) {
   o.on = on; o.button.classList.toggle("on", on);
   if (on) { o.group.addTo(map); refreshOverlay(o); }
   else { map.removeLayer(o.group); o.layers.forEach(function (w) { w.group.clearLayers(); w.seen = {}; }); }
+  if (name === "stations" && pin && typeof lookupExtras === "function") lookupExtras(pin.getLatLng());
   writeHash();
 }
 map.on("moveend", function () { Object.keys(OVERLAYS).forEach(function (n) { refreshOverlay(OVERLAYS[n]); }); });

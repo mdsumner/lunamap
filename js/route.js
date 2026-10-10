@@ -141,7 +141,7 @@ function nearestJunction(G, sn, L) {
   while (heap.length) {
     var u = pop()[1];
     if (done[u]) continue; done[u] = 1;
-    if (isJunction(G.meta[u], L)) return { node: u, dist: dist[u], prev: prev };
+    if (typeof L === "function" ? L(u) : isJunction(G.meta[u], L)) return { node: u, dist: dist[u], prev: prev };
     G.adj[u].forEach(function (a) {
       var nd = dist[u] + a.e.len;
       if (nd < dist[a.to]) { dist[a.to] = nd; prev[a.to] = { from: u, e: a.e, fwd: a.fwd }; push(nd, a.to); }

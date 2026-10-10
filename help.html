@@ -88,6 +88,8 @@ and can keep maps for use without signal.</p>
   <tr><td>Grid ref</td><td>6-figure grid reference (100 m square).</td></tr>
   <tr><td>Street atlas</td><td>Street atlas page and square, e.g. <code>SA-188-A7</code> - the reference usually given with a callout
     (urban and fringe areas only).</td></tr>
+  <tr><td>Elevation</td><td>Height at the pin in metres above sea level (AHD), from the Tasmania 2 m elevation model.
+    Needs signal; reads a small piece of the model for each new area.</td></tr>
   <tr><td>Map book</td><td>Map book page and square, e.g. <code>MB356 C4</code>.</td></tr>
   <tr><td>More formats</td><td>MGA2020, degrees-minutes-seconds and degrees-decimal-minutes.</td></tr>
 </table>
@@ -157,7 +159,10 @@ be loaded it opens the Bureau's site search for the locality instead.</p>
 fire records.</p>
 <h3>Stations</h3>
 <p>Fire (red F), ambulance (green A), police (navy P) and SES (orange S) stations from theLIST emergency management
-data, from zoom 8. Tap one for its name, type and address.</p>
+data, from zoom 8; emergency meeting points (teal M, from zoom 10, with helicopter access and mobile coverage where
+recorded) and currently activated evacuation centres (purple E). Tap one for its details.</p>
+<p>With Stations on, the pin panel also shows the <b>Nearest fire station</b> by road (and the straight-line distance),
+worked out on theLIST road network the same way as Route.</p>
 <h3>Grid</h3>
 <p>MGA grid lines, 1 km when zoomed in (10 km and 100 km further out), labelled where each line meets the edge of the
 screen like the margin of a paper map: small leading digits, bold two-digit kilometre number.</p>
