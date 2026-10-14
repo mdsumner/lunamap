@@ -127,7 +127,7 @@ var pinIcon = L.divIcon({ className: "", iconSize: [22, 22], iconAnchor: [11, 11
 
 function setPin(latlng) {
   if (!pin) pin = L.marker(latlng, { icon: pinIcon, draggable: true }).addTo(map)
-    .on("drag", function () { showCoords(pin.getLatLng()); })
+    .on("drag", function () { showCoords(pin.getLatLng()); if (typeof moveWindArrow === "function") moveWindArrow(pin.getLatLng()); })
     .on("dragstart", function () { clearRoute(); })
     .on("dragend", function () { writeHash(); lookupParcel(pin.getLatLng()); lookupMapbook(pin.getLatLng());
       if (typeof lookupHazards === "function") lookupHazards(pin.getLatLng());
@@ -144,9 +144,9 @@ var PANEL_GROUPS = [
   ["Property", ["Address", "Name", "Title", "PID", "Parcel", "Area"]],
   ["Location", ["Lon, Lat", "Lat, Lon", "MGA94", "Grid ref", "Elevation", "MGA2020", "DMS", "Deg min"]],
   ["Map references", ["Street atlas", "Map book"]],
-  ["Fire", ["Fire danger", "Fire history", "Nearest fire station"]]
+  ["Fire", ["Fire danger", "Wind", "Wind next 12 h", "Wind observed", "Fire history", "Nearest fire station"]]
 ];
-var PANEL_SHORT = ["Feature", "Address", "Route", "Lon, Lat", "Grid ref", "Fire danger", "Nearest fire station"];
+var PANEL_SHORT = ["Feature", "Address", "Route", "Lon, Lat", "Grid ref", "Fire danger", "Wind", "Nearest fire station"];
 function rowBase(k) { return String(k).replace(/ z\d+$/, ""); }
 function panelLayout(rows) {          // -> [{head} | row] in display order for the current view
   var byKey = {}; rows.forEach(function (r) { (byKey[rowBase(r.k)] = byKey[rowBase(r.k)] || []).push(r); });
@@ -177,8 +177,10 @@ function showCoords(ll) {
     d.className = "row";
     d.innerHTML = "<span class='k'></span><span class='v'></span><button>Copy</button>";
     d.querySelector(".k").textContent = r.k;
-    d.querySelector(".v").textContent = r.v;
-    d.querySelector("button").onclick = function () { copy(r.v); };
+    var v = d.querySelector(".v");
+    if (r.href) { var a = document.createElement("a"); a.href = r.href; a.target = "_blank"; a.rel = "noopener";
+                  a.textContent = r.v; v.appendChild(a); } else v.textContent = r.v;
+    d.querySelector("button").onclick = function () { copy(r.href ? r.v + " " + r.href : r.v); };
     rowsEl.appendChild(d);
   });
   var m = document.createElement("button"); m.id = "more";
@@ -205,7 +207,7 @@ map.on("click", function (e) {
   setPin(e.latlng);
 });
 document.getElementById("close").onclick = function () {
-  panel.style.display = "none"; if (pin) { map.removeLayer(pin); pin = null; }
+  panel.style.display = "none"; if (pin) { map.removeLayer(pin); pin = null; } if (typeof clearWindArrow === "function") clearWindArrow();
   clearRoute(); parcelInfo = null; parcelHi.clearLayers(); writeHash(); placeLabels();
 };
 
@@ -225,7 +227,7 @@ function copy(text) {
   }
 }
 function allText() {
-  return lastRows.map(function (r) { return r.k + ": " + r.v; }).join("\n") + "\n" + location.href;
+  return lastRows.map(function (r) { return r.k + ": " + r.v + (r.href ? " " + r.href : ""); }).join("\n") + "\n" + location.href;
 }
 document.getElementById("copyall").onclick = function () { copy(allText()); };
 document.getElementById("share").onclick = function () {

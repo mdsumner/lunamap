@@ -39,6 +39,8 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
 .rhead { font-size:11px; font-weight:600; color:#666; text-transform:uppercase; letter-spacing:.04em; padding:8px 0 2px; }
 .rhead + .row { border-top:0; }
 .row .k { width:92px; flex:none; font-size:12px; color:var(--muted); }
+.row .v a { color:#1565c0; }
+.windarrow { pointer-events:none; }
 .row .v { flex:1; font-family:ui-monospace, Menlo, Consolas, monospace; font-size:14px; user-select:all; }
 .row button { flex:none; font-size:12px; padding:4px 8px; border:1px solid #bbb; border-radius:6px;
   background:#f5f5f5; cursor:pointer; }

@@ -153,6 +153,14 @@ village or hamlet to the pin (the message says which place and how far away). Th
 OpenStreetMap places, so the map keeps a list of Tasmanian OpenStreetMap places (refreshed monthly; ODbL,
 &copy; OpenStreetMap contributors) to find the nearest one. No weather data is copied into this map. If the list cannot
 be loaded it opens the Bureau's site search for the locality instead.</p>
+<p><b>Wind</b>: every pin gets a <b>Wind</b> row (under Fire in <b>More</b>) with the forecast wind now - direction it
+blows from, mean speed and gusts in km/h - and a <b>Wind next 12 h</b> row every 3 hours. A blue arrow through the pin
+points the way the wind is blowing (downwind), longer for stronger wind. These come from a weather model via
+<a href="https://open-meteo.com/">Open-Meteo</a> (free for non-commercial use), not a measurement: on slopes, in gullies
+and on ridges the real wind can be very different. <b>Wind observed</b> links to the latest observations page of the
+nearest Bureau weather station (for example kunanyi / Mount Wellington or Hobart), which shows measured wind, gusts,
+temperature and humidity every 10 to 30 minutes. Wind needs a connection; it is not saved for offline use.
+This is a quick guide only - always go by TFS and Bureau fire weather warnings.</p>
 
 <h2 id="layers">Layers</h2>
 <h3>Danger, Warnings, Fire history</h3>
@@ -271,7 +279,8 @@ Found a problem or have an idea? <a href="https://github.com/mdsumner/lunamap/is
   CC BY 3.0 AU; aerial photo and TASMAP CC BY-NC-ND 3.0 AU. Water assets TasWater and Tasmanian Irrigation via theLIST.
   Stations, fire danger, TasALERT warnings and fire history via theLIST emergency management data.
   Elevation: Tasmania 2 m DEM, Mineral Resources Tasmania / theLIST (CC BY 3.0 AU), via Source Cooperative.
-  Place list for BOM links &copy; OpenStreetMap contributors (ODbL).
+  Place list for BOM links &copy; OpenStreetMap contributors (ODbL). Weather station list &copy; Bureau of Meteorology.
+  Wind forecast by Open-Meteo.com (CC BY 4.0).
   Built with Leaflet, proj4js, Leaflet-Geoman, geotiff.js and togeojson.
   <a href="https://github.com/mdsumner/lunamap">Source code</a>.
 </footer>

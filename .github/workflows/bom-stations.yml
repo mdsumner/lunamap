@@ -1,0 +1,67 @@
+# Harvest the list of Bureau of Meteorology weather stations in Tasmania (WMO id,
+# name, position, height) from the Bureau's public observations product IDT60920.
+# Only the station list is kept, no observations: the map uses it to link a pin to
+# the nearest station's latest observations page on bom.gov.au
+# (bom.gov.au/products/IDT60801/IDT60801.<WMO id>.shtml).
+name: bom-stations
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "29 3 2 * *"   # monthly
+
+permissions:
+  contents: write
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Fetch station list
+        run: |
+          curl -sS --fail --retry 3 --retry-delay 20 ftp://ftp.bom.gov.au/anon/gen/fwo/IDT60920.xml -o raw.xml ||
+          curl -sS --fail --retry 3 --retry-delay 20 -A "Mozilla/5.0 (lunamap; github.com/mdsumner/lunamap)" \
+            https://www.bom.gov.au/fwo/IDT60920.xml -o raw.xml
+          head -c 600 raw.xml; echo
+      - name: Compact
+        run: |
+          mkdir -p data
+          python3 - <<'PY'
+          import json, datetime, sys
+          import xml.etree.ElementTree as ET
+          root = ET.parse("raw.xml").getroot()
+          rows = {}
+          for s in root.iter("station"):
+              a = s.attrib
+              wmo, lat, lon = a.get("wmo-id"), a.get("lat"), a.get("lon")
+              if not wmo or not lat or not lon:
+                  continue
+              lat, lon = float(lat), float(lon)
+              if lat < -44.5:          # Tasmania only (drops Macquarie Island)
+                  continue
+              name = a.get("description") or a.get("stn-name") or wmo
+              h = a.get("stn-height")
+              rows[wmo] = [int(wmo), name, round(lat, 4), round(lon, 4), float(h) if h else None, a.get("bom-id")]
+          rows = sorted(rows.values())
+          if len(rows) < 20:
+              sys.exit("only %d stations - not updating" % len(rows))
+          out = {
+            "source": "Bureau of Meteorology observations product IDT60920 (station list only)",
+            "copyright": "(c) Commonwealth of Australia, Bureau of Meteorology - http://www.bom.gov.au/other/copyright.shtml",
+            "harvested": datetime.date.today().isoformat(),
+            "page": "https://www.bom.gov.au/products/IDT60801/IDT60801.{wmo}.shtml",
+            "fields": ["wmo_id", "name", "lat", "lon", "height_m", "bom_id"],
+            "stations": rows,
+          }
+          s = json.dumps(out, ensure_ascii=True, separators=(",", ":"))
+          open("data/bom-stations-tas.json", "w").write(s + "\n")
+          print(len(rows), "stations")
+          PY
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/bom-stations-tas.json
+          git diff --cached --quiet || git commit -m "Update BOM station list for Tasmania"
+          git push

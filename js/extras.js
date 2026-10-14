@@ -64,8 +64,8 @@ function nearestStation(ll) {
 }
 
 function lookupExtras(ll) {
-  var seq = ++extraSeq; extraInfo = { elev: "..." };
-  var jobs = [lookupElevation(ll, seq)];
+  var seq = ++extraSeq; extraInfo = { elev: "...", wind: "..." };
+  var jobs = [lookupElevation(ll, seq), lookupWind(ll, seq), lookupWindObs(ll, seq)];
   if (OVERLAYS.stations && OVERLAYS.stations.on) {
     extraInfo.station = "...";
     jobs.push(nearestStation(ll).then(function (txt) { if (seq === extraSeq) extraInfo.station = txt; })
@@ -76,6 +76,7 @@ function lookupExtras(ll) {
 function extraRows() {
   var rows = [];
   if (extraInfo.elev) rows.push({ k: "Elevation", v: extraInfo.elev });
+  if (typeof windRows === "function") rows = rows.concat(windRows());
   if (extraInfo.station && OVERLAYS.stations && OVERLAYS.stations.on) rows.push({ k: "Nearest fire station", v: extraInfo.station });
   return rows;
 }
