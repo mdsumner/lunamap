@@ -81,6 +81,18 @@ function fetchSegments(layer, w, s, e, n, depth) {
   return fetchSegmentsOnline(layer, w, s, e, n, depth).catch(fromPack);
 }
 
+// Routes are chosen by rough travel time, not distance, so a main road beats a
+// shorter dirt track: nominal speeds (km/h) by LIST transport class, slowed for
+// unsealed and 4WD surfaces. Distances in the directions are still real metres.
+var CLASS_KMH = { "National/State Highway": 90, "Arterial Road": 70, "Sub Arterial Road": 60, "Collector Road": 50,
+  "Local Road": 40, "Access Road": 25, "Vehicular Track": 12, "Arcade": 5, "Mall": 5 };
+function roadSpeed(ed) {
+  var v = CLASS_KMH[ed.cls] || 20;
+  if (ed.surf === "4WD required") v = Math.min(v, 8);
+  else if (ed.surf === "Unsealed") v *= 0.6;
+  return v / 3.6;                                    // metres per second
+}
+
 function buildGraph(feats) {
   var nodes = {}, adj = [], meta = [], seen = {}, edges = [];
   function node(c) {
@@ -97,6 +109,7 @@ function buildGraph(feats) {
       if (c.length < 2) return;
       var u = node(c[0]), v = node(c[c.length - 1]);
       var ed = { u: u, v: v, c: c, len: lineLen(c), name: a.PRI_NAME || null, cls: a.TRAN_CLASS || "", surf: a.SURFACE_TY || "" };
+      ed.cost = ed.len / roadSpeed(ed);
       edges.push(ed);
       adj[u].push({ to: v, e: ed, fwd: true }); adj[v].push({ to: u, e: ed, fwd: false });
       meta[u].inc.push(ed); if (v !== u) meta[v].inc.push(ed);
@@ -137,7 +150,8 @@ function snapTo(G, p) {
 
 // Dijkstra from the snap point to the first junction of level L
 function nearestJunction(G, sn, L) {
-  var n = G.adj.length, dist = new Float64Array(n).fill(Infinity), prev = new Array(n), done = new Uint8Array(n);
+  // Dijkstra on travel time (edge.cost); metres travelled kept alongside in len[]
+  var n = G.adj.length, dist = new Float64Array(n).fill(Infinity), len = new Float64Array(n), prev = new Array(n), done = new Uint8Array(n);
   var heap = [];
   function push(d, i) { heap.push([d, i]); var k = heap.length - 1;
     while (k > 0) { var p = (k - 1) >> 1; if (heap[p][0] <= heap[k][0]) break; var t = heap[p]; heap[p] = heap[k]; heap[k] = t; k = p; } }
@@ -148,17 +162,18 @@ function nearestJunction(G, sn, L) {
         if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
         if (m === k) break; var t = heap[m]; heap[m] = heap[k]; heap[k] = t; k = m; } }
     return top; }
-  var e = sn.ed;
+  var e = sn.ed, rate = e.len > 0 ? e.cost / e.len : 0;
   [[e.u, sn.toU], [e.v, sn.toV]].forEach(function (x) {
-    if (x[1].len < dist[x[0]]) { dist[x[0]] = x[1].len; prev[x[0]] = { start: true, c: x[1].c, e: e }; push(dist[x[0]], x[0]); }
+    var c = x[1].len * rate;
+    if (c < dist[x[0]]) { dist[x[0]] = c; len[x[0]] = x[1].len; prev[x[0]] = { start: true, c: x[1].c, e: e }; push(c, x[0]); }
   });
   while (heap.length) {
     var u = pop()[1];
     if (done[u]) continue; done[u] = 1;
-    if (typeof L === "function" ? L(u) : isJunction(G.meta[u], L)) return { node: u, dist: dist[u], prev: prev };
+    if (typeof L === "function" ? L(u) : isJunction(G.meta[u], L)) return { node: u, dist: len[u], time: dist[u], prev: prev };
     G.adj[u].forEach(function (a) {
-      var nd = dist[u] + a.e.len;
-      if (nd < dist[a.to]) { dist[a.to] = nd; prev[a.to] = { from: u, e: a.e, fwd: a.fwd }; push(nd, a.to); }
+      var nd = dist[u] + a.e.cost;
+      if (nd < dist[a.to]) { dist[a.to] = nd; len[a.to] = len[u] + a.e.len; prev[a.to] = { from: u, e: a.e, fwd: a.fwd }; push(nd, a.to); }
     });
   }
   return null;
