@@ -74,6 +74,8 @@
   <p class="small">Saves map tiles for the area in view, so the map, GPS dot, grid and coordinates
     work without signal. Addresses, parcels, water and gates need signal, except where you have
     already looked at them while online.</p>
+  <label class="small"><input type="checkbox" id="offroads" checked> Also save roads for routing
+    (Route and nearest fire station work without signal)</label>
   <div id="offbases"></div>
   <label class="small">Detail down to zoom
     <select id="offz"><option>15</option><option>16</option><option selected>17</option><option>18</option></select>
@@ -118,6 +120,7 @@
 <script src="js/route.js"></script>
 <script src="js/hazards.js"></script>
 <script src="js/extras.js"></script>
+<script src="js/roadpack.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

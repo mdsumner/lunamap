@@ -49,7 +49,7 @@ function lineLen(c) { var d = 0; for (var i = 1; i < c.length; i++) d += hav(c[i
 function fmtDist(m) { return m < 1000 ? Math.round(m / 10) * 10 + " m" : (m / 1000).toFixed(m < 10000 ? 1 : 0) + " km"; }
 
 // fetch segments in a box; split into quarters when the server truncates
-function fetchSegments(layer, w, s, e, n, depth) {
+function fetchSegmentsOnline(layer, w, s, e, n, depth) {
   var url = TOPO + layer + "/query?geometry=" + [w, s, e, n].map(function (v) { return v.toFixed(6); }).join(",") +
     "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects" +
     "&outFields=OBJECTID,PRI_NAME,TRAN_CLASS,SURFACE_TY,STATUS,TSEG_FEAT&returnGeometry=true&geometryPrecision=7&f=json";
@@ -59,12 +59,26 @@ function fetchSegments(layer, w, s, e, n, depth) {
     if (j.exceededTransferLimit) {
       if (depth >= 6) throw new Error("too much road data - try a smaller road size");
       var mx = (w + e) / 2, my = (s + n) / 2;
-      return Promise.all([fetchSegments(layer, w, s, mx, my, depth + 1), fetchSegments(layer, mx, s, e, my, depth + 1),
-                          fetchSegments(layer, w, my, mx, n, depth + 1), fetchSegments(layer, mx, my, e, n, depth + 1)])
+      return Promise.all([fetchSegmentsOnline(layer, w, s, mx, my, depth + 1), fetchSegmentsOnline(layer, mx, s, e, my, depth + 1),
+                          fetchSegmentsOnline(layer, w, my, mx, n, depth + 1), fetchSegmentsOnline(layer, mx, my, e, n, depth + 1)])
         .then(function (parts) { return [].concat.apply([], parts); });
     }
     return feats;
   });
+}
+
+// road segments for a box: from theLIST, or from a saved road pack (roadpack.js)
+// when there is no signal or the request fails
+function fetchSegments(layer, w, s, e, n, depth) {
+  function fromPack(err) {
+    if (typeof offlineSegments !== "function") return Promise.reject(err);
+    return offlineSegments(layer, w, s, e, n).then(function (fs) {
+      if (!fs) throw err || new Error("no signal and no saved roads here");
+      return fs;
+    });
+  }
+  if (navigator.onLine === false) return fromPack(new Error("no signal and no saved roads here"));
+  return fetchSegmentsOnline(layer, w, s, e, n, depth).catch(fromPack);
 }
 
 function buildGraph(feats) {

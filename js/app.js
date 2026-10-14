@@ -76,14 +76,14 @@ function offEstimate() {
 function offStatus() {
   var el = document.getElementById("offstat");
   if (!window.caches) { el.textContent = ""; return; }
-  caches.open(TILE_CACHE).then(function (c) { return c.keys(); }).then(function (k) {
-    var txt = "Saved on this device: " + k.length + " tiles";
-    if (navigator.storage && navigator.storage.estimate) {
-      navigator.storage.estimate().then(function (e) {
-        el.textContent = txt + " (" + (e.usage / 1048576).toFixed(0) + " MB used by this site)";
-      });
-    } else el.textContent = txt;
-  }).catch(function () {});
+  Promise.all([
+    caches.open(TILE_CACHE).then(function (c) { return c.keys(); }).then(function (k) { return k.length; }).catch(function () { return 0; }),
+    typeof roadPackStatus === "function" ? roadPackStatus() : Promise.resolve(""),
+    navigator.storage && navigator.storage.estimate ? navigator.storage.estimate().catch(function () { return null; }) : Promise.resolve(null)
+  ]).then(function (r) {
+    el.textContent = "Saved on this device: " + r[0] + " tiles" + (r[1] ? ", " + r[1] : "") +
+      (r[2] ? " (" + (r[2].usage / 1048576).toFixed(0) + " MB used by this site)" : "");
+  });
 }
 function offSave() {
   var t = offTiles(), done = 0, failed = 0, i = 0, prog = document.getElementById("offprog");
@@ -111,7 +111,10 @@ function offSave() {
   }).then(function () {
     var stopped = !offSaving; offSaving = false;
     prog.textContent = (stopped ? "Stopped after " : "Saved ") + done + " tiles" + (failed ? ", " + failed + " failed" : "");
-    offEstimate(); offStatus();
+    if (stopped || !document.getElementById("offroads").checked || typeof saveRoadPack !== "function") { offEstimate(); offStatus(); return; }
+    var tilesMsg = prog.textContent;
+    return saveRoadPack(map.getBounds().pad(0.25), function (m) { prog.textContent = tilesMsg + ". " + m; })
+      .then(function (m) { prog.textContent = tilesMsg + ". " + m; offEstimate(); offStatus(); });
   });
 }
 document.getElementById("offline").onclick = function () {
@@ -122,9 +125,9 @@ document.getElementById("offline").onclick = function () {
 document.getElementById("offclose").onclick = function () { offSaving = false; offSheet.style.display = "none"; };
 document.getElementById("offsave").onclick = offSave;
 document.getElementById("offclear").onclick = function () {
-  if (!window.caches || !confirm("Remove all saved map tiles from this device?")) return;
+  if (!window.caches || !confirm("Remove all saved map tiles and roads from this device?")) return;
   offSaving = false;
-  caches.delete(TILE_CACHE).then(function () { document.getElementById("offprog").textContent = "Cleared"; offStatus(); });
+  (typeof clearRoadPacks === "function" ? clearRoadPacks() : Promise.resolve()).then(function () { return caches.delete(TILE_CACHE); }).then(function () { document.getElementById("offprog").textContent = "Cleared"; offStatus(); });
 };
 offBases.addEventListener("change", offEstimate);
 document.getElementById("offz").addEventListener("change", offEstimate);

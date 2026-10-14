@@ -40,7 +40,12 @@ function nearestStation(ll) {
   var url = EM + "6/query?geometry=" + [P[0] - dLon, P[1] - dLat, P[0] + dLon, P[1] + dLat].map(function (v) { return v.toFixed(5); }).join(",") +
     "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects" +
     "&outFields=BRIGADE,STATION_TYPE&returnGeometry=true&f=geojson";
-  return fetch(url).then(function (r) { return r.json(); }).then(function (gj) {
+  var get = (navigator.onLine === false ? Promise.reject(new Error("offline")) : fetch(url).then(function (r) { return r.json(); }))
+    .catch(function (e) {
+      if (typeof offlineStations !== "function") throw e;
+      return offlineStations(P[0] - dLon, P[1] - dLat, P[0] + dLon, P[1] + dLat);
+    });
+  return get.then(function (gj) {
     var st = (gj.features || []).filter(function (f) { return f.geometry; }).map(function (f) {
       var c = f.geometry.coordinates; return { name: f.properties.BRIGADE, type: f.properties.STATION_TYPE, c: c, d: hav(P, c) };
     }).sort(function (a, b) { return a.d - b.d; }).slice(0, 4);

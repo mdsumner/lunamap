@@ -33,7 +33,7 @@ live from public services, mainly [theLIST](https://www.thelist.tas.gov.au) (Lan
   export/import GeoJSON, KML and GPX; send a sketch in a link.
 - **Weather**: opens the BOM forecast for the nearest place.
 - **Offline**: save map tiles for an area; the map, GPS dot, grid and coordinates keep working without
-  signal. Installable to the home screen.
+  signal, and with the saved road pack so do Route and nearest fire station. Installable to the home screen.
 
 ## Files
 
@@ -49,6 +49,7 @@ live from public services, mainly [theLIST](https://www.thelist.tas.gov.au) (Lan
 | `js/route.js` | routing on theLIST roads, Google and BOM hand-offs |
 | `js/hazards.js` | fire danger, TasALERT warnings, fire history |
 | `js/extras.js` | elevation and nearest fire station rows |
+| `js/roadpack.js` | roads and fire stations saved with an offline area, so routing works without signal |
 | `js/app.js` | toolbar menus, offline saving, start-up |
 | `js/draw.js` | drawing, export/import, sketch links (loaded on demand) |
 | `js/profile.js` | elevation sampling from the 2 m DEM (loaded on demand) |
