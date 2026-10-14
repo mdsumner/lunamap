@@ -23,16 +23,8 @@ function lookupElevation(ll, seq) {
 function ensureRoads(P, tier, r) {
   var key = P[0].toFixed(6) + "," + P[1].toFixed(6);
   if (!routeCache || routeCache.key !== key) routeCache = { key: key, feats: [], ids: {}, r: { local: 0, major: 0, hwy: 0 } };
-  var cache = routeCache;
-  if (cache.r[tier] >= r) return Promise.resolve(cache);
-  var dLat = r / 111320, dLon = r / (111320 * Math.cos(P[1] * Math.PI / 180));
-  return fetchSegments(TIERS[tier].layer, P[0] - dLon, P[1] - dLat, P[0] + dLon, P[1] + dLat, 0).then(function (fs) {
-    fs.forEach(function (f) {
-      var id = f.attributes && f.attributes.OBJECTID;
-      if (id == null || !cache.ids[id]) { if (id != null) cache.ids[id] = 1; cache.feats.push(f); }
-    });
-    cache.r[tier] = r; return cache;
-  });
+  if (routeCache.r[tier] >= r) return Promise.resolve(routeCache);
+  return growRoads(routeCache, P, tier, r);
 }
 
 function nearestStation(ll) {
@@ -54,7 +46,7 @@ function nearestStation(ll) {
     return ensureRoads(P, "local", Math.min(R, 7000)).then(function () {
       return R > 7000 ? ensureRoads(P, "major", R) : routeCache;
     }).then(function (cache) {
-      var G = buildGraph(cache.feats), sn = snapTo(G, P);
+      var G = buildGraph(cache.feats, cache.gates), sn = snapTo(G, P);
       if (!sn) throw new Error("no roads");
       var target = {};
       st.forEach(function (s) {

@@ -93,7 +93,59 @@ function roadSpeed(ed) {
   return v / 3.6;                                    // metres per second
 }
 
-function buildGraph(feats) {
+// Gates and barriers (TopographyAndRelief layer 59) on the network: crossing one
+// costs extra time, so routes avoid gated tracks unless there is no other way.
+var GATE_PENALTY_S = { "IMMOVABLE BARRIER": 7200, "BOLLARD": 7200, "FENCE BARRIER": 7200, "GATE": 900, "BOOM GATE": 900,
+  "REMOVABLE BARRIER": 900, "UNKNOWN BARRIER": 600, "STOCK GRID": 0 };
+function fetchGates(w, s, e, n) {
+  var url = TOPO + "59/query?geometry=" + [w, s, e, n].map(function (v) { return v.toFixed(6); }).join(",") +
+    "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects" +
+    "&outFields=OBJECTID,BARRIER_TY&returnGeometry=true&geometryPrecision=7&f=json";
+  var online = navigator.onLine === false ? Promise.reject(new Error("offline")) :
+    fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+      if (j.error) throw new Error(j.error.message);
+      return (j.features || []).filter(function (f) { return f.geometry; }).map(function (f) {
+        return [f.geometry.x, f.geometry.y, String(f.attributes.BARRIER_TY || "Unknown Barrier").toUpperCase(), f.attributes.OBJECTID]; });
+    });
+  return online.catch(function () { return typeof offlineGates === "function" ? offlineGates(w, s, e, n) : []; });
+}
+// widen the road cache for a pin: segments for a tier, plus gates with the local tier
+function growRoads(cache, P, tier, r) {
+  var dLat = r / 111320, dLon = r / (111320 * Math.cos(P[1] * Math.PI / 180));
+  var w = P[0] - dLon, s = P[1] - dLat, e = P[0] + dLon, n = P[1] + dLat;
+  return Promise.all([fetchSegments(TIERS[tier].layer, w, s, e, n, 0),
+                      tier === "local" ? fetchGates(w, s, e, n).catch(function () { return []; }) : Promise.resolve([])])
+  .then(function (r2) {
+    r2[0].forEach(function (f) {
+      var id = f.attributes && f.attributes.OBJECTID;
+      if (id == null || !cache.ids[id]) { if (id != null) cache.ids[id] = 1; cache.feats.push(f); }
+    });
+    cache.gates = cache.gates || []; cache.gateIds = cache.gateIds || {};
+    r2[1].forEach(function (g) { var k = g[3] != null ? g[3] : g[0] + "," + g[1]; if (!cache.gateIds[k]) { cache.gateIds[k] = 1; cache.gates.push(g); } });
+    cache.r[tier] = r;
+    return cache;
+  });
+}
+
+function markGates(G, gates) {
+  if (!gates || !gates.length) return;
+  var cell = 1e-4, grid = {};
+  function key(x, y) { return Math.floor(x / cell) + "," + Math.floor(y / cell); }
+  G.edges.forEach(function (ed, ei) { ed.c.forEach(function (p, vi) {
+    var k = key(p[0], p[1]); (grid[k] = grid[k] || []).push([ei, vi]); }); });
+  gates.forEach(function (g) {
+    var pen = GATE_PENALTY_S[g[2]]; if (pen === undefined) pen = 600;
+    var gx = Math.floor(g[0] / cell), gy = Math.floor(g[1] / cell), best = null, bd = 6;   // within 6 m
+    for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++) (grid[(gx + dx) + "," + (gy + dy)] || []).forEach(function (h) {
+      var ed = G.edges[h[0]], d = hav([g[0], g[1]], ed.c[h[1]]); if (d < bd) { bd = d; best = h; } });
+    if (!best) return;
+    var ed = G.edges[best[0]], vi = best[1], info = { type: g[2], pen: pen };
+    if (vi === 0 || vi === ed.c.length - 1) { var nd = vi === 0 ? ed.u : ed.v; G.meta[nd].gate = info; }
+    else ed.gate = info;
+  });
+}
+
+function buildGraph(feats, gates) {
   var nodes = {}, adj = [], meta = [], seen = {}, edges = [];
   function node(c) {
     var k = c[0].toFixed(7) + "," + c[1].toFixed(7);
@@ -115,7 +167,9 @@ function buildGraph(feats) {
       meta[u].inc.push(ed); if (v !== u) meta[v].inc.push(ed);
     });
   });
-  return { adj: adj, meta: meta, edges: edges };
+  var G = { adj: adj, meta: meta, edges: edges };
+  markGates(G, gates);
+  return G;
 }
 function junctionNames(m) {
   var n = {}; m.inc.forEach(function (e) { if (e.name) n[e.name] = 1; }); return Object.keys(n).sort();
@@ -172,7 +226,7 @@ function nearestJunction(G, sn, L) {
     if (done[u]) continue; done[u] = 1;
     if (typeof L === "function" ? L(u) : isJunction(G.meta[u], L)) return { node: u, dist: len[u], time: dist[u], prev: prev };
     G.adj[u].forEach(function (a) {
-      var nd = dist[u] + a.e.cost;
+      var nd = dist[u] + a.e.cost + (a.e.gate ? a.e.gate.pen : 0) + (G.meta[a.to].gate ? G.meta[a.to].gate.pen : 0);
       if (nd < dist[a.to]) { dist[a.to] = nd; len[a.to] = len[u] + a.e.len; prev[a.to] = { from: u, e: a.e, fwd: a.fwd }; push(nd, a.to); }
     });
   }
@@ -226,6 +280,17 @@ function describeRoute(G, res, sn, level) {
   });
   var jlabel = jnames.join(" / ");
   var text = "From " + jlabel + ": " + parts.join(", then ");
+  var gates = {}, nGates = 0;
+  legsFromJunction(res).forEach(function (l, i, arr) {
+    if (l.e.gate && l.e.gate.pen > 0) { nGates++; gates[l.e.gate.type] = 1; }
+  });
+  (function () {                                                   // gated nodes along the path
+    var k = res.node;
+    while (res.prev[k] && !res.prev[k].start) { if (G.meta[k].gate && G.meta[k].gate.pen > 0) { nGates++; gates[G.meta[k].gate.type] = 1; } k = res.prev[k].from; }
+    if (G.meta[k] && G.meta[k].gate && G.meta[k].gate.pen > 0) { nGates++; gates[G.meta[k].gate.type] = 1; }
+  })();
+  if (nGates) text += "; passes " + nGates + " " + (nGates === 1 ? "gate or barrier" : "gates or barriers") +
+    " (" + Object.keys(gates).map(function (t) { return t.toLowerCase(); }).join(", ") + ")";
   if (sn.off > 25) text += "; the pin is " + fmtDist(sn.off) + " off the road";
   text += ". Total " + fmtDist(total + sn.off) + ".";
   var path = []; groups.forEach(function (g, i) { path = path.concat(i ? g.c.slice(1) : g.c); });
@@ -250,19 +315,11 @@ function computeRoute(P, level) {
       return false;
     });
     if (!tier) return Promise.resolve(null);
-    var dLat = r / 111320, dLon = r / (111320 * Math.cos(P[1] * Math.PI / 180));
-    return fetchSegments(TIERS[tier].layer, P[0] - dLon, P[1] - dLat, P[0] + dLon, P[1] + dLat, 0).then(function (fs) {
-      fs.forEach(function (f) {
-        var id = f.attributes && f.attributes.OBJECTID;
-        if (id == null || !cache.ids[id]) { if (id != null) cache.ids[id] = 1; cache.feats.push(f); }
-      });
-      cache.r[tier] = r;
-      return attempt();
-    });
+    return growRoads(cache, P, tier, r).then(attempt);
   }
   function solve() {
     if (!cache.feats.length) return null;
-    var G = buildGraph(cache.feats), sn = snapTo(G, P);
+    var G = buildGraph(cache.feats, cache.gates), sn = snapTo(G, P);
     if (!sn) return null;
     var res = nearestJunction(G, sn, L);
     return res ? describeRoute(G, res, sn, level) : null;

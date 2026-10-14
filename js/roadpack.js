@@ -64,6 +64,14 @@ function offlineSegments(layer, w, s, e, n) {
     return out;
   });
 }
+function offlineGates(w, s, e, n) {
+  return loadRoadPacks().then(function (ps) {
+    var out = [];
+    ps.forEach(function (p) { (p.gates || []).forEach(function (g) {
+      if (g[0] >= w && g[0] <= e && g[1] >= s && g[1] <= n) out.push(g); }); });
+    return out;
+  });
+}
 function offlineStations(w, s, e, n) {
   var q = [w, s, e, n];
   return loadRoadPacks().then(function (ps) {
@@ -87,13 +95,20 @@ function saveRoadPack(bounds, progress) {
   progress("Saving roads for routing...");
   return Promise.all([
     fetchSegmentsOnline(8, w, s, e, n, 0),
+    fetch(TOPO + "59/query?geometry=" + [w, s, e, n].map(function (v) { return v.toFixed(6); }).join(",") +
+      "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects" +
+      "&outFields=OBJECTID,BARRIER_TY&returnGeometry=true&geometryPrecision=7&f=json").then(function (r) { return r.json(); })
+      .catch(function () { return { features: [] }; }),
     fetchSegmentsOnline(5, outer[0], outer[1], outer[2], outer[3], 0),
     fetch(EM + "6/query?geometry=" + outer.map(function (v) { return v.toFixed(5); }).join(",") +
       "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects" +
       "&outFields=BRIGADE,STATION_TYPE&returnGeometry=true&f=geojson").then(function (r) { return r.json(); })
   ]).then(function (r) {
+    var gates = (r[1].features || []).filter(function (f) { return f.geometry; }).map(function (f) {
+      return [f.geometry.x, f.geometry.y, String(f.attributes.BARRIER_TY || "Unknown Barrier").toUpperCase(), f.attributes.OBJECTID]; });
+    r.splice(1, 1);
     var pack = { bbox: [w, s, e, n], outer: outer, saved: new Date().toISOString(), local: packFeats(r[0]), major: packFeats(r[1]),
-      stations: (r[2].features || []).filter(function (f) { return f.geometry; }).map(function (f) {
+      gates: gates, stations: (r[2].features || []).filter(function (f) { return f.geometry; }).map(function (f) {
         return [f.geometry.coordinates[0], f.geometry.coordinates[1], f.properties.BRIGADE, f.properties.STATION_TYPE]; }) };
     return gzipJSON(pack).then(function (z) {
       var key = "/roadpack/" + pack.bbox.map(function (v) { return v.toFixed(4); }).join(",");
