@@ -158,6 +158,11 @@ function loadDraw() {
   }
   return drawLoading;
 }
+document.getElementById("model3d").onclick = function () {
+  setMenu(null);
+  loadScript("js/model3d.js").then(function () { window.open3D(); })
+    .catch(function (e) { toast("3D view unavailable: " + e.message); });
+};
 document.getElementById("windrose").onclick = function () {
   setMenu(null);
   loadScript("js/windrose.js").then(function () { window.openWindRose(); })
