@@ -44,6 +44,7 @@
   <div id="toolbox" class="menubox">
     <button id="draw" title="Draw points, lines and polygons; export or import">Draw</button>
     <button id="offline" title="Save maps for use without signal">Offline</button>
+    <button id="windrose" title="Seasonal wind roses around Fern Tree (modelled history)">Wind rose</button>
     <button id="print" title="Print or save this view as PDF">Print</button>
     <button id="help" title="How to use this map" onclick="location.href='help.html'">Help</button>
   </div>
@@ -85,6 +86,20 @@
   <div class="acts"><button id="offsave">Save this area</button><button id="offclear">Clear saved</button></div>
   <div id="offprog" class="small"></div>
   <div id="offstat" class="small"></div>
+</div>
+
+<div id="rosesheet" class="sheet">
+  <h2><span>Wind rose (proof of concept)</span><button id="roseclose" aria-label="Close">x</button></h2>
+  <div id="rosepts" class="seg"></div>
+  <div id="roseseason" class="seg"></div>
+  <div id="rosefilter" class="seg"></div>
+  <p id="rosetitle" class="small" style="font-weight:600;margin-top:6px"></p>
+  <div id="rosesvg"></div>
+  <p id="roselegend" class="small"></p>
+  <p id="rosesum" class="small"></p>
+  <p id="rosenote" class="small" style="color:#666"></p>
+  <p class="small">Measured roses (9 am and 3 pm) for Hobart are on the
+    <a href="https://www.bom.gov.au/climate/averages/wind/selection_map.shtml" target="_blank" rel="noopener">Bureau's wind rose pages</a>.</p>
 </div>
 
 <div id="drawsheet" class="sheet">

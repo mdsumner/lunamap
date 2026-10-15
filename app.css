@@ -62,6 +62,11 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
 .sheet h2 button { border:0; background:none; font-size:20px; line-height:1; padding:0 4px; cursor:pointer; }
 .sheet .small, .sheet label { font-size:13px; color:#333; }
 .sheet p { margin:0 0 8px; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; margin:4px 0; }
+.seg button { font-size:12px; padding:4px 8px; border:1px solid #bbb; border-radius:6px; background:#fff; }
+.seg button.on { background:#e3f2fd; border-color:#1565c0; }
+.rkey { white-space:nowrap; margin-right:6px; }
+.rkey i { display:inline-block; width:12px; height:10px; margin-right:3px; vertical-align:-1px; border-radius:2px; }
 #offbases label { display:inline-block; margin:2px 10px 2px 0; }
 #offest, #offprog, #offstat { margin-top:6px; }
 body.drawing #panel { display:none !important; }

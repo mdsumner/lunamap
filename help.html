@@ -76,7 +76,7 @@ and can keep maps for use without signal.</p>
     hillshade, grey topographic.</li>
   <li><b>Layers</b> opens the map layers, grouped: Reference (Grid, Parcels), Infrastructure (Water, Gates, Stations)
     and Fire (Danger, Warnings, Fire history, Flammability). The button shows how many are on. Tap the map to close the box.</li>
-  <li><b>Tools</b> opens Draw, Offline, Print and Help.</li>
+  <li><b>Tools</b> opens Draw, Offline, Wind rose, Print and Help.</li>
 </ul>
 
 <h2 id="panel">The pin panel</h2>
@@ -161,6 +161,12 @@ and on ridges the real wind can be very different. <b>Wind observed</b> links to
 nearest Bureau weather station (for example kunanyi / Mount Wellington or Hobart), which shows measured wind, gusts,
 temperature and humidity every 10 to 30 minutes. Wind needs a connection; it is not saved for offline use.
 This is a quick guide only - always go by TFS and Bureau fire weather warnings.</p>
+<p><b>Wind rose</b> (in <b>Tools</b>, a proof of concept) shows which way the wind usually comes from around Fern Tree,
+Hobart and Grove, by season. Petals point where the wind comes from; their length is the share of hours and the shading
+is the mean wind speed. <b>Hot, dry afternoons</b> keeps only afternoon hours of 25 &deg;C or more with humidity of 30% or
+less - the fire weather that matters most. It is built from modelled hourly history (ECMWF IFS, about 9 km, 2017 on, via
+Open-Meteo) and refreshed yearly, so the mountain's sheltering and funnelling are smoothed out; the Bureau's measured
+wind roses for Hobart are linked for comparison. Weather data by Open-Meteo.com (CC BY 4.0), from ECMWF open data.</p>
 
 <h2 id="layers">Layers</h2>
 <h3>Danger, Warnings, Fire history, Flammability</h3>

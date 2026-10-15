@@ -158,6 +158,11 @@ function loadDraw() {
   }
   return drawLoading;
 }
+document.getElementById("windrose").onclick = function () {
+  setMenu(null);
+  loadScript("js/windrose.js").then(function () { window.openWindRose(); })
+    .catch(function (e) { toast("Wind rose unavailable: " + e.message); });
+};
 document.getElementById("draw").onclick = function () {
   loadDraw().then(function () { window.toggleDraw(); })
     .catch(function (e) { drawLoading = null; toast("Drawing tools unavailable: " + e.message); });
