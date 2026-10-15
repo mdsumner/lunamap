@@ -8,6 +8,10 @@
 //             every 5 minutes while on
 //   History   fire history, last impacted in 10 seasons (14) drawn by the server
 //             from zoom 10; all recorded fires at the pin (1) in the panel
+//   Flammability  TASVEG 4.0 Fire Attributes (Public/NaturalEnvironment layer 91):
+//             moderately high, high and very high flammability shaded from zoom 12;
+//             vegetation, flammability, fire sensitivity and FRB treatment at the pin.
+//             Classes after Pyrke and Marsden-Smedley (2005), Tasforests 16.
 // ---------------------------------------------------------------------------
 var EM = LISTPUB + "EmergencyManagementPublic/MapServer/";
 var FDR_COL = { "Catastrophic": "#ad0909", "Extreme": "#f78100", "High": "#fedd3a", "Moderate": "#64bf30", "No Rating": "#ffffff" };
@@ -16,7 +20,8 @@ map.createPane("hazardPane"); map.getPane("hazardPane").style.zIndex = 380;   //
 var HAZ = {
   danger:   { btn: "danger", flag: "fd", on: false, group: L.layerGroup() },
   warnings: { btn: "warnings", flag: "tw", on: false, group: L.layerGroup(), timer: null },
-  history:  { btn: "history", flag: "fh", on: false, group: L.layerGroup() }
+  history:  { btn: "history", flag: "fh", on: false, group: L.layerGroup() },
+  flamm:    { btn: "flamm", flag: "fl", on: false, group: L.layerGroup() }
 };
 var hazInfo = {}, hazSeq = 0;
 
@@ -131,12 +136,65 @@ function lookupHistory(ll, seq) {
   }).catch(function () { if (seq === hazSeq) hazInfo.history = "(lookup failed)"; });
 }
 
+// ---- Flammability (TASVEG 4.0 Fire Attributes) ---------------------------------------
+var NE = LISTPUB + "NaturalEnvironment/MapServer/", TASVEG_FIRE = 91;
+var FLAM_COL = { VH: [183, 28, 28], H: [244, 81, 30], MH: [255, 179, 0] };
+var FLAM_TXT = { VH: "very high", H: "high", MH: "moderately high", M: "moderate", ML: "moderately low", L: "low", N: "not rated" };
+var SENS_TXT = { E: "extreme", VH: "very high", H: "high", M: "moderate", L: "low", N: "not rated" };
+var FIREATT_TXT = { Ac: "alpine heath with conifers or beech", Ag: "alpine sedgy and grassy", As: "alpine heath",
+  Bs: "buttongrass moorland", Dd: "dry sclerophyll woodland", Df: "dry sclerophyll forest", Dp: "damp sclerophyll forest",
+  Ds: "dry and coastal scrub", Gr: "native grassland", Hh: "heathland", Mf: "mixed forest", Pt: "agricultural and other",
+  Rc: "rainforest with conifers or beech", Rf: "rainforest", Sp: "sphagnum", Sr: "plantation", Ub: "urban and built-up",
+  Wd: "wet sclerophyll woodland", We: "flammable weeds and bracken", Wf: "wet sclerophyll forest", Wl: "swamp and wetland",
+  Ws: "wet scrub", Wt: "water", Zz: "non-vegetated" };
+var FLAM_WHERE = "FLAMMAB IN ('MH','H','VH')";
+// Drawn by the server, filtered to MH/H/VH and coloured by flammability alone (dynamicLayers).
+// If the server refuses that, fall back to its own colours (flammability + sensitivity), still filtered.
+var flamDynamic = JSON.stringify([{ id: TASVEG_FIRE, source: { type: "mapLayer", mapLayerId: TASVEG_FIRE },
+  definitionExpression: FLAM_WHERE, drawingInfo: { renderer: { type: "uniqueValue", field1: "FLAMMAB",
+    uniqueValueInfos: Object.keys(FLAM_COL).map(function (k) {
+      return { value: k, label: FLAM_TXT[k], symbol: { type: "esriSFS", style: "esriSFSSolid", color: FLAM_COL[k].concat(255),
+        outline: { type: "esriSLS", style: "esriSLSSolid", color: [80, 80, 80, 140], width: 0.4 } } }; }) } } }]);
+var FlammTiles = L.TileLayer.extend({
+  dynamic: true,
+  getTileUrl: function (c) {
+    var ts = this.getTileSize(), nw = c.scaleBy(ts), se = nw.add(ts);
+    var a = L.CRS.EPSG3857.project(this._map.unproject(nw, c.z)), b = L.CRS.EPSG3857.project(this._map.unproject(se, c.z));
+    var lyr = this.dynamic ? "&dynamicLayers=" + encodeURIComponent(flamDynamic) :
+      "&layers=show:" + TASVEG_FIRE + "&layerDefs=" + encodeURIComponent(JSON.stringify(
+        (function () { var o = {}; o[TASVEG_FIRE] = FLAM_WHERE; return o; })()));
+    return NE + "export?bbox=" + [a.x, b.y, b.x, a.y].map(function (v) { return v.toFixed(2); }).join(",") +
+      "&bboxSR=3857&imageSR=3857&size=" + ts.x + "," + ts.y + "&format=png32&transparent=true&dpi=96&f=image" + lyr;
+  }
+});
+var flamTiles = new FlammTiles("", { tileSize: 512, minZoom: 12, maxZoom: 19, zIndex: 3, opacity: 0.4,
+  attribution: "TASVEG 4.0 &copy; State of Tasmania" });
+flamTiles.on("tileerror", function () { if (flamTiles.dynamic) { flamTiles.dynamic = false; flamTiles.redraw(); } });
+HAZ.flamm.group.addLayer(flamTiles);
+function lookupFlamm(ll, seq) {
+  var q = atPoint(ll); q.outFields = "VEGCODE,VEGCODE_D,FIREATT,FIRESENS,FLAMMAB,FRB_TREAT";
+  return fetch(NE + TASVEG_FIRE + "/query?" + Object.keys(q).map(function (k) { return k + "=" + encodeURIComponent(q[k]); }).join("&"))
+    .then(function (r) { return r.json(); }).then(function (j) {
+      if (seq !== hazSeq) return;
+      if (j.error) throw new Error(j.error.message);
+      var f = (j.features || [])[0];
+      if (!f) { hazInfo.flamm = "(no TASVEG mapping here)"; return; }
+      var a = f.attributes;
+      var fl = FLAM_TXT[a.FLAMMAB] || a.FLAMMAB || "?";
+      hazInfo.flamm = fl.charAt(0).toUpperCase() + fl.slice(1) + "; fire sensitivity " +
+        (SENS_TXT[a.FIRESENS] || a.FIRESENS || "?") + (a.FRB_TREAT ? "; FRB treatment " + (a.FRB_TREAT === "Y" ? "yes" : a.FRB_TREAT === "N" ? "no" : a.FRB_TREAT) : "");
+      var vd = String(a.VEGCODE_D || ""); hazInfo.veg = vd.charAt(0).toUpperCase() + vd.slice(1) + (a.VEGCODE ? " (" + a.VEGCODE + ")" : "") +
+        (a.FIREATT ? "; fire group " + (FIREATT_TXT[a.FIREATT] || a.FIREATT) : "");
+    }).catch(function () { if (seq === hazSeq) hazInfo.flamm = "(lookup failed)"; });
+}
+
 // ---- panel + toggles -------------------------------------------------------------
 function lookupHazards(ll) {
   var seq = ++hazSeq; hazInfo = {};
   var jobs = [];
   if (HAZ.danger.on) { hazInfo.danger = "..."; jobs.push(lookupDanger(ll, seq)); }
   if (HAZ.history.on) { hazInfo.history = "..."; jobs.push(lookupHistory(ll, seq)); }
+  if (HAZ.flamm.on) { hazInfo.flamm = "..."; jobs.push(lookupFlamm(ll, seq)); }
   if (!jobs.length) return;
   Promise.all(jobs).then(function () { if (seq === hazSeq && pin) showCoords(pin.getLatLng()); });
 }
@@ -144,6 +202,8 @@ function hazardRows() {
   var rows = [];
   if (HAZ.danger.on && hazInfo.danger) rows.push({ k: "Fire danger", v: hazInfo.danger });
   if (HAZ.history.on && hazInfo.history) rows.push({ k: "Fire history", v: hazInfo.history });
+  if (HAZ.flamm.on && hazInfo.flamm) rows.push({ k: "Flammability", v: hazInfo.flamm });
+  if (HAZ.flamm.on && hazInfo.veg) rows.push({ k: "Vegetation", v: hazInfo.veg });
   return rows;
 }
 function hazardFlags() {
@@ -157,9 +217,10 @@ function setHazard(name, on) {
     if (name === "danger") loadDanger();
     if (name === "warnings") { loadWarnings(); h.timer = setInterval(loadWarnings, 5 * 60 * 1000); }
     if (name === "history" && map.getZoom() < 10) toast("Fire history shows from zoom 10 - tap the map for the record at a spot");
+    if (name === "flamm" && map.getZoom() < 12) toast("Flammability shows from zoom 12 - tap the map for the vegetation at a spot");
   } else {
     map.removeLayer(h.group);
-    if (name !== "history") h.group.clearLayers();
+    if (name !== "history" && name !== "flamm") h.group.clearLayers();
     if (h.timer) { clearInterval(h.timer); h.timer = null; }
   }
   if (pin) lookupHazards(pin.getLatLng());
