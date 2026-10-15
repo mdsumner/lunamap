@@ -1,0 +1,28 @@
+# Build seasonal wind roses for a few points around Fern Tree from modelled
+# hourly history (Open-Meteo historical weather API, ECMWF IFS 9 km, 2017 on).
+# Writes counts only to data/windrose-ferntree.json. Run by hand, and yearly.
+name: windrose
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 4 15 1 *"   # yearly, mid January
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build wind roses
+        run: python3 scripts/windrose.py
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/windrose-ferntree.json
+          git diff --cached --quiet || git commit -m "Update Fern Tree wind roses"
+          git push
