@@ -5,6 +5,7 @@ Fetches hourly 10 m wind, temperature and humidity from the Open-Meteo historica
 weather API (ECMWF IFS 9 km, 2017 onward) and counts hours into 16 directions by
 speed band, for each season and for three filters:
   all        every hour
+  am         mornings, 06:00 to 10:59 local time
   pm         afternoons, 13:00 to 17:59 local time
   firewx     afternoons that are hot and dry (temperature >= 25 C, humidity <= 30 %)
 Writes data/windrose-ferntree.json (counts only, a few kB).
@@ -29,7 +30,8 @@ DIRS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW
 BANDS = [10, 20, 30, 40]          # km/h upper edges; last band is 40 and over
 CALM = 2                          # km/h, counted separately, no direction
 SEASONS = {"summer": (12, 1, 2), "autumn": (3, 4, 5), "winter": (6, 7, 8), "spring": (9, 10, 11)}
-FILTERS = ["all", "pm", "firewx"]
+WARM = (9, 10, 11, 12, 1, 2)      # spring and summer together, the fire season
+FILTERS = ["all", "am", "pm", "firewx"]
 VARS = "wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,relative_humidity_2m"
 
 
@@ -63,19 +65,21 @@ def band(v):
 
 def roses(d):
     h = d["hourly"]
-    out = {s: {f: empty() for f in FILTERS} for s in list(SEASONS) + ["year"]}
+    out = {s: {f: empty() for f in FILTERS} for s in list(SEASONS) + ["warm", "year"]}
     for t, ws, wd, wg, ta, rh in zip(h["time"], h["wind_speed_10m"], h["wind_direction_10m"],
                                      h["wind_gusts_10m"], h["temperature_2m"], h["relative_humidity_2m"]):
         if ws is None or wd is None:
             continue
         month, hour = int(t[5:7]), int(t[11:13])
         season = [s for s, ms in SEASONS.items() if month in ms][0]
+        am = 6 <= hour <= 10
         pm = 13 <= hour <= 17
         fire = pm and ta is not None and rh is not None and ta >= 25 and rh <= 30
-        for f, keep in (("all", True), ("pm", pm), ("firewx", fire)):
+        groups = (season, "year", "warm") if month in WARM else (season, "year")
+        for f, keep in (("all", True), ("am", am), ("pm", pm), ("firewx", fire)):
             if not keep:
                 continue
-            for s in (season, "year"):
+            for s in groups:
                 r = out[s][f]
                 r["n"] += 1
                 if wg is not None and wg > r["gust"]:
@@ -107,7 +111,7 @@ def main():
         "period": [START, END],
         "built": datetime.date.today().isoformat(),
         "dirs": DIRS, "bands_kmh": BANDS, "calm_kmh": CALM,
-        "filters": {"all": "all hours", "pm": "afternoons 13:00-17:59",
+        "filters": {"all": "all hours", "am": "mornings 06:00-10:59", "pm": "afternoons 13:00-17:59",
                     "firewx": "hot dry afternoons (25 C or more, humidity 30% or less)"},
         "points": pts,
     }
