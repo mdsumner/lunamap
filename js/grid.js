@@ -17,7 +17,7 @@ function gridLabel(v) {
 
 function buildGrid() {
   gridLayer.clearLayers(); gridLines = [];
-  if (!gridOn) { glabels.innerHTML = ""; return; }
+  if (!gridOn || map.getZoom() < 7) { glabels.innerHTML = ""; return; }   // MGA grid only makes sense close in
   var c = map.getCenter();
   var zone = Math.floor((c.lng + 180) / 6) + 1;
   var def = mgaDefs(zone).mga2020;

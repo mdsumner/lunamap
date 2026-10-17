@@ -80,26 +80,100 @@ function homeBounds() {
   var dLat = HOME.halfWidthM / 111320, dLon = HOME.halfWidthM / (111320 * Math.cos(HOME.lat * Math.PI / 180));
   return L.latLngBounds([HOME.lat - dLat, HOME.lon - dLon], [HOME.lat + dLat, HOME.lon + dLon]);
 }
-var map = L.map("map", { zoomControl: true, attributionControl: true, maxZoom: 19, minZoom: 6, zoomSnap: 0.25 });
+var map = L.map("map", { zoomControl: true, attributionControl: true, maxZoom: 19, minZoom: 2, zoomSnap: 0.25, worldCopyJump: true });
 // fit the home area exactly (fractional zoom), then go back to whole zoom steps
 if (st.z !== undefined) map.setView([st.lat, st.lon], st.z); else map.fitBounds(homeBounds());
 map.options.zoomSnap = 1;
 L.control.scale({ imperial: false, position: "bottomright" }).addTo(map);
 
-var layers = {}, current = null;
+// Worldwide basemaps from outside services (no offline saving), and services the user adds.
+// A light world map sits under theLIST basemaps at small scales, so zooming out beyond
+// Tasmania still shows where things are.
+var EXTERNAL = [
+  { id: "osm", name: "OpenStreetMap", url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", max: 19,
+    attr: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors" },
+  { id: "otm", name: "OpenTopoMap", url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", max: 17,
+    attr: "&copy; OpenStreetMap contributors, SRTM; style &copy; <a href=\"https://opentopomap.org\">OpenTopoMap</a> (CC BY-SA)" },
+  { id: "s2", name: "Sentinel-2 cloudless 2016", url: "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/{z}/{y}/{x}.jpg", max: 15,
+    attr: "<a href=\"https://s2maps.eu\">Sentinel-2 cloudless</a> by EOX (contains modified Copernicus Sentinel data 2016)" }
+];
+var CUSTOM_KEY = "lunamap-custom-maps";
+function loadCustomMaps() { try { return JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]"); } catch (e) { return []; } }
+function saveCustomMaps(a) { try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(a)); } catch (e) {} }
+var customMaps = loadCustomMaps();
+
+var layers = {}, current = null, basemapNames = {};
 var sel = document.getElementById("layer");
-BASEMAPS.forEach(function (b) {
-  layers[b.id] = L.tileLayer(LIST + b.svc + "/MapServer/tile/{z}/{y}/{x}", {
-    maxNativeZoom: b.max, maxZoom: 19,
-    attribution: "&copy; State of Tasmania, <a href=\"https://www.thelist.tas.gov.au\">theLIST</a>" +
-      (b.lic ? " (" + b.lic + ")" : "")
+var worldUnder = L.tileLayer(EXTERNAL[0].url, { maxZoom: 9, opacity: 0.7, attribution: EXTERNAL[0].attr, zIndex: 0 });
+function group(label) { var g = document.createElement("optgroup"); g.label = label; sel.appendChild(g); return g; }
+function addOption(g, id, name) { var o = document.createElement("option"); o.value = id; o.textContent = name; g.appendChild(o); basemapNames[id] = name; }
+function customLayer(c) {
+  if (c.type === "wms") return L.tileLayer.wms(c.url, { layers: c.layers, format: "image/png", transparent: false, maxZoom: 19, attribution: c.name });
+  return L.tileLayer(c.url, { maxNativeZoom: c.max || 19, maxZoom: 19, attribution: c.name });
+}
+function buildBasemapMenu() {
+  sel.innerHTML = "";
+  var g1 = group("theLIST (Tasmania)");
+  BASEMAPS.forEach(function (b) {
+    if (!layers[b.id]) layers[b.id] = L.tileLayer(LIST + b.svc + "/MapServer/tile/{z}/{y}/{x}", {
+      maxNativeZoom: b.max, maxZoom: 19,
+      attribution: "&copy; State of Tasmania, <a href=\"https://www.thelist.tas.gov.au\">theLIST</a>" + (b.lic ? " (" + b.lic + ")" : "")
+    });
+    addOption(g1, b.id, b.name);
   });
-  var o = document.createElement("option"); o.value = b.id; o.textContent = b.name; sel.appendChild(o);
-});
+  var g2 = group("Worldwide");
+  EXTERNAL.forEach(function (b) {
+    if (!layers[b.id]) layers[b.id] = L.tileLayer(b.url, { maxNativeZoom: b.max, maxZoom: 19, attribution: b.attr, subdomains: "abc" });
+    addOption(g2, b.id, b.name);
+  });
+  var g3 = group("Your map services");
+  customMaps.forEach(function (c, i) { layers["c" + i] = customLayer(c); addOption(g3, "c" + i, c.name); });
+  addOption(g3, "__add", "+ Add a map service...");
+  if (customMaps.length) addOption(g3, "__clear", "Remove your map services");
+}
+buildBasemapMenu();
+function isListBase(id) { return BASEMAPS.some(function (b) { return b.id === id; }); }
+function basemapName(id) { return basemapNames[id] || id; }
+// URL of one 256 px tile of a basemap (used by the 3D drape); null if it cannot be built
+function basemapTileUrl(id, z, x, y) {
+  var b = BASEMAPS.filter(function (q) { return q.id === id; })[0];
+  if (b) return LIST + b.svc + "/MapServer/tile/" + z + "/" + y + "/" + x;
+  var e = EXTERNAL.filter(function (q) { return q.id === id; })[0] || (id.charAt(0) === "c" && customMaps[+id.slice(1)]);
+  if (!e || e.type === "wms") return null;
+  return e.url.replace("{s}", "abc".charAt((x + y) % 3)).replace("{z}", z).replace("{x}", x).replace("{y}", y);
+}
+function basemapMaxZoom(id) {
+  var b = BASEMAPS.filter(function (q) { return q.id === id; })[0] || EXTERNAL.filter(function (q) { return q.id === id; })[0] ||
+          (id.charAt(0) === "c" && customMaps[+id.slice(1)]);
+  return (b && b.max) || 18;
+}
+function addMapService() {
+  var url = prompt("Map service address. Accepted:\n- a tile URL with {z}, {x} and {y}\n- an ArcGIS MapServer URL (cached tiles)\n- a WMS URL (you will be asked for the layer name)");
+  if (!url) return null;
+  url = url.trim();
+  var c = { name: "", url: url, type: "xyz" };
+  if (/\{z\}/i.test(url)) c.url = url.replace(/\{Z\}/g, "{z}").replace(/\{X\}/g, "{x}").replace(/\{Y\}/g, "{y}");
+  else if (/\/MapServer\/?$/i.test(url)) c.url = url.replace(/\/?$/, "") + "/tile/{z}/{y}/{x}";
+  else if (/wms/i.test(url)) {
+    c.type = "wms"; c.url = url.split("?")[0];
+    c.layers = prompt("WMS layer name(s), comma separated:"); if (!c.layers) return null;
+  } else { alert("That does not look like a tile, ArcGIS MapServer or WMS address."); return null; }
+  var host = ""; try { host = new URL(c.url.replace(/\{[a-z]\}/g, "0")).hostname; } catch (e) {}
+  c.name = prompt("Name for this map:", (c.layers ? c.layers + " - " : "") + host) || host || "My map";
+  customMaps.push(c); saveCustomMaps(customMaps);
+  return "c" + (customMaps.length - 1);
+}
 function setLayer(id) {
+  if (id === "__add") { var nid = addMapService(); buildBasemapMenu(); id = nid || (current && current._lunaId) || "topo"; }
+  if (id === "__clear") {
+    if (confirm("Remove the map services you added on this device?")) { customMaps = []; saveCustomMaps(customMaps); }
+    Object.keys(layers).forEach(function (k) { if (/^c\d+$/.test(k)) delete layers[k]; });
+    buildBasemapMenu(); id = (current && layers[current._lunaId]) ? current._lunaId : "topo";
+  }
   if (!layers[id]) id = "topo";
   if (current) map.removeLayer(current);
-  current = layers[id].addTo(map); sel.value = id;
+  current = layers[id].addTo(map); current._lunaId = id; sel.value = id;
+  if (isListBase(id)) worldUnder.addTo(map); else map.removeLayer(worldUnder);
   if (typeof syncParcelOverlay === "function" && parcelTiles) syncParcelOverlay();
   writeHash();
 }
@@ -273,10 +347,9 @@ document.getElementById("pinme").onclick = function () {
 // Print: browser print / save as PDF of the current view
 // ---------------------------------------------------------------------------
 document.getElementById("print").onclick = function () {
-  var b = BASEMAPS.filter(function (x) { return x.id === sel.value; })[0];
   var bb = map.getBounds();
   document.getElementById("printhead").textContent =
-    b.name + "  |  " + new Date().toLocaleString("en-AU") + "  |  view " +
+    basemapName(sel.value) + "  |  " + new Date().toLocaleString("en-AU") + "  |  view " +
     bb.getSouth().toFixed(4) + "," + bb.getWest().toFixed(4) + " to " +
     bb.getNorth().toFixed(4) + "," + bb.getEast().toFixed(4) + "  |  " + location.href;
   setTimeout(function () { window.print(); }, 50);

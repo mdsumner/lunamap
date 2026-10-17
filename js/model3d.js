@@ -104,10 +104,10 @@
   // stitch basemap tiles covering a lon/lat box into one canvas; resolves {canvas, z, px0, py0} or null
   function drape(bounds, texPx) {
     var id = (document.getElementById("layer") || {}).value || "topo";
-    var b = BASEMAPS.filter(function (x) { return x.id === id; })[0] || BASEMAPS[0];
+    if (!basemapTileUrl(id, 1, 0, 0)) id = "topo";             // WMS services cannot be stitched; use theLIST
     var maxTex = renderer ? renderer.capabilities.maxTextureSize : 4096;
     texPx = Math.min(texPx, maxTex);
-    var z = Math.min(b.max || 18, 20), p0, p1;
+    var z = Math.min(basemapMaxZoom(id), 20), p0, p1;
     while (z > 1) {
       p0 = map.project(bounds.getNorthWest(), z); p1 = map.project(bounds.getSouthEast(), z);
       if ((Math.floor(p1.x / 256) - Math.floor(p0.x / 256) + 1) * 256 <= texPx &&
@@ -123,7 +123,7 @@
     for (var ty = ty0; ty <= ty1; ty++) for (var tx = tx0; tx <= tx1; tx++) jobs.push([tx, ty]);
     function worker() {
       if (next >= jobs.length) return Promise.resolve();
-      var t = jobs[next++], u = LIST + b.svc + "/MapServer/tile/" + z + "/" + t[1] + "/" + t[0];
+      var t = jobs[next++], u = basemapTileUrl(id, z, t[0], t[1]);
       return fetch(u, { mode: "cors", credentials: "omit" }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
         .then(function (bl) { return createImageBitmap(bl); })
         .then(function (im) { g.drawImage(im, (t[0] - tx0) * 256, (t[1] - ty0) * 256); ok++; })

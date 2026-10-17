@@ -72,8 +72,13 @@ and can keep maps for use without signal.</p>
   <li><b>Tap the map</b> to drop a pin. A panel opens with the location in several formats. Drag the pin to adjust it.</li>
   <li><b>Locate</b> shows your GPS position as a blue dot with an accuracy circle. Tap it again to stop.</li>
   <li><b>Pin me</b> drops the pin where you are standing.</li>
-  <li><b>Basemap</b> (the drop-down): Topographic, Emergency Services 1:50k map book, TASMAP raster, aerial photo,
-    hillshade, grey topographic.</li>
+  <li><b>Basemap</b> (the drop-down), in three groups. <b>theLIST (Tasmania)</b>: Topographic, Emergency Services 1:50k
+    map book, TASMAP raster, aerial photo, hillshade, grey topographic. <b>Worldwide</b>: OpenStreetMap, OpenTopoMap and
+    Sentinel-2 cloudless satellite imagery (2016), for zooming out past Tasmania or looking further afield; these come from
+    outside services and are not saved by Offline. <b>Your map services</b>: <b>+ Add a map service...</b> takes the address
+    of any tile service (a URL with {z}, {x} and {y}), a cached ArcGIS MapServer, or a WMS (you are asked for the layer
+    name). Added services are kept on this device only. With theLIST basemaps a faint world map shows underneath when
+    zoomed out, so you can still see where you are; the MGA grid hides below zoom 7.</li>
   <li><b>Layers</b> opens the map layers, grouped: Reference (Grid, Parcels), Infrastructure (Water, Gates, Stations)
     and Fire (Danger, Warnings, Fire history, Flammability). The button shows how many are on. Tap the map to close the box.</li>
   <li><b>Tools</b> opens Draw, Offline, 3D, Wind rose, Print and Help.</li>
@@ -162,7 +167,8 @@ nearest Bureau weather station (for example kunanyi / Mount Wellington or Hobart
 temperature and humidity every 10 to 30 minutes. Wind needs a connection; it is not saved for offline use.
 This is a quick guide only - always go by TFS and Bureau fire weather warnings.</p>
 <p><b>Wind rose</b> (in <b>Tools</b>, a proof of concept) shows which way the wind usually comes from around Fern Tree,
-Hobart and Grove, by season. Petals point where the wind comes from; their length is the share of hours and the shading
+Hobart and Grove, by season. It opens on spring and summer, mornings beside afternoons on the same scale - the pattern to
+watch is hot north-westerlies in the morning and a sea breeze from the south-east later in the day. Petals point where the wind comes from; their length is the share of hours and the shading
 is the mean wind speed. <b>Hot, dry afternoons</b> keeps only afternoon hours of 25 &deg;C or more with humidity of 30% or
 less - the fire weather that matters most. It is built from modelled hourly history (ECMWF IFS, about 9 km, 2017 on, via
 Open-Meteo) and refreshed yearly, so the mountain's sheltering and funnelling are smoothed out; the Bureau's measured

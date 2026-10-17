@@ -8,9 +8,12 @@
 // ---------------------------------------------------------------------------
 (function () {
   var ROSE_COL = ["#c6dbef", "#9ecae1", "#6baed6", "#3182bd", "#08519c"];
-  var SEASON_TXT = { summer: "Summer (Dec-Feb)", autumn: "Autumn (Mar-May)", winter: "Winter (Jun-Aug)",
-                     spring: "Spring (Sep-Nov)", year: "Year (all seasons)" };
-  var state = { point: 0, season: "summer", filter: "firewx" };
+  var SEASON_TXT = { warm: "Spring and summer (Sep-Feb)", spring: "Spring (Sep-Nov)", summer: "Summer (Dec-Feb)",
+                     autumn: "Autumn (Mar-May)", winter: "Winter (Jun-Aug)", year: "Year (all seasons)" };
+  var SEASON_BTN = { warm: "Spring+summer", spring: "Spring", summer: "Summer", autumn: "Autumn", winter: "Winter", year: "Year" };
+  var FILTER_BTN = [["ampm", "Mornings vs afternoons"], ["all", "All hours"], ["am", "Mornings"], ["pm", "Afternoons"],
+                    ["firewx", "Hot, dry afternoons"]];
+  var state = { point: 0, season: "warm", filter: "ampm" };
   var data = null, sheet = document.getElementById("rosesheet");
 
   function btns(el, items, cur, set) {
@@ -24,13 +27,17 @@
   }
   function pct(v) { return v >= 10 ? v.toFixed(0) : v.toFixed(1); }
 
-  function rose(r, dirs, bands) {
+  function maxPct(r) {
+    var n = r.n || 1;
+    return Math.max.apply(null, r.counts.map(function (row) { return 100 * row.reduce(function (a, b) { return a + b; }, 0) / n; })) || 1;
+  }
+  // one rose as SVG; maxp sets the scale, so two roses can share it
+  function rose(r, dirs, bands, maxp, maxw) {
     var S = 300, C = S / 2, R = 118, n = r.n || 1;
-    var tot = r.counts.map(function (row) { return row.reduce(function (a, b) { return a + b; }, 0); });
-    var maxp = Math.max.apply(null, tot.map(function (t) { return 100 * t / n; })) || 1;
+    maxp = maxp || maxPct(r);
     var step = maxp > 30 ? 10 : maxp > 12 ? 5 : maxp > 6 ? 2 : 1, top = Math.ceil(maxp / step) * step;
     var k = R / top, out = [];
-    out.push("<svg viewBox='0 0 " + S + " " + S + "' width='100%' style='max-width:320px;display:block;margin:0 auto' role='img'>");
+    out.push("<svg viewBox='0 0 " + S + " " + S + "' width='100%' style='max-width:" + (maxw || 320) + "px;display:block;margin:0 auto' role='img'>");
     for (var g = step; g <= top; g += step) {
       out.push("<circle cx='" + C + "' cy='" + C + "' r='" + (g * k).toFixed(1) + "' fill='none' stroke='#ddd' stroke-width='1'/>");
       out.push("<text x='" + (C + 3) + "' y='" + (C - g * k - 2).toFixed(1) + "' font-size='9' fill='#888'>" + g + "%</text>");
@@ -77,14 +84,27 @@
     var P = data.points[state.point] || data.points[0];
     btns(document.getElementById("rosepts"), data.points.map(function (p, i) { return [i, p.name]; }), state.point,
          function (v) { state.point = v; });
-    btns(document.getElementById("roseseason"), Object.keys(SEASON_TXT).map(function (k) { return [k, SEASON_TXT[k].split(" ")[0]]; }),
+    var seasons = Object.keys(SEASON_TXT).filter(function (k) { return P.roses[k]; });
+    if (!P.roses[state.season]) state.season = seasons[0];
+    var hasAm = !!P.roses[state.season].am;
+    var filters = FILTER_BTN.filter(function (f) { return hasAm || (f[0] !== "am" && f[0] !== "ampm"); });
+    if (!hasAm && (state.filter === "am" || state.filter === "ampm")) state.filter = "pm";
+    btns(document.getElementById("roseseason"), seasons.map(function (k) { return [k, SEASON_BTN[k]]; }),
          state.season, function (v) { state.season = v; });
-    btns(document.getElementById("rosefilter"), [["all", "All hours"], ["pm", "Afternoons"], ["firewx", "Hot, dry afternoons"]],
-         state.filter, function (v) { state.filter = v; });
-    var r = P.roses[state.season][state.filter], b = data.bands_kmh;
-    document.getElementById("rosetitle").textContent = P.name + " - " + SEASON_TXT[state.season] + ", " + data.filters[state.filter];
-    document.getElementById("rosesvg").innerHTML = rose(r, data.dirs, b);
-    document.getElementById("rosesum").textContent = summary(r, data.dirs);
+    btns(document.getElementById("rosefilter"), filters, state.filter, function (v) { state.filter = v; });
+    var S = P.roses[state.season], b = data.bands_kmh, svg = document.getElementById("rosesvg");
+    if (state.filter === "ampm") {
+      var m = Math.max(maxPct(S.am), maxPct(S.pm));
+      document.getElementById("rosetitle").textContent = P.name + " - " + SEASON_TXT[state.season] + ", mornings and afternoons (same scale)";
+      svg.innerHTML = "<div class='rosepair'>" + [["am", "Mornings 06:00-11:00"], ["pm", "Afternoons 13:00-18:00"]].map(function (f) {
+        return "<div><div class='small rosecap'>" + f[1] + "</div>" + rose(S[f[0]], data.dirs, b, m, 220) + "</div>"; }).join("") + "</div>";
+      document.getElementById("rosesum").textContent = "Mornings: " + summary(S.am, data.dirs) + " Afternoons: " + summary(S.pm, data.dirs);
+    } else {
+      var r = S[state.filter];
+      document.getElementById("rosetitle").textContent = P.name + " - " + SEASON_TXT[state.season] + ", " + data.filters[state.filter];
+      svg.innerHTML = rose(r, data.dirs, b);
+      document.getElementById("rosesum").textContent = summary(r, data.dirs);
+    }
     var keys = ["under " + b[0]].concat(b.slice(1).map(function (v, i) { return b[i] + "-" + v; }), [b[b.length - 1] + "+"]);
     document.getElementById("roselegend").innerHTML = "Mean wind, km/h: " + keys.map(function (t, i) {
       return "<span class='rkey'><i style='background:" + ROSE_COL[i] + "'></i>" + t + "</span>"; }).join(" ");
