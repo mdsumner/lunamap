@@ -94,6 +94,8 @@ var EXTERNAL = [
     attr: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors" },
   { id: "otm", name: "OpenTopoMap", url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", max: 17,
     attr: "&copy; OpenStreetMap contributors, SRTM; style &copy; <a href=\"https://opentopomap.org\">OpenTopoMap</a> (CC BY-SA)" },
+  { id: "esri", name: "Esri World Imagery", url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", max: 19,
+    attr: "Imagery &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community" },
   { id: "s2", name: "Sentinel-2 cloudless 2016", url: "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/{z}/{y}/{x}.jpg", max: 15,
     attr: "<a href=\"https://s2maps.eu\">Sentinel-2 cloudless</a> by EOX (contains modified Copernicus Sentinel data 2016)" }
 ];
@@ -123,7 +125,7 @@ function buildBasemapMenu() {
   });
   var g2 = group("Worldwide");
   EXTERNAL.forEach(function (b) {
-    if (!layers[b.id]) layers[b.id] = L.tileLayer(b.url, { maxNativeZoom: b.max, maxZoom: 19, attribution: b.attr, subdomains: "abc" });
+    if (!layers[b.id]) layers[b.id] = b.make ? b.make() : L.tileLayer(b.url, { maxNativeZoom: b.max, maxZoom: 19, attribution: b.attr, subdomains: "abc" });
     addOption(g2, b.id, b.name);
   });
   var g3 = group("Your map services");
@@ -139,7 +141,7 @@ function basemapTileUrl(id, z, x, y) {
   var b = BASEMAPS.filter(function (q) { return q.id === id; })[0];
   if (b) return LIST + b.svc + "/MapServer/tile/" + z + "/" + y + "/" + x;
   var e = EXTERNAL.filter(function (q) { return q.id === id; })[0] || (id.charAt(0) === "c" && customMaps[+id.slice(1)]);
-  if (!e || e.type === "wms") return null;
+  if (!e || e.type === "wms" || !e.url) return null;
   return e.url.replace("{s}", "abc".charAt((x + y) % 3)).replace("{z}", z).replace("{x}", x).replace("{y}", y);
 }
 function basemapMaxZoom(id) {

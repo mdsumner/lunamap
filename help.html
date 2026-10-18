@@ -73,8 +73,9 @@ and can keep maps for use without signal.</p>
   <li><b>Locate</b> shows your GPS position as a blue dot with an accuracy circle. Tap it again to stop.</li>
   <li><b>Pin me</b> drops the pin where you are standing.</li>
   <li><b>Basemap</b> (the drop-down), in three groups. <b>theLIST (Tasmania)</b>: Topographic, Emergency Services 1:50k
-    map book, TASMAP raster, aerial photo, hillshade, grey topographic. <b>Worldwide</b>: OpenStreetMap, OpenTopoMap and
-    Sentinel-2 cloudless satellite imagery (2016), for zooming out past Tasmania or looking further afield; these come from
+    map book, TASMAP raster, aerial photo, hillshade, grey topographic. <b>Worldwide</b>: OpenStreetMap, OpenTopoMap, Esri World Imagery,
+    Sentinel-2 cloudless satellite imagery (2016) and GEBCO 2026 (sea-floor depths and land heights worldwide, about 450 m
+    cells, drawn in your browser from a cloud-optimised GeoTIFF), for zooming out past Tasmania or looking further afield; these come from
     outside services and are not saved by Offline. <b>Your map services</b>: <b>+ Add a map service...</b> takes the address
     of any tile service (a URL with {z}, {x} and {y}), a cached ArcGIS MapServer, or a WMS (you are asked for the layer
     name). Added services are kept on this device only. With theLIST basemaps a faint world map shows underneath when
@@ -245,7 +246,7 @@ move whole shapes, and delete. While drawing, tapping the map does not drop the 
     start, end, lowest and highest heights, total climb and descent, and the steepest grade over about 20 m.
     Touch the profile to show that spot on the map. <b>Profile CSV</b> saves the samples. <b>Elevation</b> (points) gives the
     height at a point. Heights are metres above sea level (AHD). Long lines are sampled more coarsely (up to 500 samples).
-    Needs signal. Elevation: Tasmania 2 m DEM, Mineral Resources Tasmania / theLIST (CC BY 3.0 AU), via Source Cooperative.</li>
+    Needs signal. Elevation: Tasmania 2 m DEM, Mineral Resources Tasmania / theLIST (CC BY 3.0 AU), via Source Cooperative; outside it, GEBCO 2026.</li>
   <li>Shapes are saved on this device and come back next time you open the map. Nothing is uploaded.</li>
   <li><b>Export</b> as GeoJSON, KML (Google Earth, Avenza) or GPX (GPS units; polygons become closed tracks).</li>
   <li><b>Import</b> GeoJSON, KML or GPX files - for example a track from someone's GPS. Names in the file become labels.</li>
@@ -319,7 +320,8 @@ Found a problem or have an idea? <a href="https://github.com/mdsumner/lunamap/is
   Stations, fire danger, TasALERT warnings and fire history via theLIST emergency management data.
   Vegetation flammability: TASVEG 4.0 Fire Attributes, Department of Natural Resources and Environment Tasmania, via theLIST.
   Elevation: Tasmania 2 m DEM, Mineral Resources Tasmania / theLIST (CC BY 3.0 AU), via Source Cooperative.
-  Place list for BOM links &copy; OpenStreetMap contributors (ODbL). Weather station list &copy; Bureau of Meteorology.
+  Place list for BOM links &copy; OpenStreetMap contributors (ODbL). Worldwide basemaps: OpenStreetMap contributors, OpenTopoMap,
+  Esri and its data partners, EOX (Sentinel-2 cloudless), GEBCO Compilation Group (2026) GEBCO 2026 Grid. Weather station list &copy; Bureau of Meteorology.
   Wind forecast by Open-Meteo.com (CC BY 4.0).
   Built with Leaflet, proj4js, Leaflet-Geoman, geotiff.js and togeojson.
   <a href="https://github.com/mdsumner/lunamap">Source code</a>.

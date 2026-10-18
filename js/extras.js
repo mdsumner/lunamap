@@ -13,8 +13,14 @@ function lookupElevation(ll, seq) {
   return loadScript(EXTRA_GEOTIFF).then(function () { return loadScript("js/profile.js"); }).then(function () {
     var P = window.lunamapProfile, s = P.samplePoints([[ll.lng, ll.lat]], 2);
     return P.sampleDEM(s.pts, 2).then(function () { return s.pts[0].z; });
-  }).then(function (z) {
+  }).catch(function () { return null; }).then(function (z) {
     if (seq !== extraSeq) return;
+    if (z === null && typeof gebcoHeight === "function")           // outside the Tasmania DEM: global GEBCO grid
+      return gebcoHeight(ll.lng, ll.lat).then(function (g) {
+        if (seq !== extraSeq) return;
+        extraInfo.elev = g === null ? "(outside the elevation models)" :
+          (g < 0 ? "sea floor " + (-g) + " m below sea level" : g + " m") + " (GEBCO 2026, about 450 m cells)";
+      });
     extraInfo.elev = z === null ? "(outside the elevation model)" : z.toFixed(1) + " m (AHD)";
   }).catch(function () { if (seq === extraSeq) extraInfo.elev = null; });
 }
