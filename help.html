@@ -82,7 +82,8 @@ and can keep maps for use without signal.</p>
     zoomed out, so you can still see where you are; the MGA grid hides below zoom 7.</li>
   <li><b>Layers</b> opens the map layers, grouped: Reference (Grid, Parcels), Infrastructure (Water, Gates, Stations)
     and Fire (Danger, Warnings, Fire history, Flammability). The button shows how many are on. Tap the map to close the box.</li>
-  <li><b>Tools</b> opens Draw, Offline, 3D, Macquarie Is., Wind rose, Print and Help. <b>Macquarie Is.</b> (or typing
+  <li><b>3D</b> (top bar) switches between the flat map and a tilted 3D view of the same place.</li>
+  <li><b>Tools</b> opens Draw, Offline, 3D model, Macquarie Is., Wind rose, Print and Help. <b>Macquarie Is.</b> (or typing
     "Macquarie", "Macca" or "MI station" in Go to) jumps to Macquarie Island on satellite imagery, since theLIST maps stop
     at Tasmania; coordinates and grid references there are in UTM zone 57.</li>
 </ul>
@@ -272,7 +273,13 @@ that area, main roads and fire stations for 25 km around it, so <b>Route</b>, <b
 <div class="note">Test it before you rely on it: save your area, switch on flight mode, and reopen the map.</div>
 
 <h2 id="model3d">3D view</h2>
-<p><b>Tools &gt; 3D</b> builds a 3D model of the area in view: a round patch of terrain centred on the middle of the map,
+<p>The <b>3D</b> button on the top bar tilts the map you are looking at into 3D: same place, same basemap, draped over the
+terrain, and you can keep panning and zooming. Drag with two fingers (or right-drag) to tilt and turn; the compass button
+resets north and the mountain button turns the terrain off and on. Over Tasmania the terrain comes from the 2 m elevation
+model, read straight from its cloud file as you move; elsewhere (Macquarie Island, the mainland) it comes from the free
+AWS Terrain Tiles, about 30 m. Heights are exaggerated 1.5 times. The pin, your drawings and a route show in 3D, and
+tapping the 3D map moves the pin. Tap <b>2D</b> to go back to the flat map where you left off.</p>
+<p><b>Tools &gt; 3D model</b> builds a 3D model of the area in view: a round patch of terrain centred on the middle of the map,
 just big enough to take in the whole of the largest square that fits on screen. Heights come from the Tasmania 2 m DEM and
 the current basemap is draped over it; the pin shows as a red marker. Drag to turn it, pinch or scroll to zoom, two fingers
 (or right-drag) to pan. <b>Height</b> sets the exaggeration (1x is true scale; 1.5x is the default) and the N disc shows
