@@ -45,6 +45,9 @@ jobs:
               name = a.get("description") or a.get("stn-name") or wmo
               h = a.get("stn-height")
               rows[wmo] = [int(wmo), name, round(lat, 4), round(lon, 4), float(h) if h else None, a.get("bom-id")]
+          # Macquarie Island is not in the Tasmanian product; add it from its own observations page
+          # (bom.gov.au/products/IDT60801/IDT60801.94998.shtml: -54.50, 158.94, 6 m, station 300004)
+          rows.setdefault("94998", [94998, "Macquarie Island", -54.5, 158.94, 6.0, "300004"])
           rows = sorted(rows.values())
           if len(rows) < 20:
               sys.exit("only %d stations - not updating" % len(rows))
