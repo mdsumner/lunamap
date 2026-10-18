@@ -315,7 +315,105 @@ function setDraw(on) {
   }
 }
 window.drawBusy = function () { return drawOn; };
-window.toggleDraw = function () { setDraw(!drawOn); };
+window.toggleDraw = function () { setDraw(!drawOn); updateSnap(); };
+
+// ---- snapping ------------------------------------------------------------
+// Geoman snaps to drawn shapes, and (opt-in mode) to any layer with snapIgnore: false.
+// The chosen target is copied into snapGroup as faint, non-interactive geometry for
+// the area in view, rebuilt as the map moves: MGA grid crossings (lines shown as a
+// guide), theLIST roads and tracks, parcel boundaries, or the
+// points shown by Water / Gates / Stations.
+var snapGroup = L.layerGroup().addTo(map), snapMode = "drawn", snapSeq = 0, snapCanvas = L.canvas({ padding: 0.2 });
+var SNAP_STYLE = {
+  grid: { color: "#0d47a1", weight: 1, opacity: 0.35, dashArray: "2,4" },
+  cross: { radius: 2, color: "#0d47a1", weight: 1, opacity: 0.6, fillOpacity: 0.6 },
+  roads: { color: "#ff6f00", weight: 2, opacity: 0.45 },
+  parcels: { color: "#424242", weight: 1, opacity: 0.6, fill: false },
+  points: { radius: 6, color: "#ff6f00", weight: 2, fill: false, opacity: 0.8 }
+};
+function snapOpts(st) { return L.extend({ interactive: false, snapIgnore: false, bubblingMouseEvents: false }, st); }
+function snapMsg(t) { var el = document.getElementById("dsnapmsg"); if (el) el.textContent = t || ""; }
+function refreshActiveSnap() {
+  var s = map.pm.Draw.getActiveShape && map.pm.Draw.getActiveShape();
+  if (s && map.pm.Draw[s] && map.pm.Draw[s]._createSnapList) map.pm.Draw[s]._createSnapList();
+}
+function snapGrid(s) {
+  var c = map.getCenter(), zone = Math.floor((c.lng + 180) / 6) + 1, def = mgaDefs(zone).mga2020;
+  var b = map.getBounds().pad(0.2), e0 = Infinity, e1 = -Infinity, n0 = Infinity, n1 = -Infinity;
+  [[b.getWest(), b.getSouth()], [b.getEast(), b.getSouth()], [b.getEast(), b.getNorth()], [b.getWest(), b.getNorth()]].forEach(function (q) {
+    var m = proj4("EPSG:4326", def, q); e0 = Math.min(e0, m[0]); e1 = Math.max(e1, m[0]); n0 = Math.min(n0, m[1]); n1 = Math.max(n1, m[1]);
+  });
+  e0 = Math.floor(e0 / s) * s; n0 = Math.floor(n0 / s) * s; e1 = Math.ceil(e1 / s) * s; n1 = Math.ceil(n1 / s) * s;
+  var ne = Math.round((e1 - e0) / s) + 1, nn = Math.round((n1 - n0) / s) + 1;
+  if (ne * nn > 5000) return "Too many " + (s >= 1000 ? s / 1000 + " km" : s + " m") + " grid lines here - zoom in to snap to this grid";
+  function ll(E, N) { var g = proj4(def, "EPSG:4326", [E, N]); return [g[1], g[0]]; }
+  var i, j, line;
+  // lines are drawn for orientation only; the crossings are what vertices snap to
+  var guide = L.extend({}, SNAP_STYLE.grid, { interactive: false, snapIgnore: true });
+  for (i = 0; i < ne; i++) { line = []; for (j = 0; j < nn; j++) line.push(ll(e0 + i * s, n0 + j * s)); snapGroup.addLayer(L.polyline(line, guide)); }
+  for (j = 0; j < nn; j++) { line = []; for (i = 0; i < ne; i++) line.push(ll(e0 + i * s, n0 + j * s)); snapGroup.addLayer(L.polyline(line, guide)); }
+  var cross = snapOpts(L.extend({ renderer: snapCanvas }, SNAP_STYLE.cross));
+  for (i = 0; i < ne; i++) for (j = 0; j < nn; j++) snapGroup.addLayer(L.circleMarker(ll(e0 + i * s, n0 + j * s), cross));
+  // reach far enough that every spot is within range of a crossing (half the diagonal), within reason
+  var px = map.latLngToContainerPoint(ll(e0, n0)).distanceTo(map.latLngToContainerPoint(ll(e0 + s, n0)));
+  map.pm.setGlobalOptions({ snapDistance: Math.max(20, Math.min(60, Math.ceil(px * 0.72))) });
+  return "Snapping to MGA zone " + zone + " grid crossings every " + (s >= 1000 ? s / 1000 + " km" : s + " m");
+}
+function viewBox(pad) { var b = map.getBounds().pad(pad); return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]; }
+function snapRoads(seq) {
+  if (map.getZoom() < 13) return Promise.resolve("Zoom in further to snap to roads");
+  var v = viewBox(0.2);
+  return fetchSegments(8, v[0], v[1], v[2], v[3], 0).then(function (fs) {
+    if (seq !== snapSeq) return;
+    fs.forEach(function (f) { ((f.geometry && f.geometry.paths) || []).forEach(function (p) {
+      snapGroup.addLayer(L.polyline(p.map(function (c) { return [c[1], c[0]]; }), snapOpts(SNAP_STYLE.roads))); }); });
+    return "Snapping to " + fs.length + " road and track pieces in view";
+  });
+}
+function snapParcels(seq) {
+  if (map.getZoom() < 16) return Promise.resolve("Zoom in further (street level) to snap to parcel boundaries");
+  var v = viewBox(0.1);
+  var url = CAD + "/0/query?geometry=" + v.map(function (x) { return x.toFixed(6); }).join(",") +
+    "&geometryType=esriGeometryEnvelope&inSR=4326&outSR=4326&spatialRel=esriSpatialRelIntersects&outFields=OBJECTID" +
+    "&returnGeometry=true&geometryPrecision=7&f=geojson";
+  return fetch(url).then(function (r) { return r.json(); }).then(function (gj) {
+    if (seq !== snapSeq) return;
+    var n = 0;
+    (gj.features || []).forEach(function (f) {
+      var g = f.geometry; if (!g) return;
+      var polys = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
+      polys.forEach(function (rings) { rings.forEach(function (r) {
+        snapGroup.addLayer(L.polyline(r.map(function (c) { return [c[1], c[0]]; }), snapOpts(SNAP_STYLE.parcels))); n++; }); });
+    });
+    return "Snapping to " + (gj.features || []).length + " parcels in view";
+  });
+}
+function snapPoints() {
+  var n = 0;
+  Object.keys(OVERLAYS).forEach(function (k) {
+    var o = OVERLAYS[k]; if (!o.on) return;
+    o.layers.forEach(function (w) { w.group.eachLayer(function (l) {
+      if (l.getLatLng) { snapGroup.addLayer(L.circleMarker(l.getLatLng(), snapOpts(SNAP_STYLE.points))); n++; }
+      else if (l.getLatLngs) { snapGroup.addLayer(L.polyline(l.getLatLngs(), snapOpts(SNAP_STYLE.grid))); n++; }
+    }); });
+  });
+  return n ? "Snapping to " + n + " map points in view" : "Turn on Water, Gates or Stations (Layers) to snap to their points";
+}
+function updateSnap() {
+  var seq = ++snapSeq;
+  snapGroup.clearLayers(); snapMsg("");
+  map.pm.setGlobalOptions({ snappable: snapMode !== "off", snapDistance: 20 });
+  if (!drawOn || snapMode === "drawn" || snapMode === "off") { refreshActiveSnap(); return; }
+  var r;
+  if (snapMode.charAt(0) === "g") r = Promise.resolve(snapGrid(+snapMode.slice(1)));
+  else if (snapMode === "roads") r = snapRoads(seq);
+  else if (snapMode === "parcels") r = snapParcels(seq);
+  else r = Promise.resolve(snapPoints());
+  r.then(function (m) { if (seq === snapSeq) { snapMsg(m); refreshActiveSnap(); } })
+   .catch(function (e) { if (seq === snapSeq) snapMsg("Snap layer unavailable: " + e.message); });
+}
+document.getElementById("dsnap").addEventListener("change", function (e) { snapMode = e.target.value; updateSnap(); });
+map.on("moveend", function () { if (drawOn && snapMode !== "drawn" && snapMode !== "off") updateSnap(); });
 
 map.on("pm:create", function (e) {
   var layer = e.layer;

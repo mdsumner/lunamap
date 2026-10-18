@@ -81,7 +81,9 @@ and can keep maps for use without signal.</p>
     zoomed out, so you can still see where you are; the MGA grid hides below zoom 7.</li>
   <li><b>Layers</b> opens the map layers, grouped: Reference (Grid, Parcels), Infrastructure (Water, Gates, Stations)
     and Fire (Danger, Warnings, Fire history, Flammability). The button shows how many are on. Tap the map to close the box.</li>
-  <li><b>Tools</b> opens Draw, Offline, 3D, Wind rose, Print and Help.</li>
+  <li><b>Tools</b> opens Draw, Offline, 3D, Macquarie Is., Wind rose, Print and Help. <b>Macquarie Is.</b> (or typing
+    "Macquarie", "Macca" or "MI station" in Go to) jumps to Macquarie Island on satellite imagery, since theLIST maps stop
+    at Tasmania; coordinates and grid references there are in UTM zone 57.</li>
 </ul>
 
 <h2 id="panel">The pin panel</h2>
@@ -168,7 +170,9 @@ temperature and humidity every 10 to 30 minutes. Wind needs a connection; it is 
 This is a quick guide only - always go by TFS and Bureau fire weather warnings.</p>
 <p><b>Wind rose</b> (in <b>Tools</b>, a proof of concept) shows which way the wind usually comes from around Fern Tree,
 Hobart and Grove, by season. It opens on spring and summer, mornings beside afternoons on the same scale - the pattern to
-watch is hot north-westerlies in the morning and a sea breeze from the south-east later in the day. Petals point where the wind comes from; their length is the share of hours and the shading
+watch is hot north-westerlies in the morning and a sea breeze from the south-east later in the day. <b>Float on map</b>
+keeps a small rose in the corner of the map for whichever point is nearest the middle of the view, with the season and hours
+you picked; tap it to open the full panel. Petals point where the wind comes from; their length is the share of hours and the shading
 is the mean wind speed. <b>Hot, dry afternoons</b> keeps only afternoon hours of 25 &deg;C or more with humidity of 30% or
 less - the fire weather that matters most. It is built from modelled hourly history (ECMWF IFS, about 9 km, 2017 on, via
 Open-Meteo) and refreshed yearly, so the mountain's sheltering and funnelling are smoothed out; the Bureau's measured
@@ -230,6 +234,11 @@ so you can check your reading.</p>
 <p><b>Tools</b> then <b>Draw</b> opens the drawing tools on the left: line, polygon and point, then edit (move vertices),
 move whole shapes, and delete. While drawing, tapping the map does not drop the pin.</p>
 <ul>
+  <li><b>Snap to</b> (in the Draw panel) chooses what new points and vertices lock onto: other drawings (the default),
+    the MGA grid crossings every 1 km, 100 m or 10 m, theLIST roads and tracks (from zoom 13), parcel boundaries (street
+    level), or the map points shown by Water, Gates and Stations - or nothing, for free drawing. The chosen layer shows
+    faintly while you draw and refreshes as you move the map. Handy for laying out grid-aligned search areas, or tracing a
+    road or a property boundary.</li>
   <li>Tap a shape to select it: the Draw panel shows its length, or area and perimeter (points show coordinates and grid ref),
     and a <b>Label</b> field. Labels show on the map.</li>
   <li><b>Profile</b> (lines) reads the Tasmania 2 m elevation model along the line and draws an elevation profile:

@@ -105,6 +105,7 @@
       svg.innerHTML = rose(r, data.dirs, b);
       document.getElementById("rosesum").textContent = summary(r, data.dirs);
     }
+    drawFloat();
     var keys = ["under " + b[0]].concat(b.slice(1).map(function (v, i) { return b[i] + "-" + v; }), [b[b.length - 1] + "+"]);
     document.getElementById("roselegend").innerHTML = "Mean wind, km/h: " + keys.map(function (t, i) {
       return "<span class='rkey'><i style='background:" + ROSE_COL[i] + "'></i>" + t + "</span>"; }).join(" ");
@@ -113,6 +114,41 @@
       P.cell_lat + ", " + P.cell_lon +
       "), via Open-Meteo.com. Real wind on slopes and in gullies can differ a lot.";
   }
+
+  // ---- floating rose: fixed in a corner of the map, showing the rose (current season and
+  // hours) for the model point nearest the middle of the map; it follows panning in content,
+  // not in position. Tap it to open the full sheet.
+  var floatOn = false, floatEl = null;
+  function nearestPoint() {
+    var c = map.getCenter(), best = -1, bd = Infinity;
+    data.points.forEach(function (p, i) { var d = map.distance(c, [p.lat, p.lon]); if (d < bd) { bd = d; best = i; } });
+    return { i: best, d: bd };
+  }
+  function drawFloat() {
+    if (!floatOn || !data) return;
+    if (!floatEl) {
+      floatEl = document.createElement("div"); floatEl.id = "rosefloat"; floatEl.title = "Wind rose - tap for details";
+      floatEl.onclick = function () { window.openWindRose(); };
+      document.body.appendChild(floatEl);
+    }
+    var np = nearestPoint();
+    if (np.d > 60000) { floatEl.innerHTML = "<div class='rfhead'>Wind rose</div><div class='rfnote'>No rose this far from Fern Tree</div>"; return; }
+    var P = data.points[np.i], S = P.roses[state.season] || P.roses.year, b = data.bands_kmh, html;
+    if (state.filter === "ampm" && S.am) {
+      var m = Math.max(maxPct(S.am), maxPct(S.pm));
+      html = "<div class='rfpair'><div><div class='rfcap'>AM</div>" + rose(S.am, data.dirs, b, m, 92) + "</div><div><div class='rfcap'>PM</div>" +
+             rose(S.pm, data.dirs, b, m, 92) + "</div></div>";
+    } else html = rose(S[state.filter] || S.all, data.dirs, b, null, 120);
+    floatEl.innerHTML = "<div class='rfhead'>" + P.name + (np.d > 3000 ? " (" + Math.round(np.d / 1000) + " km)" : "") + "</div>" + html +
+      "<div class='rfnote'>" + SEASON_BTN[state.season] + (state.filter === "ampm" ? "" : ", " + data.filters[state.filter].split(" (")[0]) + "</div>";
+  }
+  function setFloat(on) {
+    floatOn = on;
+    document.getElementById("rosefloatbtn").textContent = on ? "Remove from map" : "Float on map";
+    if (on) drawFloat(); else if (floatEl) { floatEl.remove(); floatEl = null; }
+  }
+  map.on("moveend", drawFloat);
+  document.getElementById("rosefloatbtn").onclick = function () { setFloat(!floatOn); if (floatOn) sheet.style.display = "none"; };
 
   window.openWindRose = function () {
     sheet.style.display = "block";

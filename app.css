@@ -80,6 +80,15 @@ html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
 .seg { display:flex; flex-wrap:wrap; gap:4px; margin:4px 0; }
 .seg button { font-size:12px; padding:4px 8px; border:1px solid #bbb; border-radius:6px; background:#fff; }
 .seg button.on { background:#e3f2fd; border-color:#1565c0; }
+#rosefloat { position:absolute; right:10px; bottom:60px; z-index:900; background:rgba(255,255,255,.92); border:1px solid #999;
+  border-radius:10px; padding:4px 6px; box-shadow:0 1px 6px rgba(0,0,0,.25); cursor:pointer; max-width:210px; }
+#rosefloat svg text[font-size='9'] { display:none; }
+#rosefloat svg text { font-size:20px; }
+.rfhead { font-size:11px; font-weight:600; text-align:center; color:#333; }
+.rfnote { font-size:10px; color:#666; text-align:center; }
+.rfpair { display:flex; gap:2px; }
+.rfcap { font-size:10px; font-weight:600; text-align:center; color:#555; }
+@media print { #rosefloat { display:block !important; } }
 .rosepair { display:flex; gap:6px; }
 .rosepair > div { flex:1; min-width:0; }
 .rosecap { text-align:center; font-weight:600; }

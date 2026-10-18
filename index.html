@@ -45,6 +45,7 @@
     <button id="draw" title="Draw points, lines and polygons; export or import">Draw</button>
     <button id="offline" title="Save maps for use without signal">Offline</button>
     <button id="model3d" title="3D model of the area in view">3D</button>
+    <button id="macca" title="Go to Macquarie Island" onclick="setMenu(null); goToPlace('Macquarie Island')">Macquarie Is.</button>
     <button id="windrose" title="Seasonal wind roses around Fern Tree (modelled history)">Wind rose</button>
     <button id="print" title="Print or save this view as PDF">Print</button>
     <button id="help" title="How to use this map" onclick="location.href='help.html'">Help</button>
@@ -99,6 +100,7 @@
   <p id="roselegend" class="small"></p>
   <p id="rosesum" class="small"></p>
   <p id="rosenote" class="small" style="color:#666"></p>
+  <div class="acts"><button id="rosefloatbtn" type="button" title="Keep a small rose in the corner of the map for the nearest point">Float on map</button></div>
   <p class="small">Measured roses (9 am and 3 pm) for Hobart are on the
     <a href="https://www.bom.gov.au/climate/averages/wind/selection_map.shtml" target="_blank" rel="noopener">Bureau's wind rose pages</a>.</p>
 </div>
@@ -119,6 +121,17 @@
       <div id="dprofcredit" class="small"></div>
     </div>
   </div>
+  <label class="small dfield">Snap to <select id="dsnap">
+    <option value="drawn">Other drawings</option>
+    <option value="g1000">MGA grid, 1 km</option>
+    <option value="g100">MGA grid, 100 m</option>
+    <option value="g10">MGA grid, 10 m</option>
+    <option value="roads">Roads and tracks</option>
+    <option value="parcels">Parcel boundaries</option>
+    <option value="points">Map points (water, gates, stations)</option>
+    <option value="off">Nothing (free drawing)</option>
+  </select></label>
+  <div id="dsnapmsg" class="small"></div>
   <div id="dcount" class="small"></div>
   <div class="acts">
     <button id="dexp-geojson">GeoJSON</button><button id="dexp-kml">KML</button><button id="dexp-gpx">GPX</button>

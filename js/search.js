@@ -230,6 +230,40 @@ function showResults(res) {
   resultsEl.style.display = "block"; fitControls();
 }
 
+// Named places outside theLIST's coverage, found by name in Go to (and from Tools).
+// theLIST basemaps stop at Tasmania, so these switch to a worldwide basemap.
+var PLACES = [
+  { re: /^\s*(macquarie(\s+is(land|\.)?)?|macca|mi\s+station)\s*$/i, name: "Macquarie Island",
+    bounds: [[-54.79, 158.80], [-54.48, 158.98]], base: "s2",
+    note: "Macquarie Island (station at the isthmus, north end). theLIST maps stop at Tasmania, so the basemap is satellite; " +
+          "grid references here are UTM zone 57.",
+    marker: [-54.5, 158.94], label: "Macquarie Island station", bomWmo: 94998,
+    links: [["Station webcam (AAD)", "https://www.antarctica.gov.au/antarctic-operations/webcams/macquarie-island/"],
+            ["Daily weather observations (BOM)", "https://www.bom.gov.au/climate/dwo/IDCJDW9204.latest.shtml"],
+            ["About the station (AAD)", "https://www.antarctica.gov.au/living-and-working/stations/macquarie-island/"]] }
+];
+// a marker for each named place, with its links; the BOM latest-observations link uses the
+// station list (data/bom-stations-tas.json) when it has the station
+PLACES.forEach(function (pl) {
+  if (!pl.marker) return;
+  var icon = L.divIcon({ className: "", iconSize: [18, 18], iconAnchor: [9, 9],
+    html: "<div style='width:14px;height:14px;border-radius:50%;background:#1565c0;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.5)'></div>" });
+  var m = L.marker(pl.marker, { icon: icon, title: pl.label, zIndexOffset: 300 }).addTo(map);
+  m.bindPopup(function () {
+    var html = "<b>" + pl.label + "</b><br>" + pl.links.map(function (l) {
+      return "<a href='" + l[1] + "' target='_blank' rel='noopener'>" + l[0] + "</a>"; }).join("<br>");
+    if (pl.bomWmo) html += "<br><a href='https://www.bom.gov.au/products/IDT60801/IDT60801." + pl.bomWmo +
+      ".shtml' target='_blank' rel='noopener'>Latest observations (BOM)</a>";
+    return html;
+  });
+});
+function showPlace(pl) {
+  hideResults(); document.getElementById("q").blur();
+  if (isListBase(sel.value)) setLayer(pl.base);
+  map.fitBounds(pl.bounds);
+  toast(pl.note);
+}
+window.goToPlace = function (name) { var pl = PLACES.filter(function (x) { return x.name === name; })[0]; if (pl) showPlace(pl); };
 document.getElementById("goto").addEventListener("submit", function (ev) {
   ev.preventDefault();
   var q = document.getElementById("q"), r = null;
@@ -246,6 +280,8 @@ document.getElementById("goto").addEventListener("submit", function (ev) {
     }).catch(function (e) { toast(bname + " search failed: " + e.message); });
     return;
   }
+  var place = PLACES.filter(function (x) { return x.re.test(q.value); })[0];
+  if (place) { showPlace(place); return; }
   try { r = parseLocation(q.value); } catch (e) { r = null; }
   if (r) { goTo(r.latlng, r.kind, 15); return; }
   if (!/[A-Za-z]{2,}/.test(q.value)) { toast("Could not read that location"); return; }
