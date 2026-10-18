@@ -1,4 +1,5 @@
-# Harvest the list of Bureau of Meteorology weather stations in Tasmania (WMO id,
+# Harvest the list of Bureau of Meteorology weather stations in Tasmania and on
+# Macquarie Island (WMO id,
 # name, position, height) from the Bureau's public observations product IDT60920.
 # Only the station list is kept, no observations: the map uses it to link a pin to
 # the nearest station's latest observations page on bom.gov.au
@@ -38,7 +39,8 @@ jobs:
               if not wmo or not lat or not lon:
                   continue
               lat, lon = float(lat), float(lon)
-              if lat < -44.5:          # Tasmania only (drops Macquarie Island)
+              macca = -55.0 < lat < -54.3 and 158.7 < lon < 159.1
+              if lat < -44.5 and not macca:   # Tasmania, plus Macquarie Island
                   continue
               name = a.get("description") or a.get("stn-name") or wmo
               h = a.get("stn-height")
