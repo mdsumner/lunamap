@@ -946,7 +946,7 @@
    1
   ]
  ],
- "rows_with_place_name": 948597,
+ "rows_with_place_name_any_column": 948597,
  "top_place_names": [
   [
    "hobart",
@@ -1670,5 +1670,1525 @@
    "SUBJECT": "",
    "TOPIC_FACET_NEW": ""
   }
- ]
+ ],
+ "by_format": {
+  "file/volume": {
+   "rows": 698496,
+   "open_access": 555989,
+   "title_has_place": 177626,
+   "title_place_only_ambiguous": 17334,
+   "top_title_places": [
+    [
+     "hobart",
+     11533
+    ],
+    [
+     "launceston",
+     9578
+    ],
+    [
+     "glenorchy",
+     8712
+    ],
+    [
+     "moonah",
+     6628
+    ],
+    [
+     "forest",
+     4692
+    ],
+    [
+     "claremont",
+     3592
+    ],
+    [
+     "burnie",
+     3513
+    ],
+    [
+     "devonport",
+     2882
+    ],
+    [
+     "sandy bay",
+     2290
+    ],
+    [
+     "new town",
+     2022
+    ],
+    [
+     "montagu",
+     1972
+    ],
+    [
+     "ulverstone",
+     1954
+    ],
+    [
+     "new norfolk",
+     1928
+    ],
+    [
+     "scottsdale",
+     1907
+    ],
+    [
+     "cygnet",
+     1874
+    ],
+    [
+     "beaconsfield",
+     1850
+    ],
+    [
+     "gordon",
+     1742
+    ],
+    [
+     "deloraine",
+     1712
+    ],
+    [
+     "zeehan",
+     1657
+    ],
+    [
+     "franklin",
+     1634
+    ],
+    [
+     "sorell",
+     1631
+    ],
+    [
+     "lilydale",
+     1587
+    ],
+    [
+     "swanston",
+     1570
+    ],
+    [
+     "howrah",
+     1543
+    ],
+    [
+     "rosetta",
+     1502
+    ],
+    [
+     "lindisfarne",
+     1409
+    ],
+    [
+     "cornwall",
+     1400
+    ],
+    [
+     "grove",
+     1392
+    ],
+    [
+     "penguin",
+     1375
+    ],
+    [
+     "wynyard",
+     1369
+    ],
+    [
+     "george town",
+     1335
+    ],
+    [
+     "bellerive",
+     1317
+    ],
+    [
+     "latrobe",
+     1310
+    ],
+    [
+     "berriedale",
+     1271
+    ],
+    [
+     "west moonah",
+     1268
+    ],
+    [
+     "stanley",
+     1258
+    ],
+    [
+     "hamilton",
+     1256
+    ],
+    [
+     "ringarooma",
+     1254
+    ],
+    [
+     "risdon",
+     1140
+    ],
+    [
+     "longford",
+     1131
+    ]
+   ],
+   "keywords": [
+    [
+     "road",
+     56465
+    ],
+    [
+     "street",
+     33093
+    ],
+    [
+     "school",
+     11449
+    ],
+    [
+     "parish of",
+     10309
+    ],
+    [
+     "lot ",
+     8641
+    ],
+    [
+     "bridge",
+     8324
+    ],
+    [
+     "county of",
+     8311
+    ],
+    [
+     "railway",
+     8275
+    ],
+    [
+     "station",
+     4390
+    ],
+    [
+     "fire",
+     4106
+    ],
+    [
+     "subdivision",
+     3949
+    ],
+    [
+     "survey",
+     3283
+    ],
+    [
+     "town of",
+     2100
+    ],
+    [
+     "jetty",
+     1138
+    ],
+    [
+     "plan of",
+     476
+    ],
+    [
+     "land district",
+     394
+    ],
+    [
+     "allotment",
+     238
+    ],
+    [
+     "aerial",
+     142
+    ],
+    [
+     "bushfire",
+     79
+    ],
+    [
+     "map of",
+     52
+    ]
+   ],
+   "sample_titles": [
+    "Phillips Patricia Dawn Town Land A8735 P/35  [1965] https://stors.tas.gov.au/AI/LSD347/1/3435",
+    "8/5/127 M V Joseph Banks-Fire-Insurance Claim.  [1976-1977] https://stors.tas.gov.au/AI/AB984/1/948",
+    "81/10 Beaconsfield Hospital-inspection report hospital-Sister Widdicombe.  [1946] https://stors.tas.gov.au/AI/HSD6/1/349",
+    "8285R/11 Claude Cook, Montagu, Granville, 50 Acres  [1929] https://stors.tas.gov.au/AI/LSD180/1/2834",
+    "84101-84250  [1866-1966|1862] https://stors.tas.gov.au/AI/LTO26/1/597",
+    "870 Park St     (13902)  [1954] https://stors.tas.gov.au/AI/AE417/2/2623",
+    "89/9/8A Hospital Administration-Benefits-Pharmaceutical-Claims  [1962-1965] https://stors.tas.gov.au/AI/HSD6/1/5879",
+    "9/29 - Lots 47 & 48 Yambacoona Estate No.1, King Island  [1929-1960] https://stors.tas.gov.au/AI/AB17/1/792",
+    "9121  [1991] https://stors.tas.gov.au/AI/AF894/2/17121",
+    "Disputes Committee - Paul Lennon  [1985-1999] https://stors.tas.gov.au/AI/NS3664/2/20",
+    "Dun-Elm  [1979] https://stors.tas.gov.au/AI/HSD194/1/1572",
+    "E5/2/5(1), E5/2/5(2), E5/2/5(3), E5/2/6, E5/2/7, E5/2/8(1).  [1944-1978] https://stors.tas.gov.au/AI/AD43/1/106",
+    "EL 9/78-Tasminex NL.  [1978-1979] https://stors.tas.gov.au/AI/AC198/1/1489",
+    "ET 30-14  Creston Subdivision - Premier Homes - McKellar Road  [1965-1984] https://stors.tas.gov.au/AI/LCC27/1/432",
+    "Examination certificate - Joan Stephenson  [1821] https://stors.tas.gov.au/AI/LMSS487/1/322",
+    "Farm account book - Cash book  [1923-1969] https://stors.tas.gov.au/AI/NS2354/1/5",
+    "File 1420 (vol 1)-Organisations-State-Tas Trotting Control Board  [1982-1984] https://stors.tas.gov.au/AI/AD763/1/719",
+    "Talire School for Retarded Children.  [1982-1983] https://stors.tas.gov.au/AI/AB780/1/936",
+    "Tassell-Taylor, K.  [1985] https://stors.tas.gov.au/AI/PSC31/1/683",
+    "The Tasmanian Field Naturalist No 15  [1968] https://stors.tas.gov.au/AI/NS689/1/43",
+    "TPM-334-(K04.Gn02.01)-Municipality-Glamorgan Planning Scheme 1985.  [1985-1988] https://stors.tas.gov.au/AI/AA236/1/346",
+    "Trowutta  [1870-1924] https://stors.tas.gov.au/AI/PWD6/1/152",
+    "United Tasmania Group (UTG)  [1991-1992] https://stors.tas.gov.au/AI/NS2029/1/130",
+    "UT583/176 Departmental meetings  [1985-1994] https://stors.tas.gov.au/AI/AE429/1/17",
+    "No.194 Robert Sydney Thorne  [1890-1939] https://stors.tas.gov.au/AI/CB22/15/1/38",
+    "Northern Light.  [1861-1863] https://stors.tas.gov.au/AI/MB2/33/1/298",
+    "OB/18 The Australian Ballet.  [1974-1977] https://stors.tas.gov.au/AI/AA441/1/125",
+    "Owen, Lora dob c.1872  [1921] https://stors.tas.gov.au/AI/HSD284/1/3368",
+    "Partial transcriptions of a notebook kept by Alfred Walters during his imprisonment at Changi prison camp, Singapore.  [] https://stors.tas.gov.au/AI/NS5880/1/2",
+    "Personal correspondence, principally with members of his family.  [1930-1982] https://stors.tas.gov.au/AI/NS1457/1/1",
+    "PF17754 - Trevor Brian & Elizabeth Eleanor, Grant 888m2 Lot 25, Shack Site/Subdivision, Town of Poole Musselroe Bay  [1987] https://stors.tas.gov.au/AI/AB567/1/3968",
+    "PF832 - Horton Anthony Alfred, Grant 637m2 Lot 2 Sec. S, Town of Beaconsfield  [1970-1983] https://stors.tas.gov.au/AI/AB567/1/499",
+    "5 GEO.5. Item 428 - Road to D. and R. Smith's (Huon)  [1914] https://stors.tas.gov.au/AI/PWD18/1/12410",
+    "5/25/1 (2) Irrigation - Redundant Municipal Water Storages - Lake Nowhere Else, Ghost Creek, Whitehawk Creek  [1936] https://stors.tas.gov.au/AI/AD747/7/805",
+    "5/8/1-B200A-Mersey Welfare Planning Committee.  [1978-1983] https://stors.tas.gov.au/AI/AD203/1/1076",
+    "5008  [1990] https://stors.tas.gov.au/AI/AF894/2/4636",
+    "506782 - Nin J & R a Pt 2  - Hamper Foods Wholesale & Bay Hamper  [1991-1992] https://stors.tas.gov.au/AI/AC699/3/490",
+    "51/38 Departmental-Air travel-quarterly return to Sun Insurance office-Air Policy No 363241.  [1947] https://stors.tas.gov.au/AI/HSD6/1/669",
+    "518/2/39 Derby Minor Repairs  [1939] https://stors.tas.gov.au/AI/ED11/1/2463",
+    "52065  [1993] https://stors.tas.gov.au/AI/AF894/2/43285"
+   ]
+  },
+  "photograph": {
+   "rows": 89761,
+   "open_access": 86066,
+   "title_has_place": 38794,
+   "title_place_only_ambiguous": 3085,
+   "top_title_places": [
+    [
+     "hobart",
+     9492
+    ],
+    [
+     "risdon",
+     4746
+    ],
+    [
+     "launceston",
+     1820
+    ],
+    [
+     "sandy bay",
+     1046
+    ],
+    [
+     "port arthur",
+     838
+    ],
+    [
+     "new town",
+     679
+    ],
+    [
+     "national park",
+     534
+    ],
+    [
+     "lake st clair",
+     526
+    ],
+    [
+     "queenstown",
+     525
+    ],
+    [
+     "battery point",
+     514
+    ],
+    [
+     "new norfolk",
+     509
+    ],
+    [
+     "west coast",
+     494
+    ],
+    [
+     "ross",
+     493
+    ],
+    [
+     "devonport",
+     493
+    ],
+    [
+     "burnie",
+     493
+    ],
+    [
+     "gordon",
+     490
+    ],
+    [
+     "richmond",
+     490
+    ],
+    [
+     "sorell",
+     429
+    ],
+    [
+     "coles bay",
+     401
+    ],
+    [
+     "maria island",
+     373
+    ],
+    [
+     "taroona",
+     321
+    ],
+    [
+     "south hobart",
+     319
+    ],
+    [
+     "franklin",
+     318
+    ],
+    [
+     "cradle mountain",
+     318
+    ],
+    [
+     "bellerive",
+     282
+    ],
+    [
+     "strahan",
+     282
+    ],
+    [
+     "west hobart",
+     281
+    ],
+    [
+     "stanley",
+     248
+    ],
+    [
+     "montagu",
+     247
+    ],
+    [
+     "bothwell",
+     246
+    ],
+    [
+     "tarraleah",
+     233
+    ],
+    [
+     "zeehan",
+     218
+    ],
+    [
+     "eaglehawk neck",
+     208
+    ],
+    [
+     "north hobart",
+     207
+    ],
+    [
+     "swansea",
+     205
+    ],
+    [
+     "longford",
+     201
+    ],
+    [
+     "ulverstone",
+     200
+    ],
+    [
+     "kingston",
+     192
+    ],
+    [
+     "campbell town",
+     191
+    ],
+    [
+     "st helens",
+     190
+    ]
+   ],
+   "keywords": [
+    [
+     "street",
+     3200
+    ],
+    [
+     "bridge",
+     2589
+    ],
+    [
+     "road",
+     1469
+    ],
+    [
+     "school",
+     1075
+    ],
+    [
+     "aerial",
+     972
+    ],
+    [
+     "station",
+     839
+    ],
+    [
+     "railway",
+     672
+    ],
+    [
+     "fire",
+     382
+    ],
+    [
+     "jetty",
+     306
+    ],
+    [
+     "survey",
+     212
+    ],
+    [
+     "bushfire",
+     78
+    ],
+    [
+     "lot ",
+     78
+    ],
+    [
+     "map of",
+     38
+    ],
+    [
+     "subdivision",
+     11
+    ],
+    [
+     "plan of",
+     8
+    ],
+    [
+     "parish of",
+     5
+    ],
+    [
+     "allotment",
+     3
+    ],
+    [
+     "town of",
+     3
+    ],
+    [
+     "county of",
+     1
+    ]
+   ],
+   "sample_titles": [
+    "Photgraph - a lady  [1960] https://stors.tas.gov.au/AI/NS2008/1/44",
+    "Photograph -  Royal Hobart Hospital Staff - R A Husband, Junior Resident  [1969] https://stors.tas.gov.au/AI/AF572/1/142",
+    "photograph - 100 ton cells, E.Z., Risdon  [1920] https://stors.tas.gov.au/AI/NS3659/1/429",
+    "Photograph - 35mm transparency  - Salmon Ponds  [1960-1969] https://stors.tas.gov.au/AI/NS4845/1/148",
+    "Photograph - Aerial view - Mt Picton area n.d.  [1940-1950] https://stors.tas.gov.au/AI/NS3251/1/1379",
+    "Photograph - Beach, Caloundra Qld - GRB photo  [1974] https://stors.tas.gov.au/AI/NS5051/1/4784",
+    "Photograph - Bruny Island trip - South Bruny  [1978] https://stors.tas.gov.au/AI/NS5051/1/1287",
+    "Photograph - camping on the Islands  [1936-1937] https://stors.tas.gov.au/AI/NS2260/1/140",
+    "Photograph - Combined Sports winners, South. Premiership Friends School, with named students including Elaine Pearce  [1934] https://stors.tas.gov.au/AI/NS6250/1/402",
+    "e2e34-maria island ferry  [1983-1995] https://stors.tas.gov.au/AI/AD957/1/620",
+    "Transparency - Stone house Queen St. Bellerive  [1968] https://stors.tas.gov.au/AI/NS6345/1/448",
+    "Miscellaneous photographs  [1917-1941] https://stors.tas.gov.au/AI/NS684/1/275",
+    "\"\"Lake Sorell\"\" (photograph)  [1959] https://stors.tas.gov.au/AI/NS1054/1/784",
+    "Album No 6: - Photograph - 202. Lake Petrach (Lake St Clair National Park), Easter 1931 - creek  [1929] https://stors.tas.gov.au/AI/NS1914/1/717",
+    "Photograph - Devils Kitchen  [1960] https://stors.tas.gov.au/AI/NS2015/1/141",
+    "Photograph - Elaine Smith, Elaine Pearce and Marg Dunn on Mt. Nelson  [1948] https://stors.tas.gov.au/AI/NS6250/1/2094",
+    "Photograph - Fossil Island, Eaglehawk Neck  [1946] https://stors.tas.gov.au/AI/NS6250/1/2013",
+    "Photograph - Grace  [1940] https://stors.tas.gov.au/AI/NS4948/1/270",
+    "Photograph - Hobart - Liverpool St - Millers Corner  [1880-1920] https://stors.tas.gov.au/AI/NS3121/1/815",
+    "Photograph - Hunting scenes at Campbell Town.  [1930] https://stors.tas.gov.au/AI/NS1298/1/566",
+    "Photograph - Kingston Beach  [1946] https://stors.tas.gov.au/AI/NS3826/1/259",
+    "Photograph - Lt Lette, Sgt Myers and others in desert, Middle East. Chaplain H H Kettle photo  [1940-1943] https://stors.tas.gov.au/AI/LPIC159/2/55",
+    "Lantern slide - model schooner  [1900] https://stors.tas.gov.au/AI/CRO46/1/154",
+    "Photograph - Unidentified Four Masted Ship with Two Funnels  [1890-1919] https://stors.tas.gov.au/AI/CRO52/1/23",
+    "Photograph - view of River Derwent from the domain - to eastern shore  [1924-1925] https://stors.tas.gov.au/AI/NS3255/1/209",
+    "Photograph - Workmen renovating building  [1960] https://stors.tas.gov.au/AI/AC904/1/10",
+    "Photograph of ship- 'Aladdin'  [1866] https://stors.tas.gov.au/AI/NS543/1/279",
+    "Photographs - 312, 325, 327 Davey St, South Hobart  [2000] https://stors.tas.gov.au/AI/NS5101/1/617",
+    "Photographs - Road to Scottsdale - the Ford at Ruddy Creek  [1880] https://stors.tas.gov.au/AI/NS787/1/8",
+    "Governor Sir Edric Bastyan, Lady Bastyan and son, David. Jan 1971  [1971] https://stors.tas.gov.au/AI/NS1298/1/2688",
+    "Photograph - Montpelier Retreat, Battery Point  [1966] https://stors.tas.gov.au/AI/NS3121/1/925",
+    "Photograph - New Town Congregational Church, (unidentified woman at entrance)  [1930] https://stors.tas.gov.au/AI/NS5203/1/67",
+    "Photograph - Panorama Zinc works complex  [1920] https://stors.tas.gov.au/AI/NS3653/1/81",
+    "Photograph - Portrait of four men and two ladies (Location unknown)  [1900-1914] https://stors.tas.gov.au/AI/NS290/1/263",
+    "Photograph - Richard William Pattinson - First Christmas  [1948] https://stors.tas.gov.au/AI/NS4948/1/8",
+    "Photograph - Sailing on Hobart harbour - Bester family and friends  [1982] https://stors.tas.gov.au/AI/NS5051/1/2762",
+    "Photograph - Smelting shed with men outside  [1880] https://stors.tas.gov.au/AI/NS3245/1/375",
+    "photograph - Stefan Okrezja, E.Z., Risdon  [1972] https://stors.tas.gov.au/AI/NS3659/1/88",
+    "Photograph - The Needles near Maydena  [1986] https://stors.tas.gov.au/AI/NS1555/1/215"
+   ]
+  },
+  "map/plan": {
+   "rows": 154134,
+   "open_access": 153957,
+   "title_has_place": 106897,
+   "title_place_only_ambiguous": 5152,
+   "top_title_places": [
+    [
+     "launceston",
+     22124
+    ],
+    [
+     "hobart",
+     14762
+    ],
+    [
+     "burnie",
+     4959
+    ],
+    [
+     "devonport",
+     3916
+    ],
+    [
+     "ulverstone",
+     2495
+    ],
+    [
+     "scottsdale",
+     2428
+    ],
+    [
+     "new town",
+     1906
+    ],
+    [
+     "new norfolk",
+     1874
+    ],
+    [
+     "rokeby",
+     1737
+    ],
+    [
+     "lachlan",
+     1506
+    ],
+    [
+     "risdon",
+     1321
+    ],
+    [
+     "glenorchy",
+     1168
+    ],
+    [
+     "bridgewater",
+     1168
+    ],
+    [
+     "wynyard",
+     1130
+    ],
+    [
+     "claremont",
+     1118
+    ],
+    [
+     "kingston",
+     1114
+    ],
+    [
+     "ravenswood",
+     1103
+    ],
+    [
+     "deloraine",
+     1073
+    ],
+    [
+     "queenstown",
+     1047
+    ],
+    [
+     "rosny",
+     1010
+    ],
+    [
+     "zeehan",
+     966
+    ],
+    [
+     "george town",
+     907
+    ],
+    [
+     "sheffield",
+     897
+    ],
+    [
+     "latrobe",
+     891
+    ],
+    [
+     "st helens",
+     884
+    ],
+    [
+     "taroona",
+     874
+    ],
+    [
+     "smithton",
+     837
+    ],
+    [
+     "sorell",
+     802
+    ],
+    [
+     "franklin",
+     783
+    ],
+    [
+     "exeter",
+     721
+    ],
+    [
+     "penguin",
+     705
+    ],
+    [
+     "glenora",
+     679
+    ],
+    [
+     "ouse",
+     670
+    ],
+    [
+     "branxholm",
+     652
+    ],
+    [
+     "huonville",
+     641
+    ],
+    [
+     "prospect",
+     629
+    ],
+    [
+     "riverside",
+     600
+    ],
+    [
+     "railton",
+     598
+    ],
+    [
+     "stanley",
+     593
+    ],
+    [
+     "rocherlea",
+     592
+    ]
+   ],
+   "keywords": [
+    [
+     "school",
+     36988
+    ],
+    [
+     "street",
+     7009
+    ],
+    [
+     "railway",
+     6551
+    ],
+    [
+     "station",
+     4928
+    ],
+    [
+     "fire",
+     4094
+    ],
+    [
+     "road",
+     3441
+    ],
+    [
+     "bridge",
+     3274
+    ],
+    [
+     "survey",
+     3133
+    ],
+    [
+     "plan of",
+     3023
+    ],
+    [
+     "subdivision",
+     594
+    ],
+    [
+     "lot ",
+     414
+    ],
+    [
+     "county of",
+     392
+    ],
+    [
+     "parish of",
+     391
+    ],
+    [
+     "land district",
+     386
+    ],
+    [
+     "map of",
+     345
+    ],
+    [
+     "allotment",
+     220
+    ],
+    [
+     "aerial",
+     217
+    ],
+    [
+     "town of",
+     172
+    ],
+    [
+     "jetty",
+     70
+    ]
+   ],
+   "sample_titles": [
+    "Photocopies of letters  [1833-1836] https://stors.tas.gov.au/AI/NS865/1/1",
+    "Plan - Branxholm to Moorina. Elevations and sections of Railway  [1915-1916] https://stors.tas.gov.au/AI/PWD266/1/2236",
+    "Plan - Burnie High School Redevelopment : Phase 1; Drawing No - 2.2 Science Block 1 - Floor Plans; Contract Code C0876; Card No.110881  [1995] https://stors.tas.gov.au/AI/PWD266/5/60879",
+    "Plan - Campbell Town District School - New Administration Wing & Primary Toilet Block; Drawing No - X 03 Site Plan, Legend - Single Line Diagram; Contract Code   [1976] https://stors.tas.gov.au/AI/PWD266/4/32752",
+    "Plan - Clarendonvale Landscaping Plans; Drawing No - C113 Landscape Concept Lot No 492-500 Rockingham Drive, Clarendonvale; Contract Code 14979; Card No.79035  [1830] https://stors.tas.gov.au/AI/PWD266/5/29022",
+    "Plan - Deloraine Primary School - New Infant Wing and Administration; Drawing No - 2 Drainage Layout; Contract Code C 71.482-3; Card No.17791  [1830] https://stors.tas.gov.au/AI/PWD266/4/17786",
+    "Plan - Devonport - Stoney Rise Government Centre Greenhouse For Dept. of Agriculture; Drawing No - EE01 Electrical Services Single Line Diagram & Power Layout;   [1830] https://stors.tas.gov.au/AI/PWD266/5/20182",
+    "Plan - Don College - Devonport - Redevelopment Stage 3B; Drawing No - MM03 Details; Contract Code 60/88; Card No.73825  [1988] https://stors.tas.gov.au/AI/PWD266/5/23817",
+    "Plan - East Devonport Primary School Redevelopment; Drawing No - 15 Admin/Classroom Block Roof Plan; Contract Code 25/88; Card No.67718  [1991] https://stors.tas.gov.au/AI/PWD266/5/17711",
+    "Estate Maps-Emu Bay Estate Subdivision and Development Plans South Burnie: Plan prepared for Revised Valuation of South Burnie properties. MS.  [1901] https://stors.tas.gov.au/AI/VDL343/1/231",
+    "Plan no. 3668  [1954-1976] https://stors.tas.gov.au/AI/AD772/1/3723",
+    "Plan-Public Buildings-Court House,Murray Street, Hobart-repairs & alterations. Architect, R.G.Hamilton, Public Works Department.  [1854] https://stors.tas.gov.au/AI/PWD266/1/579",
+    "Plan - Latrobe - Mersey General Hospital - P.O.T.G. Complex; Drawing No - 38 Door Schedule - Blocks B, C & F; Contract Code C 82.135-3; Card No.43149  [1976] https://stors.tas.gov.au/AI/PWD266/4/43146",
+    "Plan - Launceston - New General Hospital; Drawing No - 0 Rev B Nuclear Medicine - Imaging Room 3 and Store - Block 2 Level 3 Dept 5.17; Contract Code 72.120-1/;  [1978] https://stors.tas.gov.au/AI/PWD266/5/1228",
+    "Plan - Launceston - New General Hospital; Drawing No - L (62A) X13 Location Plan - Electrical Services - Blocks 1 & 2 - Cable Trays - Block 2 Level 3; Contract   [1977] https://stors.tas.gov.au/AI/PWD266/4/48108",
+    "Plan - Launceston College - Science Block - Joinery - Stage 4; Drawing No - EE07 Lighting Services - Level 2; Contract Code 1031/85; Card No.90609  [1987] https://stors.tas.gov.au/AI/PWD266/5/40595",
+    "Plan - Launceston General Hospital (Old Section) Fire Security; Drawing No - 17 Working Drawing 10, New Firemain & Hosereel To Ward 7A; Contract Code 206/82; Ca  [1983] https://stors.tas.gov.au/AI/PWD266/5/33550",
+    "Plan - Launceston General Hospital Staff Accommodation; Drawing No - LD3345 Nursed Dining Room - Alterations Scheme 2; Contract Code 15396; Card No.86946  [1962] https://stors.tas.gov.au/AI/PWD266/5/36932",
+    "Plan - Launceston New General Hospital; Drawing No - A72.04 Worktop Junction; Contract Code 72/120/1/56; Card No.88877  [1980] https://stors.tas.gov.au/AI/PWD266/5/38863",
+    "Plan - Launceston State Government Offices - Civic Square Building; Drawing No - SL (13) 02 A HEC Substation Plan; Contract Code C 74.33.00-5; Card No.34868  [1980] https://stors.tas.gov.au/AI/PWD266/4/34865",
+    "Plan - Lilydale Area School; Drawing No - L499 Removal Of Druids Hall; Contract Code 15071; Card No.88152  [1951] https://stors.tas.gov.au/AI/PWD266/5/38138",
+    "Plan - Flinders Island Area School; Drawing No - L1795 Headmasters Residence Sketch Plan; Contract Code 15084; Card No.81397  [1956] https://stors.tas.gov.au/AI/PWD266/5/31384",
+    "Plan - George Town High School - Erection of Phase 1; Drawing No - 23 Construction Details for Stormwater Drains & Manholes; Contract Code C 71.241-1; Card No.1  [1972] https://stors.tas.gov.au/AI/PWD266/4/16953",
+    "Plan - Goulburn Street State School - Two Rooms for Infants; Drawing No - 7786 Plan, Elevations, Sections; Contract Code 248; Card No.408  [1927] https://stors.tas.gov.au/AI/PWD266/4/408",
+    "Plan - Hillcrest Primary School - Devonport - Stage One; Drawing No - Y-01 Floor Plans & Details; Contract Code MC 81.418-1; Card No.29423  [1980] https://stors.tas.gov.au/AI/PWD266/4/29418",
+    "Plan - Hobart Domain Government House; Drawing No - 0 Cover Sheet Fire Detection Services; Contract Code 165/82; Card No.70116  [1830] https://stors.tas.gov.au/AI/PWD266/5/20109",
+    "Plan - Hobart Technical College - Tasman Building Phase 3; Drawing No - P 23 Precast Panels; Contract Code C 51.162-3; Card No.57623  [1978] https://stors.tas.gov.au/AI/PWD266/5/7628",
+    "Plan - Huonville Primary School; Drawing No - P17 Classrooms 17 - 20 - Sanitary Plumbing & Drainage; Contract Code C0795Y2; Card No.106616  [1994] https://stors.tas.gov.au/AI/PWD266/5/56606",
+    "Plan - Kingston High School - Phase 3 - Classroom Block; Drawing No - 7205-13 Lecture Theatre Area - Structural Steelwork - Marking Plan & Details; Contract Cod  [1972] https://stors.tas.gov.au/AI/PWD266/4/36041",
+    "PLAN 30218760 E/4B/67ADiesel fuel oil pipeline - diesel shop heating [Launceston]  [1970-1972] https://stors.tas.gov.au/AI/P1279/1/728",
+    "Plan 3061479 (763) TGR - New Dundas Tramway - Zeehan Line - longitudinal section - Junction to 26 miles [ink and watercolour drawing on paper]  [1892] https://stors.tas.gov.au/AI/P1330/1/5520",
+    "Plan 3077767 (10404) Public Works, Tasmania - Huon Railway survey - permanent section - 9 miles to 10 miles - sheet 10 [pencil drawing on paper]  [1922] https://stors.tas.gov.au/AI/P1330/1/12119",
+    "Plan 3088817 (9387) TGR - Bellerive to Sorell line - long section - 3 miles 60 chains to 5 miles 0 chains (sheet 4) [ink on paper]  [1892] https://stors.tas.gov.au/AI/P1330/1/11532",
+    "PLAN 6757971 E/14D/11Detail of Handrails [X Class Locomotives]  [1953] https://stors.tas.gov.au/AI/P1279/1/1770",
+    "Plan 8385367 (6165) TGR - Launceston and Western Railway - Line survey from 8 miles 67 chains to 9 miles 70 chains - sheet 10 - [ink drawing on linen]  [1921] https://stors.tas.gov.au/AI/P1330/1/8349",
+    "Plan 8835247 (7754) TGR - Launceston and Scottsdale Railway [North Eastern Line] - plan of Upper Turner's Marsh Station (cancelled) [ink drawing on paper]  [1892] https://stors.tas.gov.au/AI/P1330/1/10699",
+    "PLAN NO BARCODE G/114 1/2/60 Cooee station building  [1930] https://stors.tas.gov.au/AI/P1332/1/1150",
+    "Plan no. 2628  [1954-1976] https://stors.tas.gov.au/AI/AD772/1/2667",
+    "Plan - Ravenswood High School - Phase 2; Drawing No - F 47 Internal D.P. Details - Pendant Power Supply Detail; Contract Code C 71.223-3; Card No.16707  [1976] https://stors.tas.gov.au/AI/PWD266/4/16702",
+    "Plan - Risdon Security Hospital; Drawing No - 40 Fire Services and Cold Water Pipework - Area 2; Contract Code C 62.221-1; Card No.24726  [1976] https://stors.tas.gov.au/AI/PWD266/4/24721"
+   ]
+  },
+  "film": {
+   "rows": 3489,
+   "open_access": 3400,
+   "title_has_place": 1371,
+   "title_place_only_ambiguous": 118,
+   "top_title_places": [
+    [
+     "hobart",
+     358
+    ],
+    [
+     "launceston",
+     91
+    ],
+    [
+     "port arthur",
+     63
+    ],
+    [
+     "devonport",
+     58
+    ],
+    [
+     "gordon",
+     45
+    ],
+    [
+     "west coast",
+     43
+    ],
+    [
+     "tarraleah",
+     40
+    ],
+    [
+     "queenstown",
+     39
+    ],
+    [
+     "burnie",
+     37
+    ],
+    [
+     "sandy bay",
+     36
+    ],
+    [
+     "taroona",
+     36
+    ],
+    [
+     "new norfolk",
+     32
+    ],
+    [
+     "franklin",
+     30
+    ],
+    [
+     "cradle mountain",
+     29
+    ],
+    [
+     "rosny",
+     28
+    ],
+    [
+     "butlers gorge",
+     26
+    ],
+    [
+     "lake st clair",
+     25
+    ],
+    [
+     "kingston",
+     25
+    ],
+    [
+     "forth",
+     25
+    ],
+    [
+     "stanley",
+     24
+    ],
+    [
+     "poatina",
+     23
+    ],
+    [
+     "national park",
+     23
+    ],
+    [
+     "ross",
+     23
+    ],
+    [
+     "strahan",
+     22
+    ],
+    [
+     "bridport",
+     22
+    ],
+    [
+     "longford",
+     20
+    ],
+    [
+     "eaglehawk neck",
+     19
+    ],
+    [
+     "tasman peninsula",
+     19
+    ],
+    [
+     "bellerive",
+     18
+    ],
+    [
+     "richmond",
+     18
+    ],
+    [
+     "north hobart",
+     17
+    ],
+    [
+     "coles bay",
+     16
+    ],
+    [
+     "forest",
+     16
+    ],
+    [
+     "ulverstone",
+     16
+    ],
+    [
+     "cambridge",
+     15
+    ],
+    [
+     "sorell",
+     15
+    ],
+    [
+     "battery point",
+     14
+    ],
+    [
+     "salmon ponds",
+     14
+    ],
+    [
+     "waddamana",
+     12
+    ],
+    [
+     "deloraine",
+     12
+    ]
+   ],
+   "keywords": [
+    [
+     "school",
+     155
+    ],
+    [
+     "bridge",
+     148
+    ],
+    [
+     "street",
+     85
+    ],
+    [
+     "road",
+     83
+    ],
+    [
+     "aerial",
+     67
+    ],
+    [
+     "fire",
+     54
+    ],
+    [
+     "railway",
+     45
+    ],
+    [
+     "station",
+     40
+    ],
+    [
+     "jetty",
+     13
+    ],
+    [
+     "bushfire",
+     9
+    ],
+    [
+     "lot ",
+     8
+    ],
+    [
+     "survey",
+     8
+    ],
+    [
+     "allotment",
+     1
+    ]
+   ],
+   "sample_titles": [
+    "Photograph  (12) - Zoe children exploring outdoors - 35 mm transparency  [1975-1997] https://stors.tas.gov.au/AI/NS3762/1/12",
+    "Film - SHOWS, REGATTAS ETC - 16 fps silent - (condition fair - 14m 00s).1960s-1970s  [1960] https://stors.tas.gov.au/AI/NS1287/1/30"
+   ]
+  },
+  "other": {
+   "rows": 2099,
+   "open_access": 2018,
+   "title_has_place": 362,
+   "title_place_only_ambiguous": 61,
+   "top_title_places": [
+    [
+     "launceston",
+     37
+    ],
+    [
+     "hobart",
+     34
+    ],
+    [
+     "bothwell",
+     32
+    ],
+    [
+     "cadbury",
+     30
+    ],
+    [
+     "deloraine",
+     12
+    ],
+    [
+     "ross",
+     10
+    ],
+    [
+     "tarraleah",
+     8
+    ],
+    [
+     "mole creek",
+     7
+    ],
+    [
+     "mackintosh",
+     7
+    ],
+    [
+     "bellerive",
+     6
+    ],
+    [
+     "caveside",
+     6
+    ],
+    [
+     "needles",
+     6
+    ],
+    [
+     "coles bay",
+     6
+    ],
+    [
+     "claremont",
+     6
+    ],
+    [
+     "glenorchy",
+     6
+    ],
+    [
+     "calder",
+     6
+    ],
+    [
+     "ulverstone",
+     6
+    ],
+    [
+     "gordon",
+     6
+    ],
+    [
+     "downie",
+     5
+    ],
+    [
+     "new norfolk",
+     5
+    ],
+    [
+     "devonport",
+     5
+    ],
+    [
+     "sorell",
+     5
+    ],
+    [
+     "wynyard",
+     5
+    ],
+    [
+     "bronte",
+     4
+    ],
+    [
+     "bronte park",
+     4
+    ],
+    [
+     "gretna",
+     4
+    ],
+    [
+     "sandy bay",
+     4
+    ],
+    [
+     "osterley",
+     4
+    ],
+    [
+     "rosetta",
+     4
+    ],
+    [
+     "ouse",
+     4
+    ],
+    [
+     "queenstown",
+     4
+    ],
+    [
+     "franklin",
+     4
+    ],
+    [
+     "stanley",
+     4
+    ],
+    [
+     "scottsdale",
+     4
+    ],
+    [
+     "breona",
+     3
+    ],
+    [
+     "dungrove",
+     3
+    ],
+    [
+     "liawenee",
+     3
+    ],
+    [
+     "longford",
+     3
+    ],
+    [
+     "cygnet",
+     3
+    ],
+    [
+     "bushy park",
+     3
+    ]
+   ],
+   "keywords": [
+    [
+     "bridge",
+     18
+    ],
+    [
+     "school",
+     12
+    ],
+    [
+     "street",
+     10
+    ],
+    [
+     "road",
+     9
+    ],
+    [
+     "station",
+     5
+    ],
+    [
+     "survey",
+     3
+    ],
+    [
+     "fire",
+     1
+    ]
+   ],
+   "sample_titles": [
+    "Photograph - BAF and cattle  [1985] https://stors.tas.gov.au/AI/NS4858/1/16"
+   ]
+  },
+  "microfilm": {
+   "rows": 1080,
+   "open_access": 1030,
+   "title_has_place": 189,
+   "title_place_only_ambiguous": 30,
+   "top_title_places": [
+    [
+     "taroona",
+     23
+    ],
+    [
+     "hobart",
+     23
+    ],
+    [
+     "blackmans bay",
+     21
+    ],
+    [
+     "campbell town",
+     21
+    ],
+    [
+     "kingston",
+     18
+    ],
+    [
+     "kingston beach",
+     9
+    ],
+    [
+     "franklin",
+     8
+    ],
+    [
+     "st marys",
+     8
+    ],
+    [
+     "launceston",
+     6
+    ],
+    [
+     "ross",
+     6
+    ],
+    [
+     "margate",
+     5
+    ],
+    [
+     "snug",
+     4
+    ],
+    [
+     "kettering",
+     3
+    ],
+    [
+     "sandfly",
+     3
+    ],
+    [
+     "woodbridge",
+     3
+    ],
+    [
+     "summerleas",
+     3
+    ],
+    [
+     "brighton",
+     3
+    ],
+    [
+     "cygnet",
+     3
+    ],
+    [
+     "gordon",
+     2
+    ],
+    [
+     "pioneer",
+     2
+    ],
+    [
+     "longford",
+     2
+    ],
+    [
+     "sorell",
+     2
+    ],
+    [
+     "deloraine",
+     2
+    ],
+    [
+     "glenora",
+     2
+    ],
+    [
+     "richmond",
+     2
+    ],
+    [
+     "forth",
+     1
+    ],
+    [
+     "lower longley",
+     1
+    ],
+    [
+     "longley",
+     1
+    ],
+    [
+     "oyster cove",
+     1
+    ],
+    [
+     "gladstone",
+     1
+    ],
+    [
+     "wilmot",
+     1
+    ],
+    [
+     "montagu",
+     1
+    ],
+    [
+     "northdown",
+     1
+    ],
+    [
+     "newnham",
+     1
+    ],
+    [
+     "bothwell",
+     1
+    ],
+    [
+     "pelverata",
+     1
+    ],
+    [
+     "kaoota",
+     1
+    ],
+    [
+     "george town",
+     1
+    ],
+    [
+     "oatlands",
+     1
+    ],
+    [
+     "swanston",
+     1
+    ]
+   ],
+   "keywords": [
+    [
+     "road",
+     38
+    ],
+    [
+     "parish of",
+     25
+    ],
+    [
+     "fire",
+     19
+    ],
+    [
+     "street",
+     13
+    ],
+    [
+     "bridge",
+     10
+    ],
+    [
+     "school",
+     9
+    ],
+    [
+     "jetty",
+     4
+    ],
+    [
+     "station",
+     3
+    ],
+    [
+     "survey",
+     3
+    ],
+    [
+     "subdivision",
+     2
+    ]
+   ],
+   "sample_titles": [
+    "Diary of George Gatenby  [1837-1838] https://stors.tas.gov.au/AI/NS1405/1/4"
+   ]
+  },
+  "microfiche": {
+   "rows": 156,
+   "open_access": 127,
+   "title_has_place": 0,
+   "title_place_only_ambiguous": 0,
+   "top_title_places": [],
+   "keywords": [],
+   "sample_titles": [
+    "Patient Files - No.s 159-276  [1947-1980] https://stors.tas.gov.au/AI/AE769/1/3"
+   ]
+  }
+ }
 }
