@@ -298,7 +298,10 @@ old aerial photos, the 3D model, the wind rose and Macquarie Island. The choice 
 the map if there is no pin, grouped by decade from the 1930s to the 2010s, with thumbnails. Tap one to lay it over the map.
 It is placed by a flat guess from the frame index: its centre and size from the frame's footprint, and its turn from the
 direction the plane flew along that run. The film's "up" is not recorded, so use <b>Rotate 90</b> and <b>Flip</b> until roads
-and coastlines line up, and <b>Opacity</b> to compare with today. Nothing is corrected for tilt or hills, so expect offsets of
+and coastlines line up (<b>Reset</b> goes back to the first guess), and <b>Opacity</b> to compare with today. <b>Fill view</b>
+adds the other frames from the same film (the same flight) that fall in the view, turned the same way. <b>Georef (JSON)</b>
+downloads the placement so you can load the photo in R, Python or QGIS: see the
+<a href="https://github.com/mdsumner/lunamap/blob/main/docs/aerial-georef.md">aerial georeferencing guide</a>. Nothing is corrected for tilt or hills, so expect offsets of
 tens of metres, more in steep country. While one is showing, a note at the top right of the map says it is a rough fit, and a dashed
 box marks the frame's footprint from the index. These are raw frames, not orthophotos: the <b>Aerial photo</b> basemap is
 theLIST's orthophoto, which is corrected to the ground. <b>Full scan</b> downloads the original high-resolution TIFF (large). Photos and index:
