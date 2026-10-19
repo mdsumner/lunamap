@@ -10,7 +10,7 @@ common words or surnames are kept but marked "maybe".
 Writes:
   data/archives/index.json        places with items: [osm id, name, lon, lat, photos, maps, plans, film]
   data/archives/p/<osm id>.json   that place's items: [catalogue id, title, years, kind, maybe]
-kind: p photograph, m map, b building plan (Public Works Department drawings), f film
+kind: p photograph, m map or plan, b Public Works Department drawing (buildings, roads, bridges), f film
 Items link to https://stors.tas.gov.au/AI/<catalogue id>.
 Usage: python3 scripts/archives_index.py archives.csv
 """
@@ -44,7 +44,8 @@ with open(src, newline="", encoding="utf-8", errors="replace") as f:
         if not kind or r.get("ACCESS", "") != "Open":
             continue
         seen += 1
-        if kind == "m" and (r.get("ID", "").startswith("PWD266/") or r.get("TITLE", "").startswith("Plan - ")):
+        pwd = r.get("ID", "").startswith("PWD266/")
+        if kind == "m" and pwd:                       # Public Works Department drawings: buildings, roads, bridges
             kind = "b"
         title = (r.get("TITLE", "") or "").strip()
         text = (title + " " + (r.get("ITEM_FURTHER_DESC", "") or "")).lower()
@@ -64,6 +65,8 @@ with open(src, newline="", encoding="utf-8", errors="replace") as f:
         best = max(RANK.get(byname[g][4], 5) for g in pool)            # the most specific kind of place named
         specific = [g for g in pool if RANK.get(byname[g][4], 5) == best]
         years = (r.get("PUBDATE_RANGE", "") or "").strip()
+        if pwd and years == "1830":                   # a placeholder date on many Public Works drawings
+            years = ""
         rec = [r.get("ID", ""), title[:160], years, kind, 0 if sure else 1]
         for g in specific:
             items[byname[g][0]].append(rec)
