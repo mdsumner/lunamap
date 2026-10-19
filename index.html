@@ -45,11 +45,14 @@
   <div id="toolbox" class="menubox">
     <button id="draw" title="Draw points, lines and polygons; export or import">Draw</button>
     <button id="offline" title="Save maps for use without signal">Offline</button>
-    <button id="model3d" title="Build a 3D model of the area in view (detail control, save image)">3D model</button>
-    <button id="macca" title="Go to Macquarie Island" onclick="setMenu(null); goToPlace('Macquarie Island')">Macquarie Is.</button>
-    <button id="windrose" title="Seasonal wind roses around Fern Tree (modelled history)">Wind rose</button>
     <button id="print" title="Print or save this view as PDF">Print</button>
     <button id="help" title="How to use this map" onclick="location.href='help.html'">Help</button>
+    <button id="explore" title="Show extra tools for exploring (kept on this device)">Explore: off</button>
+    <div class="mhead xo">Explore</div>
+    <button id="aerials" class="xo" title="Historical aerial photos covering the pin or the middle of the map">Old aerial photos</button>
+    <button id="model3d" class="xo" title="Build a 3D model of the area in view (detail control, save image)">3D model</button>
+    <button id="windrose" class="xo" title="Seasonal wind roses around Fern Tree (modelled history)">Wind rose</button>
+    <button id="macca" class="xo" title="Go to Macquarie Island" onclick="setMenu(null); goToPlace('Macquarie Island')">Macquarie Is.</button>
   </div>
   <form id="goto" autocomplete="off">
     <input id="q" type="search" enterkeyhint="go" placeholder="Go to: address, grid ref, lon lat, MGA..."

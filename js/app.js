@@ -158,6 +158,19 @@ function loadDraw() {
   }
   return drawLoading;
 }
+// Field / Explore: Explore shows the extra tools (marked .xo); kept on this device and in links
+function setExplore(on) {
+  document.body.classList.toggle("explore", on);
+  document.getElementById("explore").textContent = "Explore: " + (on ? "on" : "off");
+  try { localStorage.setItem("lunamap-explore", on ? "1" : ""); } catch (e) {}
+  writeHash();
+}
+document.getElementById("explore").onclick = function () { setExplore(!document.body.classList.contains("explore")); };
+document.getElementById("aerials").onclick = function () {
+  setMenu(null);
+  loadScript("js/aerials.js").then(function () { window.openAerials(); })
+    .catch(function (e) { toast("Aerial photos unavailable: " + e.message); });
+};
 document.getElementById("view3d").onclick = function () {
   setMenu(null);
   loadScript("js/terrain3d.js").then(function () { window.toggle3D(); })
@@ -197,6 +210,7 @@ if (st.danger) setHazard("danger", true);
 if (st.warnings) setHazard("warnings", true);
 if (st.history) setHazard("history", true);
 if (st.flamm) setHazard("flamm", true);
+(function () { var keep = ""; try { keep = localStorage.getItem("lunamap-explore") || ""; } catch (e) {} if (st.explore || keep) setExplore(true); })();
 setParcels(!st.noParcels);
 setGrid(!!st.grid);
 setLayer(st.layer || "topo");
