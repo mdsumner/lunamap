@@ -24,6 +24,14 @@ word = re.compile(r"[a-z][a-z'\-]+")
 url_re = re.compile(r"https?://([^/\s\"']+)")
 year_re = re.compile(r"\b(1[789]\d\d|20[012]\d)\b")
 
+AMBIG = {"forest", "gordon", "franklin", "montagu", "lachlan", "swanston", "stanley", "richmond", "lilydale", "carrick",
+         "penguin", "nelson", "wilmot", "dover", "jericho", "bridport", "york", "brighton", "kingston", "elizabeth", "hamilton",
+         "west coast", "mount direction", "gordon river", "huon", "derby", "bothwell", "colebrook", "ross", "evandale"}
+KEYWORDS = ["parish of", "town of", "land district", "county of", "survey", "plan of", "map of", "subdivision",
+            "road", "bridge", "jetty", "school", "railway", "station", "aerial", "street", "lot ", "allotment", "bushfire", "fire"]
+fmt_rows = collections.Counter(); fmt_place = collections.Counter(); fmt_place_ambig = collections.Counter(); fmt_open = collections.Counter()
+fmt_place_names = collections.defaultdict(collections.Counter); fmt_kw = collections.defaultdict(collections.Counter)
+fmt_samples = collections.defaultdict(list)
 cols = None
 stats = {}
 rows = 0
@@ -66,6 +74,30 @@ with open(path, newline="", encoding="utf-8", errors="replace") as f:
         if has_url:
             rows_with_url += 1
         t = " ".join(text)
+        rec = dict(zip(cols, r))
+        fmt = rec.get("LOCAL_FORMAT", "") or "?"
+        fmt_rows[fmt] += 1
+        title = " ".join([rec.get("TITLE", ""), rec.get("ITEM_FURTHER_DESC", ""), rec.get("SUBJECT", "")]).lower()
+        if len(fmt_samples[fmt]) < 40 and fmt_rows[fmt] % 2311 == 1:
+            fmt_samples[fmt].append(rec.get("TITLE", "")[:160] + "  [" + rec.get("PUBDATE_RANGE", "") + "] " + rec.get("RECORD_URL", ""))
+        tw = word.findall(title)
+        tfound = set()
+        for n in (1, 2, 3):
+            for i in range(len(tw) - n + 1):
+                g = " ".join(tw[i:i + n])
+                if g in pnames:
+                    tfound.add(g)
+        if tfound:
+            fmt_place[fmt] += 1
+            if all(g in AMBIG for g in tfound):
+                fmt_place_ambig[fmt] += 1
+            for g in tfound:
+                fmt_place_names[fmt][g] += 1
+        for kw in KEYWORDS:
+            if kw in title:
+                fmt_kw[fmt][kw] += 1
+        if rec.get("ACCESS", "") == "Open":
+            fmt_open[fmt] += 1
         for y in set(year_re.findall(t)):
             decades[y[:3] + "0s"] += 1
         ws = word.findall(t)
@@ -88,7 +120,7 @@ out = {
     "columns": [],
     "rows_with_url": rows_with_url,
     "url_hosts": url_hosts.most_common(20),
-    "rows_with_place_name": rows_with_place,
+    "rows_with_place_name_any_column": rows_with_place,
     "top_place_names": [[g, n, pnames[g][3]] for g, n in place_hits.most_common(60)],
     "place_examples": place_examples,
     "years_by_decade": sorted(decades.items()),
@@ -102,5 +134,8 @@ for c in cols:
         "distinct": d if d < 2000 else "2000+", "samples": s["samples"],
         "top": s["top"].most_common(15) if d < 2000 else s["top"].most_common(8),
     })
+out["by_format"] = {f: {"rows": fmt_rows[f], "open_access": fmt_open[f], "title_has_place": fmt_place[f],
+                        "title_place_only_ambiguous": fmt_place_ambig[f], "top_title_places": fmt_place_names[f].most_common(40),
+                        "keywords": fmt_kw[f].most_common(), "sample_titles": fmt_samples[f]} for f in fmt_rows}
 json.dump(out, open("research/archives-profile.json", "w"), indent=1, ensure_ascii=True)
 print(rows, "rows;", rows_with_place, "with a place name;", rows_with_url, "with a URL")
