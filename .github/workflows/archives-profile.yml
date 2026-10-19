@@ -1,0 +1,30 @@
+# One-off research: profile the Libraries Tasmania Digitised Archives CSV (data.gov.au,
+# CC BY 4.0) to see how much of it could be placed on the map. Run by hand.
+name: archives-profile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download
+        run: |
+          curl -sS --fail --retry 3 -L -o archives.csv \
+            https://data.gov.au/data/dataset/d7ec2d93-b9dd-482b-b6d9-432b2a2455a3/resource/ee8ec788-77ed-4faf-8ceb-17f046ab2a4f/download/archives_ite_dix.csv
+          ls -la archives.csv; head -c 1500 archives.csv; echo
+      - name: Profile
+        run: python3 scripts/archives_profile.py archives.csv
+      - name: Commit the profile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/archives-profile.json
+          git diff --cached --quiet || git commit -m "Libraries Tasmania archives profile"
+          git push
