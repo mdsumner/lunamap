@@ -171,6 +171,11 @@ document.getElementById("aerials").onclick = function () {
   loadScript("js/aerials.js").then(function () { window.openAerials(); })
     .catch(function (e) { toast("Aerial photos unavailable: " + e.message); });
 };
+document.getElementById("archives").onclick = function () {
+  setMenu(null);
+  loadScript("js/archives.js").then(function () { window.openArchives(); })
+    .catch(function (e) { toast("Archives unavailable: " + e.message); });
+};
 document.getElementById("view3d").onclick = function () {
   setMenu(null);
   loadScript("js/terrain3d.js").then(function () { window.toggle3D(); })

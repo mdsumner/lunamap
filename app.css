@@ -70,6 +70,9 @@ body.explore #explore { background:#f3e5f5; border-color:#8e24aa; }
 .airbadge { background:rgba(255,248,225,.95); border:1px solid #a1887f; border-radius:8px; padding:4px 8px; font-size:12px; max-width:220px; margin-top:96px !important; }
 .airbadge span { font-size:11px; color:#5d4037; }
 img.airimg { position:absolute; left:0; top:0; max-width:none; pointer-events:none; }
+.arcul { margin:4px 0 8px; padding-left:18px; }
+.arcul li { margin:3px 0; }
+.arcy { color:#666; white-space:nowrap; }
 .airdec { margin-top:8px; }
 .airrow { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
 .airitem { display:flex; flex-direction:column; align-items:center; width:84px; padding:3px; border:1px solid #bbb; border-radius:6px; background:#fff; font-size:11px; }
