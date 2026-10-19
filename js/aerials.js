@@ -13,7 +13,19 @@
   var IDX = LISTPUB + "Indexes/MapServer/";
   var DECADES = [[67, "1930s"], [68, "1940s"], [69, "1950s"], [70, "1960s"], [72, "1970s"], [82, "1980s"], [22, "1990s"], [32, "2000s"], [51, "2010s"]];
   var FIELDS = "OBJECTID,IMAGE_NAME,FILM_NO,RUN_NO,FRAME,FLY_DATE,FLY_SEASON,SCALE,PROJ_NAME,IMAGE_TYPE,DOWNLOAD_LINK,THUMBNAIL_LINK";
-  var sheet = null, overlay = null, cur = null;
+  var sheet = null, overlay = null, cur = null, badge = null, outline = null;
+  // on-map reminder whenever an old frame is showing: it is a raw photo fitted roughly,
+  // unlike the Aerial photo basemap (theLIST orthophoto, properly rectified)
+  function showBadge(a) {
+    if (!badge) {
+      badge = L.control({ position: "topright" });
+      badge.onAdd = function () { var d = L.DomUtil.create("div", "airbadge"); L.DomEvent.disableClickPropagation(d); return d; };
+      badge.addTo(map);
+    }
+    badge.getContainer().innerHTML = "<b>" + esc(when(a)) + " photo</b> - rough fit, not orthorectified" +
+      "<br><span>Raw frame " + esc(a.FILM_NO) + "/" + esc(a.FRAME) + "; dashed box = index footprint</span>";
+  }
+  function hideBadge() { if (badge) { map.removeControl(badge); badge = null; } if (outline) { map.removeLayer(outline); outline = null; } }
 
   function q(layer, params) {
     var s = Object.keys(params).map(function (k) { return k + "=" + encodeURIComponent(params[k]); }).join("&");
@@ -38,7 +50,9 @@
       "<button id='airoff' type='button'>Remove</button></div>" +
       "<div id='airlist' class='small'></div>" +
       "<p class='small' style='color:#666'>Photos and index: Department of Natural Resources and Environment Tasmania, via theLIST. " +
-      "Placed by a flat guess from the index - not orthorectified; hills and tilt shift things by tens of metres or more.</p>";
+      "These are raw frames from the film library, placed by a rough flat fit from the index - not orthorectified, so hills " +
+      "and tilt shift things by tens of metres or more. The <b>Aerial photo</b> basemap is different: theLIST's orthophoto, " +
+      "corrected to the ground.</p>";
     document.body.appendChild(sheet);
     sheet.querySelector("#airclose").onclick = function () { sheet.style.display = "none"; };
     sheet.querySelector("#airrot").onclick = function () { if (overlay) { overlay.turns = (overlay.turns + 1) % 4; overlay.redraw(); } };
@@ -49,6 +63,7 @@
   }
   function removeOverlay() {
     if (overlay) { map.removeLayer(overlay); overlay = null; }
+    hideBadge();
     cur = null; sheet.querySelector("#airctl").style.display = "none"; sheet.querySelector("#aircur").textContent = "";
   }
 
@@ -112,6 +127,8 @@
       var half = [side / 2 / kx, side / 2 / ky];                     // degrees per half side (lon, lat)
       removeOverlay(); cur = a;
       overlay = new AffineImage(a.THUMBNAIL_LINK, c, u, half).addTo(map);
+      outline = L.polygon(ring.map(function (p) { return [p[1], p[0]]; }), { color: "#6d4c41", weight: 1.5, dashArray: "6 5", fill: false, interactive: false }).addTo(map);
+      showBadge(a);
       overlay.setOpacity(+sheet.querySelector("#airop").value);
       sheet.querySelector("#airctl").style.display = "flex";
       sheet.querySelector("#aircur").innerHTML = "<b>" + esc(a.IMAGE_NAME) + "</b> - " + esc(when(a)) + ", " + esc(a.PROJ_NAME) +
