@@ -1,0 +1,1674 @@
+{
+ "source": "Libraries Tasmania Digitised Archives CSV, data.gov.au (CC BY 4.0)",
+ "rows": 949215,
+ "columns": [
+  {
+   "name": "FORMAT",
+   "nonempty": 949215,
+   "maxlen": 20,
+   "distinct": 7,
+   "samples": [
+    "file/volume|Archives",
+    "photograph|Archives",
+    "map/plan|Archives",
+    "film|Archives",
+    "other|Archives",
+    "microfilm|Archives"
+   ],
+   "top": [
+    [
+     "file/volume|Archives",
+     698496
+    ],
+    [
+     "map/plan|Archives",
+     154134
+    ],
+    [
+     "photograph|Archives",
+     89761
+    ],
+    [
+     "film|Archives",
+     3489
+    ],
+    [
+     "other|Archives",
+     2099
+    ],
+    [
+     "microfilm|Archives",
+     1080
+    ],
+    [
+     "microfiche|Archives",
+     156
+    ]
+   ]
+  },
+  {
+   "name": "PUBDATE",
+   "nonempty": 947355,
+   "maxlen": 509,
+   "distinct": "2000+",
+   "samples": [
+    "1965",
+    "1960|1961|1962|1963|1964",
+    "1953",
+    "1930",
+    "1942|1943|1944|1945|1946|1947",
+    "1931"
+   ],
+   "top": [
+    [
+     "1989",
+     17716
+    ],
+    [
+     "1991",
+     17464
+    ],
+    [
+     "1830",
+     16734
+    ],
+    [
+     "1993",
+     16682
+    ],
+    [
+     "1990",
+     16100
+    ],
+    [
+     "1992",
+     14398
+    ],
+    [
+     "1994",
+     13090
+    ],
+    [
+     "1980",
+     11517
+    ]
+   ]
+  },
+  {
+   "name": "LOCAL_FORMAT",
+   "nonempty": 949215,
+   "maxlen": 11,
+   "distinct": 7,
+   "samples": [
+    "file/volume",
+    "photograph",
+    "map/plan",
+    "film",
+    "other",
+    "microfilm"
+   ],
+   "top": [
+    [
+     "file/volume",
+     698496
+    ],
+    [
+     "map/plan",
+     154134
+    ],
+    [
+     "photograph",
+     89761
+    ],
+    [
+     "film",
+     3489
+    ],
+    [
+     "other",
+     2099
+    ],
+    [
+     "microfilm",
+     1080
+    ],
+    [
+     "microfiche",
+     156
+    ]
+   ]
+  },
+  {
+   "name": "ITEM_ORDER",
+   "nonempty": 913990,
+   "maxlen": 64,
+   "distinct": 1,
+   "samples": [
+    "Order to use in person at History Room, 91 Murray Street, Hobart"
+   ],
+   "top": [
+    [
+     "Order to use in person at History Room, 91 Murray Street, Hobart",
+     913990
+    ]
+   ]
+  },
+  {
+   "name": "ITEM_LOCN_BAY",
+   "nonempty": 823151,
+   "maxlen": 29,
+   "distinct": "2000+",
+   "samples": [
+    "Berriedale G 200 3",
+    "Hobart B 317 2",
+    "Berriedale H 40 4",
+    "Hobart F 338 5",
+    "Hobart A 240 1",
+    "Hobart C 221 1 - C 221 6"
+   ],
+   "top": [
+    [
+     "Berriedale P 293 1 - P 293 7",
+     10961
+    ],
+    [
+     "Berriedale N 279 1 - N 279 6",
+     10500
+    ],
+    [
+     "Berriedale N 278 1 - N 278 5",
+     8863
+    ],
+    [
+     "Berriedale P 268 2 - P 268 7",
+     8062
+    ],
+    [
+     "Berriedale ZD 1 1",
+     6875
+    ],
+    [
+     "Berriedale H 199 1 - H 208 7",
+     6467
+    ],
+    [
+     "Hobart B 204 1 - B 207 3",
+     6297
+    ],
+    [
+     "Hobart B 30 6 - B 30 4",
+     6215
+    ]
+   ]
+  },
+  {
+   "name": "SERIES_START_DATE",
+   "nonempty": 912668,
+   "maxlen": 11,
+   "distinct": "2000+",
+   "samples": [
+    "01 Jun 1965",
+    "01 Dec 1960",
+    "01 Oct 1953",
+    "09 Jul 1930",
+    "21 Oct 1942",
+    "24 Jun 1931"
+   ],
+   "top": [
+    [
+     "01 Jan 1990",
+     16027
+    ],
+    [
+     "01 Jan 1989",
+     15450
+    ],
+    [
+     "01 Jan 1991",
+     15364
+    ],
+    [
+     "01 Jan 1993",
+     14398
+    ],
+    [
+     "01 Jan 1992",
+     12777
+    ],
+    [
+     "01 Jan 1980",
+     11395
+    ],
+    [
+     "01 Jan 1994",
+     11102
+    ],
+    [
+     "01 Jan 1960",
+     9592
+    ]
+   ]
+  },
+  {
+   "name": "PUBDATE_RANGE",
+   "nonempty": 947355,
+   "maxlen": 14,
+   "distinct": "2000+",
+   "samples": [
+    "1965",
+    "1960-1964",
+    "1953",
+    "1930",
+    "1942-1947",
+    "1931"
+   ],
+   "top": [
+    [
+     "1989",
+     17716
+    ],
+    [
+     "1991",
+     17464
+    ],
+    [
+     "1830",
+     16734
+    ],
+    [
+     "1993",
+     16682
+    ],
+    [
+     "1990",
+     16100
+    ],
+    [
+     "1992",
+     14398
+    ],
+    [
+     "1994",
+     13090
+    ],
+    [
+     "1980",
+     11517
+    ]
+   ]
+  },
+  {
+   "name": "RECORD_URL",
+   "nonempty": 949215,
+   "maxlen": 44,
+   "distinct": "2000+",
+   "samples": [
+    "https://stors.tas.gov.au/AI/LSD347/1/3435",
+    "https://stors.tas.gov.au/AI/LSD347/1/3436",
+    "https://stors.tas.gov.au/AI/AE963/1/68",
+    "https://stors.tas.gov.au/AI/HSD186/1/4078",
+    "https://stors.tas.gov.au/AI/ED190/1/1870",
+    "https://stors.tas.gov.au/AI/HSD186/1/4079"
+   ],
+   "top": [
+    [
+     "https://stors.tas.gov.au/AI/LSD347/1/3435",
+     1
+    ],
+    [
+     "https://stors.tas.gov.au/AI/LSD347/1/3436",
+     1
+    ],
+    [
+     "https://stors.tas.gov.au/AI/AE963/1/68",
+     1
+    ],
+    [
+     "https://stors.tas.gov.au/AI/HSD186/1/4078",
+     1
+    ],
+    [
+     "https://stors.tas.gov.au/AI/ED190/1/1870",
+     1
+    ],
+    [
+     "https://stors.tas.gov.au/AI/HSD186/1/4079",
+     1
+    ],
+    [
+     "https://stors.tas.gov.au/AI/ED190/1/1871",
+     1
+    ],
+    [
+     "https://stors.tas.gov.au/AI/HSD284/1/3496",
+     1
+    ]
+   ]
+  },
+  {
+   "name": "ID",
+   "nonempty": 949215,
+   "maxlen": 16,
+   "distinct": "2000+",
+   "samples": [
+    "LSD347/1/3435",
+    "LSD347/1/3436",
+    "AE963/1/68",
+    "HSD186/1/4078",
+    "ED190/1/1870",
+    "HSD186/1/4079"
+   ],
+   "top": [
+    [
+     "LSD347/1/3435",
+     1
+    ],
+    [
+     "LSD347/1/3436",
+     1
+    ],
+    [
+     "AE963/1/68",
+     1
+    ],
+    [
+     "HSD186/1/4078",
+     1
+    ],
+    [
+     "ED190/1/1870",
+     1
+    ],
+    [
+     "HSD186/1/4079",
+     1
+    ],
+    [
+     "ED190/1/1871",
+     1
+    ],
+    [
+     "HSD284/1/3496",
+     1
+    ]
+   ]
+  },
+  {
+   "name": "SERIES",
+   "nonempty": 949215,
+   "maxlen": 190,
+   "distinct": "2000+",
+   "samples": [
+    "Personal Holdings Files. (LSD347)",
+    "General Correspondence (AE963)",
+    "Files of Deceased and discharged Patients. (HSD186)",
+    "Personal Files of Teachers. (ED190)",
+    "Patient Files. (HSD284)",
+    "Nominal Index (AC647)"
+   ],
+   "top": [
+    [
+     "Building Applications (AE417)",
+     34384
+    ],
+    [
+     "General Correspondence. (TC10)",
+     23027
+    ],
+    [
+     "General Correspondence. (AD9)",
+     21991
+    ],
+    [
+     "General Correspondence (3) (FC5)",
+     19242
+    ],
+    [
+     "General Correspondence [3]. (AB567)",
+     14888
+    ],
+    [
+     "Civil Engineering Drawings of Tasmanian Railways and Works (P1330)",
+     12845
+    ],
+    [
+     "Building Files (AE819)",
+     12463
+    ],
+    [
+     "Building Inspection Cards (AF507)",
+     11034
+    ]
+   ]
+  },
+  {
+   "name": "ACCESS",
+   "nonempty": 949215,
+   "maxlen": 39,
+   "distinct": 21,
+   "samples": [
+    "Open",
+    "Restricted 50 Years (B50)",
+    "Agency access only 50 Years (D50)",
+    "Agency access only 25 Years (D25)",
+    "Restricted",
+    "Special Conditions - See Series Details"
+   ],
+   "top": [
+    [
+     "Open",
+     802587
+    ],
+    [
+     "Agency access only 25 Years (D25)",
+     88119
+    ],
+    [
+     "Agency access only 75 Years (D75)",
+     19748
+    ],
+    [
+     "Restricted 50 Years (B50)",
+     12344
+    ],
+    [
+     "Agency access only 50 Years (D50)",
+     9529
+    ],
+    [
+     "Restricted 25 Years (B25)",
+     7564
+    ],
+    [
+     "Restricted 75 Years (B75)",
+     3647
+    ],
+    [
+     "Restricted 50 Years (C50)",
+     2885
+    ],
+    [
+     "Special Conditions - See Series Details",
+     868
+    ],
+    [
+     "Restricted 25 Years (C25)",
+     498
+    ],
+    [
+     "Restricted",
+     325
+    ],
+    [
+     "Agency access only 100 Years (D100)",
+     259
+    ],
+    [
+     "Agency access only 30 Years (D30)",
+     242
+    ],
+    [
+     "Restricted 50 Years (E50)",
+     201
+    ],
+    [
+     "Restricted 25 Years (E25)",
+     178
+    ]
+   ]
+  },
+  {
+   "name": "ITEM_LOCATION",
+   "nonempty": 823151,
+   "maxlen": 10,
+   "distinct": 3,
+   "samples": [
+    "Berriedale",
+    "Hobart",
+    "Launceston"
+   ],
+   "top": [
+    [
+     "Berriedale",
+     438807
+    ],
+    [
+     "Hobart",
+     374822
+    ],
+    [
+     "Launceston",
+     9522
+    ]
+   ]
+  },
+  {
+   "name": "AGENCY",
+   "nonempty": 941427,
+   "maxlen": 463,
+   "distinct": "2000+",
+   "samples": [
+    "Lands and Surveys Department (TA69)",
+    "Tasmanian Government Railways (TA245)|Transport Commission (TA90)",
+    "New Town Charitable Institution (TA888)|New Town Infirmary and Consumptive Home (TA889)|New Town Rest Home (TA890)|St John's Park Hospital (TA443)",
+    "Education Department (TA63)",
+    "Royal Derwent Hospital (TA465)",
+    "Tuberculosis Division (TA679)"
+   ],
+   "top": [
+    [
+     "Public Works Department (TA24)",
+     144518
+    ],
+    [
+     "Launceston Magistrates Court (Also Known As Launceston Lower Court) (TA1061)",
+     66499
+    ],
+    [
+     "Hobart City Council (TA114)",
+     38435
+    ],
+    [
+     "Department of Agriculture (2) (TA370)|Department of Primary Industry (TA903)",
+     22302
+    ],
+    [
+     "Lands and Surveys Department (TA69)",
+     17526
+    ],
+    [
+     "Glenorchy Municipal Council (TA110)|Glenorchy City Council (TA430)",
+     15364
+    ],
+    [
+     "Education Department (TA63)",
+     12438
+    ],
+    [
+     "Glenorchy City Council (TA430)",
+     11224
+    ]
+   ]
+  },
+  {
+   "name": "SERIES_END_DATE",
+   "nonempty": 716433,
+   "maxlen": 11,
+   "distinct": "2000+",
+   "samples": [
+    "29 Jun 1965",
+    "09 Nov 1964",
+    "01 Oct 1953",
+    "16 Jul 1930",
+    "17 Jun 1947",
+    "05 Oct 1931"
+   ],
+   "top": [
+    [
+     "31 Dec 1990",
+     19827
+    ],
+    [
+     "31 Dec 1989",
+     17006
+    ],
+    [
+     "31 Dec 1993",
+     16505
+    ],
+    [
+     "31 Dec 1991",
+     15918
+    ],
+    [
+     "31 Dec 1992",
+     12713
+    ],
+    [
+     "31 Dec 1994",
+     11062
+    ],
+    [
+     "31 Dec 1976",
+     10529
+    ],
+    [
+     "31 Dec 1984",
+     9252
+    ]
+   ]
+  },
+  {
+   "name": "TITLE",
+   "nonempty": 949215,
+   "maxlen": 260,
+   "distinct": "2000+",
+   "samples": [
+    "Phillips Patricia Dawn Town Land A8735 P/35",
+    "Phillips Pauline Rose Temporary Licence A4901 R/35",
+    "Phillips' Report on Tasmanian Government Railway",
+    "Phillips, Albert",
+    "Phillips, Allison Couper. (formerly Ferguson) (0418/1942)",
+    "Phillips, Arthur"
+   ],
+   "top": [
+    [
+     "Minutes",
+     1835
+    ],
+    [
+     "Correspondence",
+     1559
+    ],
+    [
+     "Record of cases",
+     1366
+    ],
+    [
+     "Item description not online but is available from paper lists",
+     1330
+    ],
+    [
+     "Minutes of meetings",
+     1039
+    ],
+    [
+     "Letterbooks of general outward correspondence",
+     912
+    ],
+    [
+     "Register",
+     765
+    ],
+    [
+     "Letterbook",
+     570
+    ]
+   ]
+  },
+  {
+   "name": "ITEM_FURTHER_DESC",
+   "nonempty": 18653,
+   "maxlen": 259,
+   "distinct": "2000+",
+   "samples": [
+    "Storekeeper of Port Cygnet",
+    "Photocopy of the original because it was wet process photocopy.",
+    "Notable cricketing history content",
+    "Illustrated by slides from NS1386/7",
+    "These records have been transferred to the custody of the Queen Victoria Museum and Art Gallery, Launceston, and can be viewed there.",
+    "Permission from donor required for copying"
+   ],
+   "top": [
+    [
+     ".",
+     613
+    ],
+    [
+     "35mm transparency",
+     578
+    ],
+    [
+     "Contained in photograph album (4)",
+     508
+    ],
+    [
+     "Contact prints made from negatives for client viewing",
+     508
+    ],
+    [
+     "A4 size",
+     409
+    ],
+    [
+     "Contained in photograph album (7)",
+     284
+    ],
+    [
+     "Colour photo",
+     161
+    ],
+    [
+     "FRAGILE AND BRITTLE ITEMS - PLEASE TAKE CARE",
+     159
+    ]
+   ]
+  },
+  {
+   "name": "ITEM_COPY_NUMBER",
+   "nonempty": 25323,
+   "maxlen": 111,
+   "distinct": "2000+",
+   "samples": [
+    "Z265",
+    "Z2625",
+    "Z2631",
+    "Z2626",
+    "Z2637",
+    "Z1148"
+   ],
+   "top": [
+    [
+     "Z2641",
+     953
+    ],
+    [
+     "Z2643",
+     800
+    ],
+    [
+     "Z1143",
+     769
+    ],
+    [
+     "Z2636",
+     740
+    ],
+    [
+     "Z2639",
+     728
+    ],
+    [
+     "Z1144",
+     691
+    ],
+    [
+     "Z2620",
+     690
+    ],
+    [
+     "Z2640",
+     654
+    ]
+   ]
+  },
+  {
+   "name": "SUBJECT",
+   "nonempty": 254,
+   "maxlen": 146,
+   "distinct": 19,
+   "samples": [
+    "Launceston Library",
+    "Treated by Conservation 20/05/2018|4 ply photographic board ; mylar sleeve ; folder board folder for housing and A3 type box for housing all items",
+    "Buildings|Halls|Taverns|Bridgewater",
+    "52681",
+    "21380",
+    "Item removed and added to Crowther series of J E McElroy papers"
+   ],
+   "top": [
+    [
+     "Launceston Library",
+     123
+    ],
+    [
+     "52681",
+     38
+    ],
+    [
+     "Previously in NS1131/40",
+     33
+    ],
+    [
+     "21380",
+     29
+    ],
+    [
+     "Books|Illustrations|Towns",
+     5
+    ],
+    [
+     "Books|Illustrations|Homesteads",
+     4
+    ],
+    [
+     "Books|Illustrations|Homesteads|Avoca",
+     2
+    ],
+    [
+     "Buildings|Halls|Taverns|Bridgewater",
+     1
+    ],
+    [
+     "Item removed and added to Crowther series of J E McElroy papers",
+     1
+    ],
+    [
+     "Houses|Lake Sorell",
+     1
+    ],
+    [
+     "Books|Illustrations",
+     1
+    ],
+    [
+     "Portraits|People|Family portraits|Portraits, family|Portraits, group",
+     1
+    ],
+    [
+     "Single volume. Transfered from Tasmaniana Library October 2018.",
+     1
+    ],
+    [
+     "Books|Illustrations|Avoca",
+     1
+    ],
+    [
+     "Books|Illustrations|Homesteads|Book illustrations",
+     1
+    ]
+   ]
+  },
+  {
+   "name": "TOPIC_FACET_NEW",
+   "nonempty": 21,
+   "maxlen": 68,
+   "distinct": 11,
+   "samples": [
+    "Buildings|Halls|Taverns",
+    "Item removed and added to Crowther series of J E McElroy papers",
+    "Houses",
+    "Books|Illustrations",
+    "Books|Illustrations|Towns",
+    "Portraits|People|Family portraits|Portraits, family|Portraits, group"
+   ],
+   "top": [
+    [
+     "Books|Illustrations|Homesteads",
+     6
+    ],
+    [
+     "Books|Illustrations|Towns",
+     5
+    ],
+    [
+     "Books|Illustrations",
+     2
+    ],
+    [
+     "Buildings|Halls|Taverns",
+     1
+    ],
+    [
+     "Item removed and added to Crowther series of J E McElroy papers",
+     1
+    ],
+    [
+     "Houses",
+     1
+    ],
+    [
+     "Portraits|People|Family portraits|Portraits, family|Portraits, group",
+     1
+    ],
+    [
+     "Books|Illustrations|Homesteads|Book illustrations",
+     1
+    ],
+    [
+     "Books|Illustrations|Towns|Book illustrations",
+     1
+    ],
+    [
+     "Rivers|Books|Illustrations|Churches|Book illustrations|Mills",
+     1
+    ],
+    [
+     "Books|Illustrations|Houses|Book illustrations",
+     1
+    ]
+   ]
+  }
+ ],
+ "rows_with_url": 949215,
+ "url_hosts": [
+  [
+   "stors.tas.gov.au",
+   949215
+  ],
+  [
+   "linctas.ent.sirsidynix.net.au",
+   209
+  ],
+  [
+   "portal.archives.tas.gov.au",
+   47
+  ],
+  [
+   "www.linc.tas.gov.au",
+   13
+  ],
+  [
+   "archive.org",
+   1
+  ],
+  [
+   "www.archive.org",
+   1
+  ]
+ ],
+ "rows_with_place_name": 948597,
+ "top_place_names": [
+  [
+   "hobart",
+   934967,
+   "city"
+  ],
+  [
+   "berriedale",
+   439375,
+   "suburb"
+  ],
+  [
+   "launceston",
+   124729,
+   "city"
+  ],
+  [
+   "glenorchy",
+   30182,
+   "town"
+  ],
+  [
+   "new town",
+   13444,
+   "suburb"
+  ],
+  [
+   "burnie",
+   12682,
+   "city"
+  ],
+  [
+   "devonport",
+   8550,
+   "city"
+  ],
+  [
+   "lilydale",
+   7441,
+   "village"
+  ],
+  [
+   "moonah",
+   7296,
+   "suburb"
+  ],
+  [
+   "risdon",
+   7251,
+   "suburb"
+  ],
+  [
+   "sorell",
+   6079,
+   "town"
+  ],
+  [
+   "forest",
+   5553,
+   "village"
+  ],
+  [
+   "ulverstone",
+   5314,
+   "town"
+  ],
+  [
+   "new norfolk",
+   5075,
+   "town"
+  ],
+  [
+   "claremont",
+   5028,
+   "suburb"
+  ],
+  [
+   "scottsdale",
+   4925,
+   "town"
+  ],
+  [
+   "sandy bay",
+   4107,
+   "suburb"
+  ],
+  [
+   "oatlands",
+   3437,
+   "town"
+  ],
+  [
+   "deloraine",
+   3345,
+   "town"
+  ],
+  [
+   "cygnet",
+   3278,
+   "town"
+  ],
+  [
+   "zeehan",
+   3144,
+   "town"
+  ],
+  [
+   "queenstown",
+   3109,
+   "town"
+  ],
+  [
+   "wynyard",
+   3079,
+   "town"
+  ],
+  [
+   "beaconsfield",
+   3079,
+   "town"
+  ],
+  [
+   "franklin",
+   3008,
+   "village"
+  ],
+  [
+   "latrobe",
+   2864,
+   "town"
+  ],
+  [
+   "west coast",
+   2742,
+   "locality"
+  ],
+  [
+   "swanston",
+   2687,
+   "hamlet"
+  ],
+  [
+   "gordon",
+   2671,
+   "village"
+  ],
+  [
+   "george town",
+   2654,
+   "town"
+  ],
+  [
+   "montagu",
+   2552,
+   "hamlet"
+  ],
+  [
+   "kingston",
+   2492,
+   "town"
+  ],
+  [
+   "rokeby",
+   2452,
+   "suburb"
+  ],
+  [
+   "penguin",
+   2441,
+   "town"
+  ],
+  [
+   "bellerive",
+   2396,
+   "suburb"
+  ],
+  [
+   "stanley",
+   2354,
+   "village"
+  ],
+  [
+   "lachlan",
+   2349,
+   "hamlet"
+  ],
+  [
+   "longford",
+   2301,
+   "town"
+  ],
+  [
+   "smithton",
+   2269,
+   "town"
+  ],
+  [
+   "richmond",
+   2171,
+   "town"
+  ],
+  [
+   "st leonards",
+   2094,
+   "suburb"
+  ],
+  [
+   "howrah",
+   2060,
+   "suburb"
+  ],
+  [
+   "hamilton",
+   2025,
+   "village"
+  ],
+  [
+   "lindisfarne",
+   1946,
+   "suburb"
+  ],
+  [
+   "ringarooma",
+   1936,
+   "village"
+  ],
+  [
+   "rosetta",
+   1894,
+   "suburb"
+  ],
+  [
+   "st helens",
+   1885,
+   "town"
+  ],
+  [
+   "campbell town",
+   1868,
+   "town"
+  ],
+  [
+   "strahan",
+   1858,
+   "town"
+  ],
+  [
+   "taroona",
+   1857,
+   "suburb"
+  ],
+  [
+   "ross",
+   1780,
+   "town"
+  ],
+  [
+   "sheffield",
+   1775,
+   "town"
+  ],
+  [
+   "port arthur",
+   1754,
+   "village"
+  ],
+  [
+   "bothwell",
+   1741,
+   "town"
+  ],
+  [
+   "waratah",
+   1687,
+   "town"
+  ],
+  [
+   "bridgewater",
+   1656,
+   "suburb"
+  ],
+  [
+   "fingal",
+   1606,
+   "town"
+  ],
+  [
+   "brighton",
+   1604,
+   "town"
+  ],
+  [
+   "huonville",
+   1586,
+   "town"
+  ],
+  [
+   "cornwall",
+   1556,
+   "hamlet"
+  ]
+ ],
+ "place_examples": [
+  {
+   "places": [
+    "hobart"
+   ],
+   "text": "photograph|archives 1953 photograph order to use in person at history room, 91 murray street, hobart hobart c 164 6 01 jan 1953 1953 https://stors.tas.gov.au/ai/ns2519/1/133 ns2519/1/133 miscellaneous photographs collected by the o'may family (ns2519) open hobart o'may family (ng543) 31 dec 1953 pho"
+  },
+  {
+   "places": [
+    "berriedale",
+    "carrick",
+    "hobart"
+   ],
+   "text": "photograph|archives 1980|1981|1982|1983|1984|1985|1986|1987 photograph order to use in person at history room, 91 murray street, hobart berriedale g 86 2 01 jan 1980 1980-1987 https://stors.tas.gov.au/ai/ns3030/1/142 ns3030/1/142 photographs and slides (ns3030) open berriedale montpelier foundry pty"
+  },
+  {
+   "places": [
+    "launceston"
+   ],
+   "text": "photograph|archives 1940 photograph launceston 34 1 5 1940 https://stors.tas.gov.au/ai/lpic19/1/405 lpic19/1/405 photographs and postcards of ships (lpic19) open launceston robert william brookes (ng2617) photograph -  ship - weeroona"
+  },
+  {
+   "places": [
+    "hobart",
+    "mount direction"
+   ],
+   "text": "photograph|archives 1920 photograph order to use in person at history room, 91 murray street, hobart hobart c 172 3 01 jan 1920 1920 https://stors.tas.gov.au/ai/ns1003/2/29 ns1003/2/29 photographs, glass plate negatives & miscellaneous papers of r.c. harvey (ns1003) open hobart richard c harvey (pho"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart"
+   ],
+   "text": "photograph|archives 1993 photograph order to use in person at history room, 91 murray street, hobart berriedale n 246 1 01 mar 1993 1993 https://stors.tas.gov.au/ai/ns5051/1/3156 ns5051/1/3156 bester family transparencies (ns5051) open berriedale bester family (ng3356) photograph - 12 - sailing the "
+  },
+  {
+   "places": [
+    "hobart",
+    "richmond"
+   ],
+   "text": "photograph|archives 1981 photograph order to use in person at history room, 91 murray street, hobart hobart c 196 3 01 mar 1981 1981 https://stors.tas.gov.au/ai/ph40/1/3555 ph40/1/3555 collection  of photographs (ph40) open hobart unidentified creating agency (xx1) 31 mar 1981 photograph - 28-30 bri"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart",
+    "new norfolk"
+   ],
+   "text": "photograph|archives 1960 photograph order to use in person at history room, 91 murray street, hobart berriedale h 80 7 01 jan 1960 1960 https://stors.tas.gov.au/ai/ns6190/1/31 ns6190/1/31 transparencies of tasmanian colonial buildings (ns6190) open berriedale geoffrey thomas stilwell (ng1436) 31 dec"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart"
+   ],
+   "text": "photograph|archives 1993 photograph order to use in person at history room, 91 murray street, hobart berriedale n 246 1 01 mar 1993 1993 https://stors.tas.gov.au/ai/ns5051/1/3064 ns5051/1/3064 bester family transparencies (ns5051) open berriedale bester family (ng3356) photograph - 4 - sailing the s"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart"
+   ],
+   "text": "photograph|archives 1980 photograph order to use in person at history room, 91 murray street, hobart berriedale r 60 1 01 jan 1980 1980 https://stors.tas.gov.au/ai/ns3828/1/83 ns3828/1/83 photographs (ns3828) open berriedale robert (bob) burton (ng3145)|the wilderness society (tasmania inc) (ng2155)"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart"
+   ],
+   "text": "photograph|archives 1960|1961|1962|1963|1964|1965|1966|1967|1968|1969|1970|1971|1972|1973|1974|1975|1976|1977|1978|1979|1980 photograph order to use in person at history room, 91 murray street, hobart berriedale m 156 2 01 jan 1960 1960-1980 https://stors.tas.gov.au/ai/ns3826/1/288 ns3826/1/288 post"
+  },
+  {
+   "places": [
+    "hobart"
+   ],
+   "text": "photograph|archives 1940 photograph order to use in person at history room, 91 murray street, hobart hobart b 23 1 01 jan 1940 1940 https://stors.tas.gov.au/ai/ns1298/1/1362 ns1298/1/1362 photographs, negatives, newspaper cuttings and miscellaneous papers belonging to ben sheppard (ns1298) open hoba"
+  },
+  {
+   "places": [
+    "beaumaris",
+    "hobart"
+   ],
+   "text": "photograph|archives 1860|1861|1862|1863|1864|1865|1866|1867|1868|1869|1870|1871|1872|1873|1874|1875|1876|1877|1878|1879|1880|1881|1882|1883|1884|1885|1886|1887|1888|1889|1890|1891|1892|1893|1894|1895|1896|1897|1898|1899|1900|1901|1902|1903|1904|1905|1906|1907|1908|1909|1910|1911|1912|1913|1914|1915|"
+  },
+  {
+   "places": [
+    "berriedale",
+    "boat harbour",
+    "boat harbour beach",
+    "hobart"
+   ],
+   "text": "photograph|archives 1948 photograph order to use in person at history room, 91 murray street, hobart berriedale n 246 1 1948 https://stors.tas.gov.au/ai/ns5051/1/4724 ns5051/1/4724 bester family transparencies (ns5051) open berriedale bester family (ng3356) photograph - boat harbour beach - grb phot"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart"
+   ],
+   "text": "photograph|archives 1985 photograph order to use in person at history room, 91 murray street, hobart berriedale p 182 6 01 jan 1985 1985 https://stors.tas.gov.au/ai/ns3428/1/249 ns3428/1/249 photographs relating to the miss tasmania quest (ns3428) open berriedale miss tasmania quest (ng2323)|cerebra"
+  },
+  {
+   "places": [
+    "claremont",
+    "hobart"
+   ],
+   "text": "photograph|archives 1940|1941|1942|1943|1944|1945|1946|1947|1948|1949|1950|1951|1952|1953|1954|1955|1956|1957|1958|1959|1960|1961|1962|1963|1964|1965|1966|1967|1968|1969|1970|1971|1972|1973|1974|1975 photograph hobart c 170 3 01 jan 1940 1940-1975 https://stors.tas.gov.au/ai/ph60/1/666 ph60/1/666 ph"
+  },
+  {
+   "places": [
+    "hobart"
+   ],
+   "text": "photograph|archives 1940|1941|1942|1943|1944|1945|1946|1947|1948|1949|1950|1951|1952|1953|1954|1955|1956|1957|1958|1959|1960|1961|1962|1963|1964|1965|1966|1967|1968|1969|1970|1971|1972|1973|1974|1975 photograph hobart c 170 4 01 jan 1940 1940-1975 https://stors.tas.gov.au/ai/ph60/1/1529 ph60/1/1529 "
+  },
+  {
+   "places": [
+    "hobart",
+    "longford"
+   ],
+   "text": "photograph|archives 1920|1921|1922|1923|1924|1925|1926|1927|1928|1929|1930|1931|1932|1933|1934|1935|1936|1937|1938|1939 photograph order to use in person at history room, 91 murray street, hobart hobart c 90 4 01 jan 1920 1920-1939 https://stors.tas.gov.au/ai/ns6166/1/105 ns6166/1/105 family photogr"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart",
+    "sandy bay"
+   ],
+   "text": "photograph|archives 1968 photograph order to use in person at history room, 91 murray street, hobart berriedale p 25 6 01 jan 1968 1968 https://stors.tas.gov.au/ai/ac904/1/67 ac904/1/67 photographs of school, pupils and activities. (ac904) open berriedale sandy bay infant school (ta1318) 31 dec 1968"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart",
+    "risdon"
+   ],
+   "text": "photograph|archives 1979|1980|1981 photograph order to use in person at history room, 91 murray street, hobart berriedale k 142 2 01 jan 1979 1979-1981 https://stors.tas.gov.au/ai/ns3659/1/746 ns3659/1/746 photographs of e.z. manufacturing process and people (ns3659) open berriedale electrolytic zin"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart"
+   ],
+   "text": "photograph|archives 1990|1991|1992|1993|1994|1995|1996|1997|1998|1999 photograph order to use in person at history room, 91 murray street, hobart berriedale q 172 4 01 jan 1990 1990-1999 https://stors.tas.gov.au/ai/ns4637/1/158 ns4637/1/158 photographs and slides (ns4637) open berriedale peter willm"
+  },
+  {
+   "places": [
+    "hobart"
+   ],
+   "text": "file/volume|archives 1939|1940 file/volume order to use in person at history room, 91 murray street, hobart hobart t 25 6 01 jul 1939 1939-1940 https://stors.tas.gov.au/ai/ad9/1/2580 ad9/1/2580 general correspondence. (ad9) open hobart department of agriculture (2) (ta370)|department of primary indu"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart"
+   ],
+   "text": "file/volume|archives 1976|1977|1978|1979|1980|1981|1982|1983|1984 file/volume order to use in person at history room, 91 murray street, hobart berriedale p 69 3 01 oct 1976 1976-1984 https://stors.tas.gov.au/ai/ab984/1/950 ab984/1/950 marine division - general correspondence. (ab984) open berriedale"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart",
+    "launceston"
+   ],
+   "text": "file/volume|archives 1993 file/volume order to use in person at history room, 91 murray street, hobart berriedale p 293 1 - p 293 7 01 jan 1993 1993 https://stors.tas.gov.au/ai/af894/2/44152 af894/2/44152 record of proceedings (complaints) in the court of petty sessions - adult (af894) agency access"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart",
+    "launceston"
+   ],
+   "text": "file/volume|archives 1992 file/volume order to use in person at history room, 91 murray street, hobart berriedale p 268 2 - p 268 7 01 jan 1992 1992 https://stors.tas.gov.au/ai/af894/2/32808 af894/2/32808 record of proceedings (complaints) in the court of petty sessions - adult (af894) agency access"
+  },
+  {
+   "places": [
+    "berriedale",
+    "hobart",
+    "launceston"
+   ],
+   "text": "file/volume|archives 1992 file/volume order to use in person at history room, 91 murray street, hobart berriedale p 268 2 - p 268 7 01 jan 1992 1992 https://stors.tas.gov.au/ai/af894/2/33063 af894/2/33063 record of proceedings (complaints) in the court of petty sessions - adult (af894) agency access"
+  }
+ ],
+ "years_by_decade": [
+  [
+   "1700s",
+   1298
+  ],
+  [
+   "1710s",
+   1252
+  ],
+  [
+   "1720s",
+   1213
+  ],
+  [
+   "1730s",
+   1250
+  ],
+  [
+   "1740s",
+   1215
+  ],
+  [
+   "1750s",
+   1279
+  ],
+  [
+   "1760s",
+   1247
+  ],
+  [
+   "1770s",
+   1247
+  ],
+  [
+   "1780s",
+   1275
+  ],
+  [
+   "1790s",
+   1358
+  ],
+  [
+   "1800s",
+   2140
+  ],
+  [
+   "1810s",
+   2502
+  ],
+  [
+   "1820s",
+   17779
+  ],
+  [
+   "1830s",
+   40910
+  ],
+  [
+   "1840s",
+   34881
+  ],
+  [
+   "1850s",
+   39112
+  ],
+  [
+   "1860s",
+   77664
+  ],
+  [
+   "1870s",
+   105450
+  ],
+  [
+   "1880s",
+   173970
+  ],
+  [
+   "1890s",
+   216176
+  ],
+  [
+   "1900s",
+   303551
+  ],
+  [
+   "1910s",
+   367580
+  ],
+  [
+   "1920s",
+   440333
+  ],
+  [
+   "1930s",
+   522899
+  ],
+  [
+   "1940s",
+   581614
+  ],
+  [
+   "1950s",
+   764378
+  ],
+  [
+   "1960s",
+   817457
+  ],
+  [
+   "1970s",
+   771041
+  ],
+  [
+   "1980s",
+   602450
+  ],
+  [
+   "1990s",
+   280475
+  ],
+  [
+   "2000s",
+   35193
+  ],
+  [
+   "2010s",
+   4430
+  ],
+  [
+   "2020s",
+   1108
+  ]
+ ],
+ "example_rows": [
+  {
+   "FORMAT": "file/volume|Archives",
+   "PUBDATE": "1965",
+   "LOCAL_FORMAT": "file/volume",
+   "ITEM_ORDER": "Order to use in person at History Room, 91 Murray Street, Hobart",
+   "ITEM_LOCN_BAY": "Berriedale G 200 3",
+   "SERIES_START_DATE": "01 Jun 1965",
+   "PUBDATE_RANGE": "1965",
+   "RECORD_URL": "https://stors.tas.gov.au/AI/LSD347/1/3435",
+   "ID": "LSD347/1/3435",
+   "SERIES": "Personal Holdings Files. (LSD347)",
+   "ACCESS": "Open",
+   "ITEM_LOCATION": "Berriedale",
+   "AGENCY": "Lands and Surveys Department (TA69)",
+   "SERIES_END_DATE": "29 Jun 1965",
+   "TITLE": "Phillips Patricia Dawn Town Land A8735 P/35",
+   "ITEM_FURTHER_DESC": "",
+   "ITEM_COPY_NUMBER": "",
+   "SUBJECT": "",
+   "TOPIC_FACET_NEW": ""
+  },
+  {
+   "FORMAT": "file/volume|Archives",
+   "PUBDATE": "1960|1961|1962|1963|1964",
+   "LOCAL_FORMAT": "file/volume",
+   "ITEM_ORDER": "Order to use in person at History Room, 91 Murray Street, Hobart",
+   "ITEM_LOCN_BAY": "Berriedale G 200 3",
+   "SERIES_START_DATE": "01 Dec 1960",
+   "PUBDATE_RANGE": "1960-1964",
+   "RECORD_URL": "https://stors.tas.gov.au/AI/LSD347/1/3436",
+   "ID": "LSD347/1/3436",
+   "SERIES": "Personal Holdings Files. (LSD347)",
+   "ACCESS": "Open",
+   "ITEM_LOCATION": "Berriedale",
+   "AGENCY": "Lands and Surveys Department (TA69)",
+   "SERIES_END_DATE": "09 Nov 1964",
+   "TITLE": "Phillips Pauline Rose Temporary Licence A4901 R/35",
+   "ITEM_FURTHER_DESC": "",
+   "ITEM_COPY_NUMBER": "",
+   "SUBJECT": "",
+   "TOPIC_FACET_NEW": ""
+  },
+  {
+   "FORMAT": "file/volume|Archives",
+   "PUBDATE": "1953",
+   "LOCAL_FORMAT": "file/volume",
+   "ITEM_ORDER": "Order to use in person at History Room, 91 Murray Street, Hobart",
+   "ITEM_LOCN_BAY": "Hobart B 317 2",
+   "SERIES_START_DATE": "01 Oct 1953",
+   "PUBDATE_RANGE": "1953",
+   "RECORD_URL": "https://stors.tas.gov.au/AI/AE963/1/68",
+   "ID": "AE963/1/68",
+   "SERIES": "General Correspondence (AE963)",
+   "ACCESS": "Open",
+   "ITEM_LOCATION": "Hobart",
+   "AGENCY": "Tasmanian Government Railways (TA245)|Transport Commission (TA90)",
+   "SERIES_END_DATE": "01 Oct 1953",
+   "TITLE": "Phillips' Report on Tasmanian Government Railway",
+   "ITEM_FURTHER_DESC": "",
+   "ITEM_COPY_NUMBER": "",
+   "SUBJECT": "",
+   "TOPIC_FACET_NEW": ""
+  },
+  {
+   "FORMAT": "file/volume|Archives",
+   "PUBDATE": "1930",
+   "LOCAL_FORMAT": "file/volume",
+   "ITEM_ORDER": "Order to use in person at History Room, 91 Murray Street, Hobart",
+   "ITEM_LOCN_BAY": "Berriedale H 40 4",
+   "SERIES_START_DATE": "09 Jul 1930",
+   "PUBDATE_RANGE": "1930",
+   "RECORD_URL": "https://stors.tas.gov.au/AI/HSD186/1/4078",
+   "ID": "HSD186/1/4078",
+   "SERIES": "Files of Deceased and discharged Patients. (HSD186)",
+   "ACCESS": "Restricted 50 Years (B50)",
+   "ITEM_LOCATION": "Berriedale",
+   "AGENCY": "New Town Charitable Institution (TA888)|New Town Infirmary and Consumptive Home (TA889)|New Town Rest Home (TA890)|St John's Park Hospital (TA443)",
+   "SERIES_END_DATE": "16 Jul 1930",
+   "TITLE": "Phillips, Albert",
+   "ITEM_FURTHER_DESC": "",
+   "ITEM_COPY_NUMBER": "",
+   "SUBJECT": "",
+   "TOPIC_FACET_NEW": ""
+  },
+  {
+   "FORMAT": "file/volume|Archives",
+   "PUBDATE": "1942|1943|1944|1945|1946|1947",
+   "LOCAL_FORMAT": "file/volume",
+   "ITEM_ORDER": "Order to use in person at History Room, 91 Murray Street, Hobart",
+   "ITEM_LOCN_BAY": "Hobart F 338 5",
+   "SERIES_START_DATE": "21 Oct 1942",
+   "PUBDATE_RANGE": "1942-1947",
+   "RECORD_URL": "https://stors.tas.gov.au/AI/ED190/1/1870",
+   "ID": "ED190/1/1870",
+   "SERIES": "Personal Files of Teachers. (ED190)",
+   "ACCESS": "Open",
+   "ITEM_LOCATION": "Hobart",
+   "AGENCY": "Education Department (TA63)",
+   "SERIES_END_DATE": "17 Jun 1947",
+   "TITLE": "Phillips, Allison Couper. (formerly Ferguson) (0418/1942)",
+   "ITEM_FURTHER_DESC": "",
+   "ITEM_COPY_NUMBER": "",
+   "SUBJECT": "",
+   "TOPIC_FACET_NEW": ""
+  }
+ ]
+}
