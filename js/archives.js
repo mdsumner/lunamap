@@ -7,7 +7,7 @@
 (function () {
   var KINDS = [["p", "Photographs"], ["m", "Maps and plans"], ["b", "Public Works drawings"], ["f", "Film"]];
   var PAGE = 150;
-  var sheet = null, index = null, marks = L.layerGroup(), here = null, curPlace = null, items = [], filter = "";
+  var sheet = null, index = null, marks = L.layerGroup(), here = null, curPlace = null, items = [], filter = "", onlineOnly = false;
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return "&#" + c.charCodeAt(0) + ";"; }); }
   function loadIndex() {
@@ -22,21 +22,26 @@
     sheet.innerHTML = "<h2><span>Archives near here</span><button id='arcclose' aria-label='Close'>x</button></h2>" +
       "<div id='arcplaces' class='seg'></div>" +
       "<input id='arcfilter' type='search' placeholder='Filter titles (e.g. fire, school, 1967)' style='width:100%;margin:4px 0'>" +
+      "<label class='small'><input id='arconline' type='checkbox'> Only items that may be viewable online</label>" +
       "<div id='arclist' class='small'></div>" +
       "<p class='small' style='color:#666'>From the Libraries Tasmania / Tasmanian Archives catalogue (data.gov.au, CC BY 4.0; " +
-      "open-access items, catalogue as of 2021). Items are matched by the place named in their title, so they are near here " +
+      "open-access items, catalogue as of 2021). Most items are originals you order to view in person at the History Room " +
+      "(91 Murray Street, Hobart); \"online?\" marks the few without that note, which may be viewable online. Items are matched by the place named in their title, so they are near here " +
       "only in that sense; \"?\" marks a name that is also a common word or surname. Copies of archive items are for private " +
       "research; other uses need permission from Libraries Tasmania.</p>";
     document.body.appendChild(sheet);
     sheet.querySelector("#arcclose").onclick = function () { sheet.style.display = "none"; map.removeLayer(marks); };
     sheet.querySelector("#arcfilter").oninput = function (e) { filter = e.target.value.toLowerCase(); render(); };
+    sheet.querySelector("#arconline").onchange = function (e) { onlineOnly = e.target.checked; render(); };
     return sheet;
   }
 
   function render() {
     var el = sheet.querySelector("#arclist");
     if (!curPlace) return;
-    var shown = items.filter(function (it) { return !filter || (it[1] + " " + it[2]).toLowerCase().indexOf(filter) >= 0; });
+    var shown = items.filter(function (it) {
+      return (!filter || (it[1] + " " + it[2]).toLowerCase().indexOf(filter) >= 0) && (!onlineOnly || it[5] === 1);
+    });
     var html = ["<div><b>" + esc(curPlace[1]) + "</b>: " + shown.length + (filter ? " matching" : "") + " items</div>"];
     KINDS.forEach(function (k) {
       var g = shown.filter(function (it) { return it[3] === k[0]; });
@@ -44,7 +49,8 @@
       html.push("<details" + (k[0] === "p" || k[0] === "m" ? " open" : "") + "><summary><b>" + k[1] + "</b> (" + g.length + ")</summary><ul class='arcul'>" +
         g.slice(0, PAGE).map(function (it) {
           return "<li><a href='https://stors.tas.gov.au/AI/" + esc(it[0]) + "' target='_blank' rel='noopener'>" + esc(it[1]) + "</a>" +
-            (it[2] ? " <span class='arcy'>" + esc(it[2]) + "</span>" : "") + (it[4] ? " <span title='The place name is also a common word or surname'>?</span>" : "") + "</li>";
+            (it[2] ? " <span class='arcy'>" + esc(it[2]) + "</span>" : "") + (it[4] ? " <span title='The place name is also a common word or surname'>?</span>" : "") +
+            (it[5] === 1 ? " <span class='arcon' title='No order-in-person note in the catalogue: may be viewable online'>online?</span>" : "") + "</li>";
         }).join("") + (g.length > PAGE ? "<li>... and " + (g.length - PAGE) + " more: use the filter</li>" : "") + "</ul></details>");
     });
     el.innerHTML = html.join("");
