@@ -9,7 +9,8 @@ common words or surnames are kept but marked "maybe".
 
 Writes:
   data/archives/index.json        places with items: [osm id, name, lon, lat, photos, maps, plans, film]
-  data/archives/p/<osm id>.json   that place's items: [catalogue id, title, years, kind, maybe]
+  data/archives/p/<osm id>.json   that place's items: [catalogue id, title, years, kind, maybe, online]
+online = 1 when the item has no "order to use in person" note (so it may be viewable online).
 kind: p photograph, m map or plan, b Public Works Department drawing (buildings, roads, bridges), f film
 Items link to https://stors.tas.gov.au/AI/<catalogue id>.
 Usage: python3 scripts/archives_index.py archives.csv
@@ -67,7 +68,8 @@ with open(src, newline="", encoding="utf-8", errors="replace") as f:
         years = (r.get("PUBDATE_RANGE", "") or "").strip()
         if pwd and years == "1830":                   # a placeholder date on many Public Works drawings
             years = ""
-        rec = [r.get("ID", ""), title[:160], years, kind, 0 if sure else 1]
+        online = 0 if (r.get("ITEM_ORDER", "") or "").strip() else 1   # no "order to use in person" note: maybe viewable online
+        rec = [r.get("ID", ""), title[:160], years, kind, 0 if sure else 1, online]
         for g in specific:
             items[byname[g][0]].append(rec)
 
