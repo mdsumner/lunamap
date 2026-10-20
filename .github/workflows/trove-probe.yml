@@ -1,0 +1,28 @@
+# One-off research: probe Trove for Libraries Tasmania items that are online with images.
+# Needs the repository secret TROVE_API_KEY. Run by hand.
+name: trove-probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Probe Trove
+        env:
+          TROVE_API_KEY: ${{ secrets.TROVE_API_KEY }}
+        run: python3 scripts/trove_probe.py
+      - name: Commit the result
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/trove-probe.json || true
+          git diff --cached --quiet || git commit -m "Trove probe result"
+          git push
