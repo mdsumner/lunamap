@@ -247,7 +247,27 @@ move whole shapes, and delete. While drawing, tapping the map does not drop the 
     start, end, lowest and highest heights, total climb and descent, and the steepest grade over about 20 m.
     Touch the profile to show that spot on the map. <b>Profile CSV</b> saves the samples. <b>Elevation</b> (points) gives the
     height at a point. Heights are metres above sea level (AHD). Long lines are sampled more coarsely (up to 500 samples).
+    <b>Slope detail</b> (tick it under the profile; it stays on until you untick it) adds a coloured slope strip under the
+    profile and colours the line on the map the same way: grey under 5%, green 5-10%, yellow 10-20%, orange 20-30%, red over 30%.
+    It lists the distance in each class, the average grade going up and going down, the steepest 100 m stretch, and the
+    steepest spot up and down (tap one to go there). Touching the profile then also gives the slope at that spot, uphill or
+    downhill in the direction the line was drawn. Profile CSV gets grade columns in percent and degrees.
+    Slope is smoothed over about 20 m (wider on long lines, which are sampled more coarsely), so a short sharp pinch can be
+    steeper than shown; on the 2 m model expect about 1 to 2 percentage points of noise.
     Needs signal. Elevation: Tasmania 2 m DEM, Mineral Resources Tasmania / theLIST (CC BY 3.0 AU), via Source Cooperative; outside it, GEBCO 2026.</li>
+  <li><b>Slope: percent, ratio and degrees.</b> All three describe the same thing, rise over run, where run is the
+    horizontal (map) distance, not the distance along the ground.
+    <ul>
+      <li><b>Percent</b> = 100 x rise / run. Climbing 10 m over 100 m is 10%. 100% is not vertical: it is 45 degrees,
+        1 m up for every 1 m across. Vertical would be infinite percent.</li>
+      <li><b>Ratio, "1 in N"</b> = run / rise, so N = 100 / percent. 10% is 1 in 10, 25% is 1 in 4, 50% is 1 in 2.
+        A bigger N is gentler. Road signs and track notes use this.</li>
+      <li><b>Degrees</b> = the angle above horizontal, atan(rise / run). Percent and degrees are close only on gentle
+        slopes: 10% is about 6 degrees, 20% about 11, 30% about 17, 50% about 27, 100% is 45.</li>
+    </ul>
+    Watch for ratios written the other way round: earthworks and batters are often given as horizontal to vertical,
+    so a "3:1" batter is 3 across for 1 up, which is 1 in 3, about 33% or 18 degrees. Fire behaviour guides usually
+    quote slope in degrees; as a rule of thumb a fire runs roughly twice as fast for every 10 degrees of upslope.</li>
   <li>Shapes are saved on this device and come back next time you open the map. Nothing is uploaded.</li>
   <li><b>Export</b> as GeoJSON, KML (Google Earth, Avenza) or GPX (GPS units; polygons become closed tracks).</li>
   <li><b>Import</b> GeoJSON, KML or GPX files - for example a track from someone's GPS. Names in the file become labels.</li>

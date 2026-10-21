@@ -94,11 +94,58 @@ function adopt(layer, props) {
 var GEOTIFF_JS = "https://cdn.jsdelivr.net/npm/geotiff@3.0.5/dist-browser/geotiff.js";
 var profCursor = L.circleMarker([0, 0], { radius: 6, color: "#fff", weight: 2, fillColor: "#e65100", fillOpacity: 1, interactive: false });
 var profData = null, profSeq = 0;
+var SLOPE_KEY = "lunamap-slope", slopeOn = false, slopeLine = L.layerGroup();
+try { slopeOn = localStorage.getItem(SLOPE_KEY) === "1"; } catch (e) {}
+document.getElementById("dslope").checked = slopeOn;
 function clearProfile() {
   profSeq++; profData = null;
   document.getElementById("dprof").style.display = "none";
   if (map.hasLayer(profCursor)) map.removeLayer(profCursor);
+  slopeLine.clearLayers(); map.removeLayer(slopeLine);
 }
+// opt-in slope detail: a slope strip under the profile, the line coloured by slope on the
+// map, distance in each slope class, average grades, steepest spots, and slope at the cursor
+function drawSlopeDetail() {
+  var P = window.lunamapProfile, el = document.getElementById("dprofslope");
+  slopeLine.clearLayers(); map.removeLayer(slopeLine);
+  if (!profData) return;
+  document.getElementById("dprofchart").innerHTML = P.profileSVG(profData.pts, profData.st, { slope: slopeOn });
+  wireProfileCursor();
+  if (!slopeOn) { el.innerHTML = ""; return; }
+  var pts = profData.pts, ss = profData.ss, C = P.SLOPE_CLASSES, total = ss.dist.reduce(function (a, b) { return a + b; }, 0);
+  // the drawn line, coloured by slope class
+  var seg = null;
+  for (var i = 0; i < pts.length; i++) {
+    var c = pts[i].g === null ? -1 : P.slopeClass(pts[i].g);
+    if (seg && seg.c === c) { seg.ll.push([pts[i].lat, pts[i].lon]); continue; }
+    if (seg && seg.c >= 0) { seg.ll.push([pts[i].lat, pts[i].lon]); L.polyline(seg.ll, { color: C[seg.c][2], weight: 7, opacity: 0.9, interactive: false }).addTo(slopeLine); }
+    seg = { c: c, ll: [[pts[i].lat, pts[i].lon]] };
+  }
+  if (seg && seg.c >= 0 && seg.ll.length > 1) L.polyline(seg.ll, { color: C[seg.c][2], weight: 7, opacity: 0.9, interactive: false }).addTo(slopeLine);
+  slopeLine.addTo(map);
+  var rows = C.map(function (k, j) {
+    var d = ss.dist[j]; if (!d) return "";
+    return "<tr><td><span style='display:inline-block;width:12px;height:12px;background:" + k[2] + ";vertical-align:middle'></span> " + k[1] +
+      "</td><td style='text-align:right'>" + fmtDist(d) + "</td><td style='text-align:right'>" + Math.round(100 * d / (total || 1)) + "%</td></tr>";
+  }).join("");
+  function spot(p, word) {
+    return p ? "<button type='button' class='slopego' data-d='" + p.d + "'>" + word + " " + P.fmtGrade(p.g) + " at " + fmtDist(p.d) + "</button>" : "";
+  }
+  el.innerHTML = "<table style='border-collapse:collapse;margin:4px 0'>" + rows + "</table>" +
+    "<div>Average climbing " + (ss.upAvg === null ? "n/a" : P.fmtGrade(ss.upAvg)) + ", average descending " +
+    (ss.dnAvg === null ? "n/a" : P.fmtGrade(-ss.dnAvg)) + " (in the drawn direction).</div>" +
+    (ss.sustained ? "<div>Steepest 100 m: " + P.fmtGrade(ss.sustained.g, true) + ", " + fmtDist(ss.sustained.from) + " to " + fmtDist(ss.sustained.to) + " along.</div>" : "") +
+    "<div class='acts'>" + spot(ss.maxUp, "Steepest up") + spot(ss.maxDn, "Steepest down") + "</div>" +
+    "<div style='color:#666'>Slope is rise over horizontal distance, smoothed over about " + Math.round(Math.max(10, profData.spacing) * 2) +
+    " m. % = 100 x rise / run; 1 in N = run / rise; 100% = 1 in 1 = 45 deg. See Help.</div>";
+  [].forEach.call(el.querySelectorAll(".slopego"), function (b) { b.onclick = function () { profileCursorAt(+b.getAttribute("data-d"), true); }; });
+}
+document.getElementById("dslope").onchange = function (e) {
+  slopeOn = e.target.checked;
+  try { localStorage.setItem(SLOPE_KEY, slopeOn ? "1" : "0"); } catch (err) {}
+  drawSlopeDetail();
+  if (profData) document.getElementById("dprofread").textContent = "Touch the profile to find a spot on the line";
+};
 function loadProfileTools() {
   return loadScript(GEOTIFF_JS).then(function () { return loadScript("js/profile.js"); });
 }
@@ -124,8 +171,9 @@ function runProfile() {
       }
       var st = P.profileStats(s.pts);
       if (!st) { toast("No elevation along this line (outside the DEM)"); return; }
-      profData = { pts: s.pts, layer: layer };
-      document.getElementById("dprofchart").innerHTML = P.profileSVG(s.pts, st);
+      profData = { pts: s.pts, layer: layer, st: st, spacing: s.spacing, ss: P.slopeStats(s.pts, s.spacing) };
+      // one steepest figure everywhere: the smoothed grade used by the slope detail
+      var ss = profData.ss; st.steep = Math.max(ss.maxUp ? ss.maxUp.g : 0, ss.maxDn ? -ss.maxDn.g : 0);
       document.getElementById("dprofstats").textContent =
         "Start " + (st.start === null ? "n/a" : Math.round(st.start) + " m") + ", end " + (st.end === null ? "n/a" : Math.round(st.end) + " m") +
         ". Lowest " + Math.round(st.min) + " m, highest " + Math.round(st.max) + " m. Climb +" + Math.round(st.up) +
@@ -134,22 +182,32 @@ function runProfile() {
       document.getElementById("dprofcredit").textContent = P.credit;
       document.getElementById("dprofread").textContent = "Touch the profile to find a spot on the line";
       document.getElementById("dprof").style.display = "block";
-      wireProfileCursor();
+      drawSlopeDetail();
     });
   }).catch(function (e) { toast("Elevation unavailable: " + e.message); })
     .then(function () { btn.disabled = false; btn.textContent = kindOf(layer) === "point" ? "Elevation" : "Profile"; });
+}
+// put the cursor (chart line + map dot + readout) at distance d along the line
+function profileCursorAt(d, pan) {
+  if (!profData) return;
+  var vb = 600, L0 = 38, R0 = 8, pts = profData.pts, D = pts[pts.length - 1].d, best = pts[0];
+  pts.forEach(function (p) { if (Math.abs(p.d - d) < Math.abs(best.d - d)) best = p; });
+  var cur = document.getElementById("dprofcur"), xv = L0 + (vb - L0 - R0) * (D ? best.d / D : 0);
+  if (cur) { cur.setAttribute("x1", xv); cur.setAttribute("x2", xv); cur.setAttribute("visibility", "visible"); }
+  profCursor.setLatLng([best.lat, best.lon]); if (!map.hasLayer(profCursor)) profCursor.addTo(map);
+  if (pan) map.panTo([best.lat, best.lon]);
+  var txt = fmtDist(best.d) + " along: " + (best.z === null ? "no data" : best.z.toFixed(1) + " m");
+  if (slopeOn && best.g !== null && best.g !== undefined)
+    txt += ", slope " + window.lunamapProfile.fmtGrade(best.g, true) + (best.g > 0.005 ? " uphill" : best.g < -0.005 ? " downhill" : "");
+  document.getElementById("dprofread").textContent = txt;
 }
 function wireProfileCursor() {
   var svg = document.getElementById("dprofsvg"); if (!svg || !profData) return;
   function at(ev) {
     var r = svg.getBoundingClientRect(), cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
     var vb = 600, L0 = 38, R0 = 8, fx = (cx / r.width * vb - L0) / (vb - L0 - R0);
-    var pts = profData.pts, D = pts[pts.length - 1].d, d = Math.max(0, Math.min(1, fx)) * D, best = pts[0];
-    pts.forEach(function (p) { if (Math.abs(p.d - d) < Math.abs(best.d - d)) best = p; });
-    var cur = document.getElementById("dprofcur"), xv = L0 + (vb - L0 - R0) * (D ? best.d / D : 0);
-    cur.setAttribute("x1", xv); cur.setAttribute("x2", xv); cur.setAttribute("visibility", "visible");
-    profCursor.setLatLng([best.lat, best.lon]); if (!map.hasLayer(profCursor)) profCursor.addTo(map);
-    document.getElementById("dprofread").textContent = fmtDist(best.d) + " along: " + (best.z === null ? "no data" : best.z.toFixed(1) + " m");
+    var pts = profData.pts, D = pts[pts.length - 1].d;
+    profileCursorAt(Math.max(0, Math.min(1, fx)) * D, false);
     if (ev.cancelable) ev.preventDefault();
   }
   ["mousemove", "touchstart", "touchmove", "click"].forEach(function (t) { svg.addEventListener(t, at, { passive: false }); });

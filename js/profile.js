@@ -97,7 +97,66 @@ function profileStats(pts) {
   return { min: min, max: max, up: up, down: down, steep: steep, start: pts[0].z, end: pts[pts.length - 1].z };
 }
 
-function profileSVG(pts, st) {
+// ---- slope detail (opt in) ----------------------------------------------------------
+// Grade = rise / run, where run is the horizontal (map) distance. Shown three ways:
+// percent (100 x rise / run), "1 in N" (N = run / rise) and degrees (atan of rise / run).
+// 100% = 1 in 1 = 45 degrees. Grades are smoothed over about 20 m (or the sample spacing,
+// if wider) so 2 m DEM noise, kerbs and logs don't show up as cliffs.
+var SLOPE_CLASSES = [   // upper bound in percent, label, colour
+  [5, "under 5% (flat)", "#9e9e9e"], [10, "5-10% (gentle)", "#7cb342"], [20, "10-20% (moderate)", "#fdd835"],
+  [30, "20-30% (steep)", "#fb8c00"], [Infinity, "over 30% (very steep)", "#c62828"]];
+function slopeClass(g) { var p = Math.abs(g) * 100; for (var i = 0; i < SLOPE_CLASSES.length; i++) if (p < SLOPE_CLASSES[i][0]) return i; return SLOPE_CLASSES.length - 1; }
+function fmtGrade(g, signed) {
+  var p = g * 100, a = Math.abs(p), deg = Math.atan(Math.abs(g)) * 180 / Math.PI;
+  var ratio = a < 0.5 ? "level" : "1 in " + (100 / a < 10 ? (100 / a).toFixed(1).replace(/\.0$/, "") : Math.round(100 / a));
+  return (signed && p >= 0.5 ? "+" : signed && p <= -0.5 ? "-" : "") + Math.round(a) + "% (" + ratio + ", " +
+    (deg < 10 ? deg.toFixed(1) : Math.round(deg)) + " deg)";
+}
+// grade at each sample along the line (signed: + is uphill in the drawn direction), or null
+function slopes(pts, spacing) {
+  var h = Math.max(10, spacing), n = pts.length, a = 0, b = 0;
+  for (var i = 0; i < n; i++) {
+    while (a < i && pts[i].d - pts[a].d > h) a++;
+    if (b < i) b = i;
+    while (b + 1 < n && pts[b + 1].d - pts[i].d <= h) b++;
+    // least-squares slope of height against distance over the window (steadier than end points,
+    // since each sample takes the height of the 2 m cell it falls in)
+    var sn = 0, sd = 0, sz = 0, sdd = 0, sdz = 0, dmin = Infinity, dmax = -Infinity;
+    for (var j = a; j <= b; j++) {
+      var q = pts[j]; if (q.z === null) continue;
+      var dx = q.d - pts[i].d;
+      sn++; sd += dx; sz += q.z; sdd += dx * dx; sdz += dx * q.z; dmin = Math.min(dmin, q.d); dmax = Math.max(dmax, q.d);
+    }
+    var den = sn * sdd - sd * sd;
+    pts[i].g = (pts[i].z !== null && sn >= 2 && dmax - dmin >= Math.min(10, h) && den > 0) ? (sn * sdz - sd * sz) / den : null;
+  }
+}
+// distance in each class, average grades, steepest spots
+function slopeStats(pts, spacing) {
+  slopes(pts, spacing);
+  var dist = SLOPE_CLASSES.map(function () { return 0; }), upD = 0, upZ = 0, dnD = 0, dnZ = 0, maxUp = null, maxDn = null;
+  for (var i = 1; i < pts.length; i++) {
+    var p = pts[i], q = pts[i - 1], dd = p.d - q.d;
+    if (p.g === null || q.g === null || p.z === null || q.z === null) continue;
+    var g = (p.g + q.g) / 2;
+    dist[slopeClass(g)] += dd;
+    if (p.z > q.z) { upD += dd; upZ += p.z - q.z; } else if (p.z < q.z) { dnD += dd; dnZ += q.z - p.z; }
+    if (p.g > 0 && (!maxUp || p.g > maxUp.g)) maxUp = p;
+    if (p.g < 0 && (!maxDn || p.g < maxDn.g)) maxDn = p;
+  }
+  // steepest sustained 100 m (only for lines long enough)
+  var sus = null;
+  for (var x = 0, y = 0; y < pts.length; y++) {
+    while (x < y && pts[y].d - pts[x + 1].d >= 100) x++;
+    if (pts[y].d - pts[x].d >= 100 && pts[x].z !== null && pts[y].z !== null) {
+      var gg = (pts[y].z - pts[x].z) / (pts[y].d - pts[x].d);
+      if (!sus || Math.abs(gg) > Math.abs(sus.g)) sus = { g: gg, from: pts[x].d, to: pts[y].d };
+    }
+  }
+  return { dist: dist, upAvg: upD ? upZ / upD : null, dnAvg: dnD ? -dnZ / dnD : null, maxUp: maxUp, maxDn: maxDn, sustained: sus };
+}
+
+function profileSVG(pts, st, opt) {
   var W = 600, H = 170, L = 38, R = 8, T = 8, B = 22;
   var D = pts[pts.length - 1].d || 1, zmin = Math.floor(st.min), zmax = Math.ceil(st.max);
   if (zmax - zmin < 10) { zmax = zmin + 10; }
@@ -115,16 +174,37 @@ function profileSVG(pts, st) {
   return "<svg id='dprofsvg' viewBox='0 0 " + W + " " + H + "' preserveAspectRatio='none' style='width:100%;height:120px'>" +
     "<g font-size='11' fill='#555' font-family='system-ui,sans-serif'>" + g(zmax) + g((zmin + zmax) / 2) + g(zmin) +
     "<text x='" + L + "' y='" + (H - 6) + "'>0</text><text x='" + (W - R) + "' y='" + (H - 6) + "' text-anchor='end'>" + fmtDist(D) + "</text></g>" +
-    "<path d='" + fill + "' fill='#e1bee7' opacity='0.7'/><path d='" + path + "' fill='none' stroke='#6a1b9a' stroke-width='2'/>" +
+    "<path d='" + fill + "' fill='#e1bee7' opacity='0.7'/>" + (opt && opt.slope ? slopeBand(pts, x, H - B) : "") +
+    "<path d='" + path + "' fill='none' stroke='#6a1b9a' stroke-width='2'/>" +
     "<line id='dprofcur' x1='0' x2='0' y1='" + T + "' y2='" + (H - B) + "' stroke='#e65100' stroke-width='1.5' visibility='hidden'/></svg>";
 }
 
+// a strip along the bottom of the plot coloured by slope class
+function slopeBand(pts, x, yb) {
+  var out = "", run = null;
+  function flush(end) {
+    if (run) out += "<rect x='" + x(run.d0).toFixed(1) + "' y='" + (yb - 7) + "' width='" + Math.max(0.5, x(end) - x(run.d0)).toFixed(1) +
+      "' height='7' fill='" + SLOPE_CLASSES[run.c][2] + "'/>";
+  }
+  for (var i = 0; i < pts.length; i++) {
+    var c = pts[i].g === null || pts[i].g === undefined ? -1 : slopeClass(pts[i].g);
+    if (!run || run.c !== c) { if (run && run.c >= 0) flush(pts[i].d); run = c >= 0 ? { c: c, d0: pts[i].d } : { c: -1, d0: pts[i].d }; }
+  }
+  if (run && run.c >= 0) flush(pts[pts.length - 1].d);
+  return out;
+}
+
 function profileCSV(pts) {
-  return "distance_m,lon,lat,easting_mga94_z55,northing_mga94_z55,elevation_m_ahd\n" + pts.map(function (p) {
-    return [p.d.toFixed(1), p.lon.toFixed(6), p.lat.toFixed(6), p.E.toFixed(1), p.N.toFixed(1),
-            p.z === null ? "" : p.z.toFixed(2)].join(",");
-  }).join("\n") + "\n";
+  var hasG = pts.some(function (p) { return p.g !== undefined; });
+  return "distance_m,lon,lat,easting_mga94_z55,northing_mga94_z55,elevation_m_ahd" + (hasG ? ",grade_pct,grade_deg" : "") + "\n" +
+    pts.map(function (p) {
+      var row = [p.d.toFixed(1), p.lon.toFixed(6), p.lat.toFixed(6), p.E.toFixed(1), p.N.toFixed(1), p.z === null ? "" : p.z.toFixed(2)];
+      if (hasG) row.push(p.g === null || p.g === undefined ? "" : (p.g * 100).toFixed(1),
+                         p.g === null || p.g === undefined ? "" : (Math.atan(p.g) * 180 / Math.PI).toFixed(1));
+      return row.join(",");
+    }).join("\n") + "\n";
 }
 
 window.lunamapProfile = { samplePoints: samplePoints, sampleDEM: sampleDEM, profileStats: profileStats,
-  profileSVG: profileSVG, profileCSV: profileCSV, credit: DEM_CREDIT };
+  profileSVG: profileSVG, profileCSV: profileCSV, credit: DEM_CREDIT,
+  slopeStats: slopeStats, slopeClass: slopeClass, fmtGrade: fmtGrade, SLOPE_CLASSES: SLOPE_CLASSES };
