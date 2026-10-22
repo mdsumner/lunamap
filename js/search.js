@@ -205,6 +205,78 @@ function addressSearch(raw) {
   return next();
 }
 
+// Road and place names, alongside addresses: "Styx Road", "styx rd", "mount lloyd", "Uxbridge".
+// Roads come from theLIST transport network (layer 8, the routing data), one entry per stretch
+// of a name (pieces within about 2 km of each other join up), so a remote road with no
+// addresses on it is still found. Places come from the OpenStreetMap place list in data/.
+var ROAD_WORDS = { RD: "ROAD", ST: "STREET", AVE: "AVENUE", AV: "AVENUE", DR: "DRIVE", CRES: "CRESCENT", CR: "CRESCENT",
+  CT: "COURT", PL: "PLACE", LN: "LANE", HWY: "HIGHWAY", PDE: "PARADE", TCE: "TERRACE", CL: "CLOSE", GR: "GROVE",
+  TRK: "TRACK", BVD: "BOULEVARD", BLVD: "BOULEVARD", CCT: "CIRCUIT", ESP: "ESPLANADE", MT: "MOUNT", "MT.": "MOUNT", STH: "SOUTH", NTH: "NORTH" };
+var roadHi = L.layerGroup().addTo(map);
+function nameWords(raw) {
+  var s = String(raw).split(/\r?\n/)[0].toUpperCase().replace(/[^A-Z0-9' ]+/g, " ").replace(/\s+/g, " ").trim();
+  return s ? s.split(" ").map(function (w) { return ROAD_WORDS[w] || w; }).join(" ") : "";
+}
+function roadSearch(raw) {
+  var name = nameWords(raw);
+  if (!name || name.length < 3 || /^[0-9]/.test(name)) return Promise.resolve([]);
+  var url = LISTPUB + "TopographyAndRelief/MapServer/8/query?where=" + encodeURIComponent("UPPER(PRI_NAME) LIKE " + sqlq(name + "%")) +
+    "&outFields=OBJECTID,PRI_NAME,TRAN_CLASS,SURFACE_TY&returnGeometry=true&outSR=4326&maxAllowableOffset=0.0002&geometryPrecision=5&f=json";
+  return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+    if (j.error) throw new Error(j.error.message);
+    var byName = {};
+    (j.features || []).forEach(function (f) {
+      if (!f.geometry || !f.geometry.paths) return;
+      var nm = f.attributes.PRI_NAME; (byName[nm] = byName[nm] || []).push(f);
+    });
+    var items = [];
+    Object.keys(byName).forEach(function (nm) {
+      // join pieces whose ends come within ~2 km into stretches (same name, different places stay apart)
+      var fs = byName[nm], grp = fs.map(function (_, i) { return i; });
+      function root(i) { while (grp[i] !== i) i = grp[i] = grp[grp[i]]; return i; }
+      var ends = fs.map(function (f) { var ps = f.geometry.paths; return [ps[0][0], ps[ps.length - 1][ps[ps.length - 1].length - 1]]; });
+      for (var a = 0; a < fs.length; a++) for (var b = a + 1; b < fs.length; b++) {
+        if (root(a) === root(b)) continue;
+        var near = ends[a].some(function (p) { return ends[b].some(function (q) { return map.distance([p[1], p[0]], [q[1], q[0]]) < 2000; }); });
+        if (near) grp[root(a)] = root(b);
+      }
+      var clusters = {};
+      fs.forEach(function (f, i) { (clusters[root(i)] = clusters[root(i)] || []).push(f); });
+      Object.keys(clusters).forEach(function (k) {
+        var cf = clusters[k], len = 0, surf = {}, lines = [], bb = L.latLngBounds([]);
+        cf.forEach(function (f) { surf[f.attributes.SURFACE_TY] = 1; f.geometry.paths.forEach(function (p) {
+          var ll = p.map(function (c) { return [c[1], c[0]]; }); lines.push(ll); ll.forEach(function (x) { bb.extend(x); });
+          for (var i = 1; i < ll.length; i++) len += map.distance(ll[i - 1], ll[i]); }); });
+        var mid = bb.getCenter(), best = null;           // a point on the road near its middle
+        lines.forEach(function (l) { l.forEach(function (x) { var d = map.distance(x, mid); if (!best || d < best.d) best = { d: d, x: x }; }); });
+        items.push({ label: titleCase(nm), kind: "road", lat: best.x[0], lon: best.x[1], lines: lines, bounds: bb,
+          sub: "road, " + fmtDist(len) + (surf.Unsealed || surf["4WD required"] ? (surf.Sealed ? ", partly unsealed" : ", unsealed") : "") });
+      });
+    });
+    return items;
+  }).catch(function () { return []; });
+}
+var allPlaces = null;
+function placeSearch(raw) {
+  var name = nameWords(raw).toLowerCase();
+  if (!name || name.length < 3) return Promise.resolve([]);
+  if (!allPlaces) allPlaces = fetch("data/osm-places-tas.json").then(function (r) { return r.json(); })
+    .then(function (d) { return d.places; }).catch(function (e) { allPlaces = null; return []; });
+  return allPlaces.then(function (ps) {
+    return ps.filter(function (p) { return String(p[1]).toLowerCase().indexOf(name) === 0; }).slice(0, 8)
+      .map(function (p) { return { label: p[1], kind: "place", sub: String(p[4]).replace(/_/g, " "), lat: p[2], lon: p[3] }; });
+  });
+}
+function showRoad(it) {
+  hideResults(); document.getElementById("q").blur();
+  roadHi.clearLayers();
+  roadHi.addLayer(L.polyline(it.lines, { color: "#ffeb3b", weight: 10, opacity: 0.7, interactive: false }));
+  roadHi.addLayer(L.polyline(it.lines, { color: "#e65100", weight: 3, opacity: 0.9, interactive: false }));
+  var topPad = document.querySelector(".bar").getBoundingClientRect().bottom + 10;
+  map.fitBounds(it.bounds, { paddingTopLeft: [30, topPad], paddingBottomRight: [30, 30], maxZoom: 16 });
+  toast(it.label + " (" + it.sub + ") - tap the map to pin a spot");
+}
+
 var resultsEl = document.getElementById("results");
 function hideResults() { resultsEl.style.display = "none"; resultsEl.innerHTML = ""; fitControls(); }
 function goTo(latlng, msg, zoom) {
@@ -224,7 +296,7 @@ function showResults(res) {
     var sm = document.createElement("small");
     sm.textContent = "  " + (it.sub ? it.sub + ", " : "") + (it.d < 1000 ? Math.round(it.d) + " m" : (it.d / 1000).toFixed(it.d < 1e4 ? 1 : 0) + " km") + " away";
     b.appendChild(sm);
-    b.onclick = function () { goTo(L.latLng(it.lat, it.lon), null); };
+    b.onclick = function () { if (it.kind === "road") showRoad(it); else goTo(L.latLng(it.lat, it.lon), null, it.kind === "place" ? 14 : 17); };
     resultsEl.appendChild(b);
   });
   resultsEl.style.display = "block"; fitControls();
@@ -285,14 +357,26 @@ document.getElementById("goto").addEventListener("submit", function (ev) {
   try { r = parseLocation(q.value); } catch (e) { r = null; }
   if (r) { goTo(r.latlng, r.kind, 15); return; }
   if (!/[A-Za-z]{2,}/.test(q.value)) { toast("Could not read that location"); return; }
-  toast("Searching addresses...");
-  addressSearch(q.value).then(function (res) {
-    if (!res || !res.items.length) { toast("No address found"); return; }
-    var one = res.items.length === 1 && (res.numMatched || res.wanted === null);
-    if (one) { var it = res.items[0]; goTo(L.latLng(it.lat, it.lon), it.label, res.numMatched ? 17 : 16); return; }
+  toast("Searching...");
+  var text = q.value;
+  Promise.all([addressSearch(text).catch(function () { return null; }), roadSearch(text), placeSearch(text)]).then(function (r3) {
+    var res = r3[0] || { items: [] }, c = map.getCenter();
+    // a numbered address that matched wins; otherwise places, roads and streets together
+    if (!(res.numMatched && res.items.length)) {
+      var extra = r3[2].concat(r3[1]);
+      extra.forEach(function (it) { it.d = map.distance(c, L.latLng(it.lat, it.lon)); });
+      // a road found by both searches: keep the road entry (it shows the whole road)
+      var roadNames = {}; r3[1].forEach(function (it) { roadNames[it.label.toUpperCase()] = 1; });
+      res.items = extra.concat(res.items.filter(function (it) { return !roadNames[String(it.label).split(",")[0].toUpperCase().replace(/ RD$/, " ROAD")]; }));
+      if (!r3[0] || !r3[0].numMatched) res.wanted = r3[0] && r3[0].numMatched === false ? r3[0].wanted : null;
+    }
+    if (!res.items.length) { toast("Nothing found for \"" + text + "\""); return; }
+    var one = res.items.length === 1 && (res.numMatched || res.wanted === null || res.wanted === undefined);
+    if (one) { var it = res.items[0];
+      if (it.kind === "road") showRoad(it); else goTo(L.latLng(it.lat, it.lon), it.label, res.numMatched ? 17 : it.kind === "place" ? 14 : 16); return; }
     document.getElementById("toast").style.display = "none";
     showResults(res);
-  }).catch(function (e) { toast("Address search failed: " + e.message); });
+  }).catch(function (e) { toast("Search failed: " + e.message); });
 });
 document.getElementById("q").addEventListener("input", function () { if (!this.value) hideResults(); });
 map.on("click", hideResults);

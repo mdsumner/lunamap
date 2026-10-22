@@ -55,7 +55,7 @@ and can keep maps for use without signal.</p>
   <a href="#start">Getting started</a>
   <a href="#panel">The pin panel</a>
   <a href="#goto">Go to</a>
-  <a href="#route">Route</a>
+  <a href="#route">Route</a> <a href="#routefrom">From...</a>
   <a href="#weather">Weather</a>
   <a href="#layers">Layers</a>
   <a href="#grid">Grid refs</a>
@@ -117,6 +117,9 @@ show plus a link back to this exact view. <b>Share</b> opens your phone's share 
     and suburb are optional (<code>12 Pillinger Drive, Fern Tree</code>, <code>3/20 mount view cres</code>).
     Several matches give a pick list, nearest first.</td></tr>
   <tr><td><code>pillinger</code></td><td>The street; a pick list if there is more than one.</td></tr>
+  <tr><td><code>styx road</code>, <code>styx rd</code>, <code>mount lloyd</code></td><td>Roads and tracks by name, including
+    remote ones with no addresses, and places (towns, localities, hamlets). A road is highlighted along its whole length;
+    tap the map to pin a spot on it. Abbreviations like Rd, St, Mt work.</td></tr>
   <tr><td><code>265 522</code></td><td>Grid reference (4, 6, 8 or 10 figures), taken in the 100 km square nearest the map view.
     The pin goes in the centre of the square.</td></tr>
   <tr><td><code>SA-188-B6</code>, <code>SA188B6</code>, <code>sa 188 b6</code></td><td>Street atlas square. <code>SA188</code> alone shows the whole page;
@@ -155,6 +158,22 @@ the pin is 50 m off the road. Total 1.1 km.</code></p>
   <li>While a route is shown, the selected parcel's outline turns grey and dashed so it is not confused with the route.</li>
   <li>The route, and its road size, are kept in the share link. Tap <b>Clear route</b> to remove it.</li>
 </ul>
+
+<h2 id="routefrom">Route from another point: fastest or back roads</h2>
+<p><b>From...</b> in the pin panel routes to the pin from a second point: <b>My location</b>, or <b>Tap the map</b>
+  (the next tap sets the start, marked A, and leaves the pin where it is). Two choices:</p>
+<ul>
+  <li><b>Fastest</b> or <b>Back roads</b>. Back roads treats highways, arterial and sub-arterial roads as five times slower,
+    so it keeps to collector, local and access roads and tracks where they join up. The other choice is drawn dashed for
+    comparison, with its distance and time.</li>
+  <li><b>Avoid gates</b> or <b>We have keys</b>. With keys, ordinary gates, boom gates and removable barriers cost only a
+    minute or two, so routes may go through them; bollards, fences and immovable barriers are still avoided.</li>
+</ul>
+<p>The result gives the distance, a rough time at nominal speeds for each road type, how much is unsealed, track or 4WD,
+  any gates or barriers passed, and turn-by-turn directions. It works for points up to 120 km apart, and offline where
+  roads were saved with Offline maps.</p>
+<p>theLIST shows which roads join up, not whether they are open. Forestry and private roads may be gated, locked or
+  closed, and gate data is incomplete. Check before relying on it.</p>
 
 <h2 id="weather">Weather</h2>
 <p><b>BOM</b> in the pin panel opens the Bureau of Meteorology forecast for the nearest town, suburb,
@@ -225,6 +244,11 @@ Outlines are white on the aerial photo, dark on other basemaps. Tapping the map 
     <td>Gates and barriers from zoom 13: G gate, B boom gate, o bollard, F fence barrier, X immovable barrier,
     R removable barrier, # stock grid, ? unknown. Tap for name, status and managing authority.</td></tr>
 </table>
+<h3>Road types</h3>
+<p>Roads and tracks coloured by surface and type, so back roads stand out at a wide view: sealed minor roads dark grey,
+  unsealed brown, vehicular tracks dashed brown, 4WD dashed red, main roads faint grey; closed roads dotted grey.
+  From zoom 9 theLIST draws them; from zoom 12 they are drawn on the phone with gates and barriers as small black dots,
+  and tapping a road gives its name, class, surface and status.</p>
 <p>Tap any symbol to put the pin exactly on it.</p>
 
 <h2 id="grid">Grid references</h2>
