@@ -1,0 +1,68 @@
+# Research helper: fetch features from a theLIST ArcGIS layer in a box and commit them to
+# research/ as GeoJSON, splitting the box until the server stops truncating. Used to look
+# at LIST data from places that cannot reach the LIST services directly.
+name: list-fetch
+
+on:
+  workflow_dispatch:
+    inputs:
+      layer:
+        description: "Service path and layer, e.g. TopographyAndRelief/MapServer/8"
+        required: true
+      bbox:
+        description: "west,south,east,north in lon/lat"
+        required: true
+      fields:
+        description: "outFields"
+        default: "*"
+      out:
+        description: "file name under research/"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Fetch
+        env:
+          LAYER: ${{ inputs.layer }}
+          BBOX: ${{ inputs.bbox }}
+          FIELDS: ${{ inputs.fields }}
+          OUT: ${{ inputs.out }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.parse, urllib.request
+          base = "https://services.thelist.tas.gov.au/arcgis/rest/services/Public/" + os.environ["LAYER"]
+          meta = json.load(urllib.request.urlopen(base + "?f=json", timeout=60))
+          feats, seen = [], set()
+          def get(w, s, e, n, depth=0):
+              q = urllib.parse.urlencode({"geometry": "%f,%f,%f,%f" % (w, s, e, n), "geometryType": "esriGeometryEnvelope",
+                  "inSR": 4326, "outSR": 4326, "spatialRel": "esriSpatialRelIntersects", "outFields": os.environ["FIELDS"],
+                  "returnGeometry": "true", "geometryPrecision": 6, "f": "geojson"})
+              j = json.load(urllib.request.urlopen(base + "/query?" + q, timeout=120))
+              if j.get("exceededTransferLimit") or j.get("properties", {}).get("exceededTransferLimit"):
+                  mx, my = (w + e) / 2, (s + n) / 2
+                  for b in ((w, s, mx, my), (mx, s, e, my), (w, my, mx, n), (mx, my, e, n)): get(*b, depth + 1)
+                  return
+              for f in j.get("features", []):
+                  k = f.get("id") or json.dumps(f["properties"], sort_keys=True) + json.dumps(f.get("geometry"))[:80]
+                  if k not in seen: seen.add(k); feats.append(f)
+          get(*[float(v) for v in os.environ["BBOX"].split(",")])
+          os.makedirs("research", exist_ok=True)
+          fields = [{"name": f["name"], "alias": f.get("alias"), "type": f.get("type"),
+                     "domain": f.get("domain")} for f in meta.get("fields", [])]
+          json.dump({"type": "FeatureCollection", "layer": os.environ["LAYER"], "bbox": os.environ["BBOX"],
+                     "fields": fields, "features": feats}, open("research/" + os.environ["OUT"], "w"), separators=(",", ":"))
+          print(len(feats), "features")
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898499+github-actions[bot]@users.noreply.github.com"
+          git add research
+          git commit -m "Research: list-fetch ${{ inputs.out }}" || exit 0
+          git push
