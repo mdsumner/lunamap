@@ -258,6 +258,18 @@ Outlines are white on the aerial photo, dark on other basemaps. Tapping the map 
   unsealed brown, vehicular tracks dashed brown, 4WD dashed red, main roads faint grey; closed roads dotted grey.
   From zoom 9 theLIST draws them; from zoom 12 they are drawn on the phone with gates and barriers as small black dots,
   and tapping a road gives its name, class, surface and status. Tapping a road highlights it (the whole named road in view) and pins the spot without selecting the parcel underneath; tap off the road to get the parcel again.</p>
+<h3>Gate notes</h3>
+<p>The brigade's own notes on gates. Tap a gate (Gates layer, or a black dot on Road types) and then <b>Gate note</b> in
+  the pin panel: tick whether the brigade has a key, say which key (e.g. STT, Parks, council), add a note (chain and padlock,
+  key on the truck ring, ring the owner first...) and the date it was last checked. Gates with notes show a yellow <b>K</b>.</p>
+<ul>
+  <li>Notes are kept on this phone only and never uploaded. <b>Export notes</b> writes a GeoJSON file (it also opens in QGIS)
+    to share inside the brigade; <b>Import notes</b> merges one in, and for each gate the more recently checked note wins.
+    Keep the file within the station network - do not post it publicly.</li>
+  <li>Routes treat a gate the brigade has a key for as passable (about a minute), and the directions name the key, e.g.
+    "passes 1 gate or barrier (gate - STT key)".</li>
+  <li>Notes are tied to theLIST's gate record, or to its position if the record changes in a later data release.</li>
+</ul>
 <p>Tap any symbol to put the pin exactly on it.</p>
 
 <h2 id="grid">Grid references</h2>

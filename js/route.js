@@ -140,6 +140,7 @@ function markGates(G, gates) {
       var ed = G.edges[h[0]], d = hav([g[0], g[1]], ed.c[h[1]]); if (d < bd) { bd = d; best = h; } });
     if (!best) return;
     var ed = G.edges[best[0]], vi = best[1], info = { type: g[2], pen: pen };
+    if (typeof gateNoteAdjust === "function") info = gateNoteAdjust(info, g);   // brigade gate notes (gatenotes.js)
     if (vi === 0 || vi === ed.c.length - 1) { var nd = vi === 0 ? ed.u : ed.v; G.meta[nd].gate = info; }
     else ed.gate = info;
   });
@@ -282,15 +283,15 @@ function describeRoute(G, res, sn, level) {
   var text = "From " + jlabel + ": " + parts.join(", then ");
   var gates = {}, nGates = 0;
   legsFromJunction(res).forEach(function (l, i, arr) {
-    if (l.e.gate && l.e.gate.pen > 0) { nGates++; gates[l.e.gate.type] = 1; }
+    if (l.e.gate && l.e.gate.pen > 0) { nGates++; gates[l.e.gate.label || l.e.gate.type] = 1; }
   });
   (function () {                                                   // gated nodes along the path
     var k = res.node;
-    while (res.prev[k] && !res.prev[k].start) { if (G.meta[k].gate && G.meta[k].gate.pen > 0) { nGates++; gates[G.meta[k].gate.type] = 1; } k = res.prev[k].from; }
-    if (G.meta[k] && G.meta[k].gate && G.meta[k].gate.pen > 0) { nGates++; gates[G.meta[k].gate.type] = 1; }
+    while (res.prev[k] && !res.prev[k].start) { if (G.meta[k].gate && G.meta[k].gate.pen > 0) { nGates++; gates[G.meta[k].gate.label || G.meta[k].gate.type] = 1; } k = res.prev[k].from; }
+    if (G.meta[k] && G.meta[k].gate && G.meta[k].gate.pen > 0) { nGates++; gates[G.meta[k].gate.label || G.meta[k].gate.type] = 1; }
   })();
   if (nGates) text += "; passes " + nGates + " " + (nGates === 1 ? "gate or barrier" : "gates or barriers") +
-    " (" + Object.keys(gates).map(function (t) { return t.toLowerCase(); }).join(", ") + ")";
+    " (" + Object.keys(gates).map(function (t) { return t.indexOf(" - ") > 0 ? t : t.toLowerCase(); }).join(", ") + ")";
   if (sn.off > 25) text += "; the pin is " + fmtDist(sn.off) + " off the road";
   text += ". Total " + fmtDist(total + sn.off) + ".";
   var path = []; groups.forEach(function (g, i) { path = path.concat(i ? g.c.slice(1) : g.c); });

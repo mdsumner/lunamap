@@ -102,7 +102,7 @@
         if (g[2] === "STOCK GRID") return;
         RT.dots.addLayer(L.circleMarker([g[1], g[0]], { renderer: RT.renderer, radius: 3.5, weight: 1.5, color: "#fff",
           fillColor: "#000", fillOpacity: 1 }).on("click", function (ev) {
-            if (window.mapPick(ev)) return; pickFeature(ev.latlng, { what: titleCase(g[2]), detail: "on the road network (theLIST)" }, { line: true }); }));
+            if (window.mapPick(ev)) return; pickFeature(L.latLng(g[1], g[0]), { what: titleCase(g[2]), detail: "on the road network (theLIST)", gate: { id: g[3], type: g[2], x: g[0], y: g[1] } }, { line: true }); }));
       });
     });
   }
@@ -142,6 +142,7 @@
   var AB = { from: null, marker: null, way: "back", keys: false, circuit: false, layer: L.layerGroup().addTo(map), picking: false,
              seq: 0, cache: null, sheet: null };
 
+  window.abInvalidate = function () { AB.cache = null; if (AB.sheet && AB.sheet.style.display === "block" && AB.from) run(); };
   function gatePen(info) {
     if (!info) return 0;
     if (AB.keys && KEY_PEN_S[info.type] !== undefined) return KEY_PEN_S[info.type];
@@ -208,14 +209,14 @@
       var e = l.e, len = lineLen(l.c), g = groups[groups.length - 1];
       total += len; time += len / roadSpeed(e);
       if (e.surf === "4WD required") fwd += len; else if (e.cls === "Vehicular Track") track += len; else if (e.surf === "Unsealed") unsealed += len;
-      if (e.gate && e.gate.pen > 0) { nGates++; gates[e.gate.type] = 1; }
+      if (e.gate && e.gate.pen > 0) { nGates++; gates[e.gate.label || e.gate.type] = 1; }
       var same = g && (e.name ? g.name === e.name : !g.name);
       if (same) { g.c = g.c.concat(l.c.slice(1)); g.len += len; g.cls[e.cls] = 1; g.surf[e.surf] = 1;
         if (!e.name && g.label !== unnamedLabel(e.cls)) g.label = "unnamed tracks and roads"; }
       else { var cls = {}, surf = {}; cls[e.cls] = 1; surf[e.surf] = 1;
         groups.push({ name: e.name, label: e.name || unnamedLabel(e.cls), c: l.c.slice(), len: len, cls: cls, surf: surf }); }
     });
-    r.nodes.forEach(function (k) { var gi = G.meta[k].gate; if (gi && gi.pen > 0) { nGates++; gates[gi.type] = 1; } });
+    r.nodes.forEach(function (k) { var gi = G.meta[k].gate; if (gi && gi.pen > 0) { nGates++; gates[gi.label || gi.type] = 1; } });
     // fold very short pieces into their neighbours so directions stay readable
     groups = groups.filter(function (g, i) { return g.len >= 120 || i === 0 || i === groups.length - 1; });
     var parts = groups.map(function (g, i) {
@@ -243,7 +244,7 @@
     if (d.fwd > 50) dirt.push(fmtDist(d.fwd) + " 4WD");
     return bits.join(", ") + (dirt.length ? "; " + dirt.join(", ") : "; all sealed") +
       (d.nGates ? "; " + d.nGates + " " + (d.nGates === 1 ? "gate or barrier" : "gates or barriers") +
-       " (" + d.gateTypes.map(function (t) { return t.toLowerCase(); }).join(", ") + ")" : "");
+       " (" + d.gateTypes.map(function (t) { return t.indexOf(" - ") > 0 ? t : t.toLowerCase(); }).join(", ") + ")" : "");
   }
 
   function roadsFor(A, B) {

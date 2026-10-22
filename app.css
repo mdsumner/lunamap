@@ -165,3 +165,5 @@ body.drawing #panel { display:none !important; }
 .rtlegend { background:rgba(255,255,255,.92); border:1px solid #999; border-radius:6px; padding:3px 6px; font-size:11px; line-height:1.5; max-width:180px; }
 .rtlegend span { display:inline-flex; align-items:center; gap:3px; margin-right:6px; white-space:nowrap; }
 #absheet .seg button { font-size:13px; }
+.wsym.gnkey { background:#f9a825; color:#000; border-radius:50%; border:2px solid #fff; }
+#gnsheet input[type=checkbox] { vertical-align:middle; }

@@ -203,7 +203,7 @@ var OVERLAYS = {
     { url: "TopographyAndRelief/MapServer/59", minZoom: 13, kind: "gate",
       fields: "OBJECTID,BARRIER_TY,STATUS,AUTHORITY,PRI_NAME,SEC_NAME",
       describe: function (p) { var t = String(p.BARRIER_TY || "Unknown Barrier").toUpperCase();
-        return { what: titleCase(t), sym: GATE_SYM[t] || "?",
+        return { what: titleCase(t), sym: GATE_SYM[t] || "?", gate: { id: p.OBJECTID, type: t },
           detail: joinBits([p.PRI_NAME, p.SEC_NAME, p.STATUS && p.STATUS !== "Unknown" ? p.STATUS : null, p.AUTHORITY]) }; } }
   ] }
 };
@@ -211,7 +211,8 @@ var OVERLAYS = {
 var featureInfo = null;
 function featureRows() {
   if (!featureInfo) return [];
-  return [{ k: "Feature", v: featureInfo.what + (featureInfo.detail ? " - " + featureInfo.detail : "") }];
+  return [{ k: "Feature", v: featureInfo.what + (featureInfo.detail ? " - " + featureInfo.detail : "") }]
+    .concat(typeof gateNoteRows === "function" ? gateNoteRows() : []);
 }
 // opts.line: a road or track was tapped - pin it without selecting the parcel underneath
 function pickFeature(ll, info, opts) {
@@ -257,7 +258,9 @@ function refreshOverlay(o) {
           var ll = L.latLng(g[1], g[0]);
           lyr = L.marker(ll, { icon: symIcon(w.kind, info.sym), title: info.what + (info.detail ? " - " + info.detail : ""),
                                zIndexOffset: w.kind === "hyd" ? 0 : (/^(fire|amb|pol|ses|emp|evac)$/.test(w.kind) ? 300 : 100) });
-          lyr.on("click", function () { pickFeature(ll, info); });
+          lyr.on("click", function () {
+            if (info.gate) { info.gate.x = ll.lng; info.gate.y = ll.lat; pickFeature(ll, info, { line: true }); return; }
+            pickFeature(ll, info); });
         }
         w.group.addLayer(lyr);
       });
