@@ -300,6 +300,33 @@ function placeSearch(raw, ps) {
   return ps.filter(function (p) { return String(p[1]).toLowerCase().indexOf(name) === 0; }).slice(0, 8)
     .map(function (p) { return { label: p[1], kind: "place", sub: String(p[4]).replace(/_/g, " "), lat: p[2], lon: p[3], locality: p[1] }; });
 }
+// Property names from the cadastre (PROP_NAME, e.g. a farm or homestead name; FEAT_NAME for some
+// reserves), used when nothing else matches. Matches the start of the name or of any word in it;
+// with a locality typed, also the name part within that locality.
+function propertySearch(text, qq) {
+  var raw = String(text).split(/\r?\n/)[0].toUpperCase().replace(/[^A-Z0-9'. &-]+/g, " ").replace(/\s+/g, " ").trim();
+  if (raw.length < 3) return Promise.resolve([]);
+  function q(name, loc) {
+    var w = "(UPPER(PROP_NAME) LIKE " + sqlq(name + "%") + " OR UPPER(PROP_NAME) LIKE " + sqlq("% " + name + "%") +
+            " OR UPPER(FEAT_NAME) LIKE " + sqlq(name + "%") + ")" + (loc ? " AND UPPER(PROP_ADD2) LIKE " + sqlq(loc + "%") : "");
+    return fetch(CAD + "/0/query?where=" + encodeURIComponent(w) + "&outFields=PID,PROP_NAME,FEAT_NAME,PROP_ADD,PROP_ADD2" +
+      "&returnGeometry=true&outSR=4326&maxAllowableOffset=0.0001&geometryPrecision=6&resultRecordCount=60&f=geojson")
+      .then(function (r) { return r.json(); }).then(function (j) { return j.features || []; });
+  }
+  var first = q(raw, "");
+  return first.then(function (fs) { return fs.length || !qq.loc ? fs : q(qq.name, qq.loc); }).then(function (fs) {
+    var g = {};
+    fs.forEach(function (f) {
+      var p = f.properties || {}, nm = p.PROP_NAME || p.FEAT_NAME; if (!nm || !f.geometry) return;
+      var k = nm + "|" + (p.PROP_ADD2 || ""); if (g[k]) return;
+      var ll = labelPoint(f.geometry); if (!ll) return;
+      g[k] = { label: titleCase(nm), kind: "property", lat: ll.lat, lon: ll.lng,
+        locality: String(p.PROP_ADD2 || "").replace(/\s+TAS\s+\d{4}$/, ""),
+        sub: "property" + (p.PROP_ADD ? ", " + titleCase(p.PROP_ADD.replace(/\s+TAS\s+\d{4}$/, "")) : "") };
+    });
+    return Object.keys(g).map(function (k) { return g[k]; });
+  }).catch(function () { return []; });
+}
 // order results: those in the locality asked for first (nearest to it), then nearest to the view
 function rankResults(items, q) {
   var c = map.getCenter(), want = q.loc;
@@ -424,6 +451,12 @@ document.getElementById("goto").addEventListener("submit", function (ev) {
       var inLoc = res.items.filter(function (it) { return it.inLoc && it.kind !== "place"; });
       if (qq.loc && inLoc.length === 1 && res.wanted === null) res.items = inLoc;
     }
+    if (res.items.length) return res;
+    // nothing else: try property names
+    toast("Searching property names...");
+    return propertySearch(text, qq).then(function (props) { res.items = rankResults(props, qq); res.wanted = null; res.props = true; return res; });
+  }).then(function (res) {
+    if (!res) return;
     if (!res.items.length) { toast("Nothing found for \"" + text + "\""); return; }
     var one = res.items.length === 1 && (res.numMatched || res.wanted === null || res.wanted === undefined);
     if (one) { var it = res.items[0];
