@@ -9,6 +9,9 @@ var BASEMAPS = [
   { id: "topo",   name: "Topographic",              svc: "Topographic",          max: 18, lic: CC_BY },
   { id: "esmb",   name: "Emergency Services 1:50k", svc: "ESgisMapBookPUBLIC",   max: 15, lic: "" },
   { id: "tasmap", name: "TASMAP raster",            svc: "TasmapRaster",         max: 16, lic: CC_NC },
+  { id: "t100k",  name: "TASMAP 1:100 000 sheets",  svc: "Tasmap100K",           max: 15, lic: CC_NC },
+  { id: "t25k",   name: "TASMAP 1:25 000 sheets",   svc: "Tasmap25K",            max: 16, lic: CC_NC },
+  { id: "t250k",  name: "TASMAP 1:250 000 sheets",  svc: "Tasmap250K",           max: 15, lic: CC_NC },
   { id: "ortho",  name: "Aerial photo",             svc: "Orthophoto",           max: 19, lic: CC_NC },
   { id: "hill",   name: "Hillshade",                svc: "Hillshade",            max: 18, lic: CC_BY },
   { id: "grey",   name: "Topographic (grey)",       svc: "TopographicGrayScale", max: 18, lic: CC_BY }
