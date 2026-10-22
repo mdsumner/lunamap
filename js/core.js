@@ -214,7 +214,10 @@ function setPin(latlng) {
       if (typeof pinMovedAB === "function") pinMovedAB(); });
   else pin.setLatLng(latlng);
   clearRoute(); setFolded(false); parcelInfo = null; featureInfo = null; showCoords(latlng); writeHash();
-  lookupParcel(latlng); lookupMapbook(latlng);
+  var lineSel = window.pinIsLine; window.pinIsLine = false;
+  if (lineSel) { parcelSeq++; parcelHi.clearLayers(); }          // a road was tapped: no parcel
+  else { lookupParcel(latlng); if (window.roadTapHi) window.roadTapHi.clearLayers(); }
+  lookupMapbook(latlng);
   if (typeof lookupHazards === "function") lookupHazards(latlng);
   if (typeof lookupExtras === "function") lookupExtras(latlng);
   if (typeof pinMovedAB === "function") pinMovedAB();

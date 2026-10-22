@@ -213,8 +213,10 @@ function featureRows() {
   if (!featureInfo) return [];
   return [{ k: "Feature", v: featureInfo.what + (featureInfo.detail ? " - " + featureInfo.detail : "") }];
 }
-function pickFeature(ll, info) {
+// opts.line: a road or track was tapped - pin it without selecting the parcel underneath
+function pickFeature(ll, info, opts) {
   lastFeatureClick = Date.now();
+  window.pinIsLine = !!(opts && opts.line);
   setPin(ll); featureInfo = info; showCoords(ll);
 }
 function symIcon(kind, sym) {

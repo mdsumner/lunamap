@@ -18,6 +18,7 @@
   var RT = { on: false, group: L.layerGroup(), lines: L.layerGroup(), dots: L.layerGroup(), seen: {}, n: 0, seq: 0,
              renderer: L.canvas({ padding: 0.3, tolerance: 8 }) };
   RT.lines.addTo(RT.group); RT.dots.addTo(RT.group);
+  var tapHi = window.roadTapHi = L.layerGroup().addTo(map);   // the road last tapped
   var RT_MINZOOM = 9, RT_VECTOR = 12;     // drawn by the server from zoom 9, as tappable lines from zoom 12
 
   // zoomed out: theLIST draws the roads, styled the same way (dynamicLayers); if the server
@@ -80,7 +81,17 @@
         RT.seen[a.OBJECTID] = 1; RT.n++;
         var lls = g.paths.map(function (p) { return p.map(function (c) { return [c[1], c[0]]; }); });
         var line = L.polyline(lls, roadStyle(a));
-        line.on("click", function (ev) { if (window.mapPick(ev)) return; pickFeature(ev.latlng, { what: a.PRI_NAME ? "Road" : "Unnamed road or track", detail: roadDetail(a) }); });
+        line._rtName = a.PRI_NAME || null;
+        line.on("click", function (ev) {
+          if (window.mapPick(ev)) return;
+          // highlight the tapped piece, and the rest of that road in view when it has a name
+          tapHi.clearLayers();
+          var lls = [];
+          if (line._rtName) RT.lines.eachLayer(function (o) { if (o._rtName === line._rtName) lls.push(o.getLatLngs()); });
+          else lls.push(line.getLatLngs());
+          tapHi.addLayer(L.polyline(lls, { color: "#ffeb3b", weight: 11, opacity: 0.75, interactive: false }));
+          pickFeature(ev.latlng, { what: a.PRI_NAME ? "Road" : "Unnamed road or track", detail: roadDetail(a) }, { line: true });
+        });
         RT.lines.addLayer(line);
       });
     }).catch(function (err) { if (seq === RT.seq) toast("Roads unavailable: " + err.message); });
@@ -91,7 +102,7 @@
         if (g[2] === "STOCK GRID") return;
         RT.dots.addLayer(L.circleMarker([g[1], g[0]], { renderer: RT.renderer, radius: 3.5, weight: 1.5, color: "#fff",
           fillColor: "#000", fillOpacity: 1 }).on("click", function (ev) {
-            if (window.mapPick(ev)) return; pickFeature(ev.latlng, { what: titleCase(g[2]), detail: "on the road network (theLIST)" }); }));
+            if (window.mapPick(ev)) return; pickFeature(ev.latlng, { what: titleCase(g[2]), detail: "on the road network (theLIST)" }, { line: true }); }));
       });
     });
   }
