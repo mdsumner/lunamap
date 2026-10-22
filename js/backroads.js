@@ -128,7 +128,7 @@
   var BACK_FACTOR = 5;                      // back roads: main roads cost this many times their travel time
   var KEY_PEN_S = { "GATE": 60, "BOOM GATE": 60, "REMOVABLE BARRIER": 120, "UNKNOWN BARRIER": 60 };
   var MAX_SPAN_M = 120000;
-  var AB = { from: null, marker: null, way: "back", keys: false, layer: L.layerGroup().addTo(map), picking: false,
+  var AB = { from: null, marker: null, way: "back", keys: false, circuit: false, layer: L.layerGroup().addTo(map), picking: false,
              seq: 0, cache: null, sheet: null };
 
   function gatePen(info) {
@@ -137,9 +137,9 @@
     return info.pen;
   }
   // Dijkstra from the snap point sB to either end of sA's edge, so legs run A -> B
-  function solve(G, sA, sB, way) {
+  function solve(G, sA, sB, way, avoid) {
     var n = G.adj.length, dist = new Float64Array(n).fill(Infinity), prev = new Array(n), done = new Uint8Array(n), heap = [];
-    function cost(e) { return e.cost * (way === "back" && MAJOR[e.cls] ? BACK_FACTOR : 1); }
+    function cost(e) { return e.cost * (way === "back" && MAJOR[e.cls] ? BACK_FACTOR : 1) * (avoid && avoid.has(e) ? 10 : 1); }
     function push(d, i) { heap.push([d, i]); var k = heap.length - 1;
       while (k > 0) { var p = (k - 1) >> 1; if (heap[p][0] <= heap[k][0]) break; var t = heap[p]; heap[p] = heap[k]; heap[k] = t; k = p; } }
     function pop() { var top = heap[0], last = heap.pop();
@@ -220,7 +220,7 @@
       return turn + " " + what;
     });
     var path = []; r.legs.forEach(function (l, i) { path = path.concat(i ? l.c.slice(1) : l.c); });
-    return { total: total, time: time, unsealed: unsealed, track: track, fwd: fwd, nGates: nGates, gateTypes: Object.keys(gates),
+    return { edges: new Set(r.legs.map(function (l) { return l.e; })), legs: r.legs, total: total, time: time, unsealed: unsealed, track: track, fwd: fwd, nGates: nGates, gateTypes: Object.keys(gates),
              parts: parts, path: path };
   }
   function fmtTime(s) { var m = Math.round(s / 60); return m < 60 ? m + " min" : Math.floor(m / 60) + " h " + (m % 60) + " min"; }
@@ -262,9 +262,22 @@
       var sA = snapTo(G, A), sB = snapTo(G, B);
       if (!sA || !sB) throw new Error("no roads near the points");
       function one(way) { var r = sA.ed === sB.ed ? sameEdge(sA, sB) : solve(G, sA, sB, way); return r ? describe(G, r) : null; }
-      var main = one(AB.way), other = one(AB.way === "back" ? "fast" : "back");
+      var main = one(AB.way);
       if (!main) throw new Error("the roads here do not join up");
+      // circuit: the way back from the pin, with the roads of the way there costing ten times as much
+      var back = null, other = null;
+      if (AB.circuit) {
+        var rb = sA.ed === sB.ed ? null : solve(G, sB, sA, AB.way, main.edges);
+        if (rb) { back = describe(G, rb); back.shared = 0; var nm = {};
+          rb.legs.forEach(function (l) { if (main.edges.has(l.e)) { back.shared += lineLen(l.c); if (l.e.name) nm[l.e.name] = 1; } });
+          back.sharedNames = Object.keys(nm); }
+      } else other = one(AB.way === "back" ? "fast" : "back");
       clearLines();
+      if (back) {
+        var lb = back.path.map(function (c) { return [c[1], c[0]]; });
+        AB.layer.addLayer(L.polyline(lb, { color: "#fff", weight: 7, opacity: 0.8, interactive: false }));
+        AB.layer.addLayer(L.polyline(lb, { color: "#00838f", weight: 3.5, opacity: 0.95, dashArray: "8 5", interactive: false }));
+      }
       var same = other && Math.abs(other.total - main.total) < 50 && Math.abs(other.time - main.time) < 30;
       if (other && !same) AB.layer.addLayer(L.polyline(other.path.map(function (c) { return [c[1], c[0]]; }),
         { color: "#5e35b1", weight: 3, opacity: 0.6, dashArray: "6 6", interactive: false }));
@@ -277,12 +290,23 @@
       var html = "<b>" + label + ":</b> " + headline(main) + ".<br>" + esc(main.parts.join(", then ")) + ".";
       if (sA.off > 25) html += "<br>The start is " + fmtDist(sA.off) + " off the road.";
       if (sB.off > 25) html += "<br>The pin is " + fmtDist(sB.off) + " off the road.";
+      if (AB.circuit) {
+        html = "<b>Circuit, " + label.toLowerCase() + ":</b> " + (back ? fmtDist(main.total + back.total) + " round, about " + fmtTime(main.time + back.time) + "." : "") +
+          "<br><b>There:</b> " + headline(main) + ".<br>" + esc(main.parts.join(", then ")) + ".";
+        if (!back) html += "<br><span style='color:#00838f'><b>Back:</b> no way back found.</span>";
+        else if (back.total > 0 && back.shared / back.total > 0.85)
+          html += "<br><span style='color:#00838f'><b>Back:</b> no separate way back - every way found uses the same roads" +
+            (back.sharedNames.length ? " (" + esc(back.sharedNames.join(", ")) + ")" : "") + ".</span>";
+        else html += "<br><span style='color:#00838f'><b>Back (dashed):</b> " + headline(back) + ".<br>" + esc(back.parts.join(", then ")) + "." +
+          (back.shared > 50 ? " Shares " + fmtDist(back.shared) + " with the way there" + (back.sharedNames.length ? " (" + esc(back.sharedNames.join(", ")) + ")" : "") + "." : " No roads shared with the way there.") + "</span>";
+      } else
       html += "<br><span style='color:#5e35b1'>" + (same ? (AB.way === "back" ? "The fastest way is the same route." : "The back-roads way is the same route.") :
         (AB.way === "back" ? "Fastest (dashed): " : "Back roads (dashed): ") + headline(other) + ".") + "</span>";
       html += "<div class='small' style='color:#666;margin-top:4px'>Times use nominal speeds for each road type, slower on unsealed and 4WD. " +
         "theLIST shows which roads join up, not whether they are open: forestry and private roads may be gated, locked or closed.</div>";
       document.getElementById("abres").innerHTML = html;
       var bb = L.latLngBounds(ll).extend(AB.from).extend(pin.getLatLng());
+      if (back) back.path.forEach(function (c) { bb.extend([c[1], c[0]]); });
       map.fitBounds(bb, { paddingTopLeft: [30, document.querySelector(".bar").getBoundingClientRect().bottom + 10],
         paddingBottomRight: [30, Math.min(AB.sheet.offsetHeight + 30, map.getSize().y * 0.6)], maxZoom: 16 });
     }).catch(function (e) { if (seq === AB.seq) { clearLines(); status("No route: " + e.message + "."); } });
@@ -306,6 +330,7 @@
       "<div class='seg'><button type='button' id='abme'>My location</button><button type='button' id='abtap'>Tap the map</button></div>" +
       "<div class='seg' id='abway'><button type='button' data-v='fast'>Fastest</button><button type='button' data-v='back'>Back roads</button></div>" +
       "<div class='seg' id='abkeys'><button type='button' data-v='avoid'>Avoid gates</button><button type='button' data-v='keys'>We have keys</button></div>" +
+      "<div class='seg' id='abcirc'><button type='button' data-v='one'>One way</button><button type='button' data-v='circ'>Circuit (different way back)</button></div>" +
       "<div id='abres' class='small'></div>";
     document.body.appendChild(d); AB.sheet = d;
     L.DomEvent.disableClickPropagation(d);
@@ -322,7 +347,8 @@
     };
     d.querySelector("#abway").onclick = function (e) { var v = e.target.getAttribute("data-v"); if (!v) return; AB.way = v; seg("abway", v); run(); };
     d.querySelector("#abkeys").onclick = function (e) { var v = e.target.getAttribute("data-v"); if (!v) return; AB.keys = v === "keys"; seg("abkeys", v); run(); };
-    seg("abway", AB.way); seg("abkeys", AB.keys ? "keys" : "avoid");
+    d.querySelector("#abcirc").onclick = function (e) { var v = e.target.getAttribute("data-v"); if (!v) return; AB.circuit = v === "circ"; seg("abcirc", v); run(); };
+    seg("abway", AB.way); seg("abkeys", AB.keys ? "keys" : "avoid"); seg("abcirc", AB.circuit ? "circ" : "one");
     return d;
   }
   function closeSheet() {

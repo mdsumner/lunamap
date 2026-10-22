@@ -150,6 +150,10 @@ the pin is 50 m off the road. Total 1.1 km.</code></p>
   <li>One-way streets, gates and seasonal closures are not taken into account - check before relying on it.</li>
   <li>When a route is found the panel folds down to a one-line summary so the map stays visible. Tap <b>Show</b> for the
     full directions and coordinates, <b>Hide</b> to fold it again.</li>
+  <li><b>Second way</b>: Route also looks for a second way to the pin that avoids the roads of the first, drawn dashed in
+    teal with a "2" at its junction. The <b>Second way</b> row says how much it still shares with the first route
+    (for example a single access road), or "no separate second way" when every way out uses the same roads - a dead end
+    with one way in. It looks up to about 7 km around the pin.</li>
   <li><b>Bigger road</b> steps out to the next size of road: collector road, then main road (the default), then highway,
     then a junction of two highways. It skips any step that gives the same junction.</li>
   <li><b>Google</b> opens driving directions in Google Maps (the app on a phone): from the route's junction to the pin
@@ -169,6 +173,8 @@ the pin is 50 m off the road. Total 1.1 km.</code></p>
   <li><b>Avoid gates</b> or <b>We have keys</b>. With keys, ordinary gates, boom gates and removable barriers cost only a
     minute or two, so routes may go through them; bollards, fences and immovable barriers are still avoided.</li>
 </ul>
+<p><b>One way</b> or <b>Circuit</b>. Circuit adds a way back from the pin by different roads where they exist (dashed teal),
+  with the round-trip distance and time and how much of the way back repeats the way there.</p>
 <p>The result gives the distance, a rough time at nominal speeds for each road type, how much is unsealed, track or 4WD,
   any gates or barriers passed, and turn-by-turn directions. It works for points up to 120 km apart, and offline where
   roads were saved with Offline maps.</p>

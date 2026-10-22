@@ -221,13 +221,13 @@ function setPin(latlng) {
 }
 // Pin panel: a short view (what most taps need) and a full view grouped by kind.
 var PANEL_GROUPS = [
-  ["", ["Feature", "Route"]],
+  ["", ["Feature", "Route", "Second way"]],
   ["Property", ["Address", "Name", "Title", "PID", "Parcel", "Area"]],
   ["Location", ["Lon, Lat", "Lat, Lon", "MGA94", "Grid ref", "Elevation", "MGA2020", "DMS", "Deg min"]],
   ["Map references", ["Street atlas", "Map book"]],
   ["Fire", ["Fire danger", "Wind", "Wind next 12 h", "Wind observed", "Flammability", "Vegetation", "Fire history", "Nearest fire station"]]
 ];
-var PANEL_SHORT = ["Feature", "Address", "Route", "Lon, Lat", "Grid ref", "Fire danger", "Wind", "Flammability", "Nearest fire station"];
+var PANEL_SHORT = ["Feature", "Address", "Route", "Second way", "Lon, Lat", "Grid ref", "Fire danger", "Wind", "Flammability", "Nearest fire station"];
 function rowBase(k) { return String(k).replace(/ z\d+$/, ""); }
 function panelLayout(rows) {          // -> [{head} | row] in display order for the current view
   var byKey = {}; rows.forEach(function (r) { (byKey[rowBase(r.k)] = byKey[rowBase(r.k)] || []).push(r); });

@@ -46,7 +46,7 @@ function bearing(a, b) {
   return (Math.atan2(y, x) / r + 360) % 360;
 }
 function lineLen(c) { var d = 0; for (var i = 1; i < c.length; i++) d += hav(c[i - 1], c[i]); return d; }
-function fmtDist(m) { return m < 1000 ? Math.round(m / 10) * 10 + " m" : (m / 1000).toFixed(m < 10000 ? 1 : 0) + " km"; }
+function fmtDist(m) { return m < 995 ? Math.round(m / 10) * 10 + " m" : (m / 1000).toFixed(m < 10000 ? 1 : 0) + " km"; }
 
 // fetch segments in a box; split into quarters when the server truncates
 function fetchSegmentsOnline(layer, w, s, e, n, depth) {
@@ -305,7 +305,13 @@ function computeRoute(P, level) {
   if (!routeCache || routeCache.key !== key) routeCache = { key: key, feats: [], ids: {}, r: { local: 0, major: 0, hwy: 0 } };
   var cache = routeCache;
   function attempt() {
-    var hit = solve(); if (hit) return Promise.resolve(hit);
+    var hit = solve();
+    if (hit) {
+      // no second way yet: load the local roads a step wider (up to 7 km) and look again
+      var wider = TIERS.local.radii.filter(function (x) { return x > cache.r.local && x <= Math.min(7000, L.reach.local || 0); })[0];
+      if (hit.second && !hit.second.ok && wider) return growRoads(cache, P, "local", wider).then(attempt);
+      return Promise.resolve(hit);
+    }
     // next fetch: the innermost tier this level may still widen
     var tier = null, r = null;
     ["local", "major", "hwy"].some(function (t) {
@@ -322,14 +328,48 @@ function computeRoute(P, level) {
     var G = buildGraph(cache.feats, cache.gates), sn = snapTo(G, P);
     if (!sn) return null;
     var res = nearestJunction(G, sn, L);
-    return res ? describeRoute(G, res, sn, level) : null;
+    if (!res) return null;
+    var info = describeRoute(G, res, sn, level);
+    info.second = secondWay(G, res, sn, L, level);
+    info.short += info.second.ok ? "; second way " + fmtDist(info.second.total) + " (" + info.second.junction + ")" : "; no second way found";
+    return info;
   }
   return attempt();
+}
+
+// A second way: the route again with every road piece of the first one costing ten times
+// as much, so it leaves by a different road where there is one. What it still shares with
+// the first route is reported, so a single road in shows up as "no second way".
+var SECOND_FACTOR = 10;
+function secondWay(G, res, sn, L, level) {
+  var used = new Set(legsFromJunction(res).map(function (l) { return l.e; }));
+  var saved = [];
+  used.forEach(function (e) { saved.push([e, e.cost]); e.cost *= SECOND_FACTOR; });
+  var r2 = null;
+  try { r2 = nearestJunction(G, sn, L); } finally { saved.forEach(function (x) { x[0].cost = x[1]; }); }
+  if (!r2) return { ok: false, text: "none found in the roads loaded around the pin" };
+  var d2 = describeRoute(G, r2, sn, level), shared = 0, names = {};
+  legsFromJunction(r2).forEach(function (l) { if (used.has(l.e)) { shared += lineLen(l.c); if (l.e.name) names[l.e.name] = 1; } });
+  var nm = Object.keys(names).join(", ");
+  d2.shared = shared;
+  if (d2.total > 0 && shared / d2.total > 0.85)
+    return { ok: false, text: "no separate second way: every way out found uses the same roads" + (nm ? " (" + nm + ")" : "") };
+  d2.text = d2.text.replace(/\. Total ([^.]*)\.$/, ". Total $1") +
+    (shared > 50 ? "; shares " + fmtDist(shared) + " with the first route" + (nm ? " (" + nm + ")" : "") : "; no roads shared with the first route") + ".";
+  return d2;
 }
 
 function drawRoute(r, fit) {
   routeLayer.clearLayers();
   var ll = r.path.map(function (c) { return L.latLng(c[1], c[0]); });
+  if (r.second && r.second.ok) {
+    var l2 = r.second.path.map(function (c) { return L.latLng(c[1], c[0]); });
+    routeLayer.addLayer(L.polyline(l2, { color: "#fff", weight: 7, opacity: 0.8, interactive: false }));
+    routeLayer.addLayer(L.polyline(l2, { color: "#00838f", weight: 3.5, opacity: 0.95, dashArray: "8 5", interactive: false }));
+    routeLayer.addLayer(L.marker(L.latLng(r.second.jc[1], r.second.jc[0]), { interactive: false,
+      icon: L.divIcon({ className: "", iconSize: [20, 20], iconAnchor: [10, 10],
+        html: "<div class='wsym' style='width:20px;height:20px;background:#00838f;border-radius:3px'><span>2</span></div>" }) }));
+  }
   routeLayer.addLayer(L.polyline(ll, { color: "#fff", weight: 8, opacity: 0.9, interactive: false }));
   routeLayer.addLayer(L.polyline(ll, { color: "#d84315", weight: 4.5, opacity: 0.95, interactive: false }));
   if (pin && r.snap) routeLayer.addLayer(L.polyline([L.latLng(r.snap[1], r.snap[0]), pin.getLatLng()],
@@ -339,6 +379,7 @@ function drawRoute(r, fit) {
       html: "<div class='wsym' style='width:20px;height:20px;background:#d84315;border-radius:3px'><span>J</span></div>" }) }));
   if (fit) {
     var b = L.latLngBounds(ll); if (pin) b.extend(pin.getLatLng());
+    if (r.second && r.second.ok) r.second.path.forEach(function (c) { b.extend([c[1], c[0]]); });
     var bottomPad = panel.style.display === "block" ? Math.min(panel.offsetHeight + 30, map.getSize().y * 0.6) : 30;
     var topPad = document.querySelector(".bar").getBoundingClientRect().bottom + 10;
     map.fitBounds(b, { paddingTopLeft: [30, topPad], paddingBottomRight: [30, bottomPad], maxZoom: 17 });
@@ -352,7 +393,9 @@ function clearRoute() {
 }
 function routeRows() {
   if (!routeInfo) return [];
-  return [{ k: "Route", v: routeInfo.ok ? routeInfo.text : routeInfo.msg }];
+  var rows = [{ k: "Route", v: routeInfo.ok ? routeInfo.text : routeInfo.msg }];
+  if (routeInfo.ok && routeInfo.second) rows.push({ k: "Second way", v: routeInfo.second.text });
+  return rows;
 }
 function applyRoute(info, fit) {
   routeInfo = info; routeBtn.textContent = "Clear route"; restyleParcelHi();
