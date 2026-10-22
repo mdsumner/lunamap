@@ -140,7 +140,7 @@ function markGates(G, gates) {
       var ed = G.edges[h[0]], d = hav([g[0], g[1]], ed.c[h[1]]); if (d < bd) { bd = d; best = h; } });
     if (!best) return;
     var ed = G.edges[best[0]], vi = best[1], info = { type: g[2], pen: pen };
-    if (typeof gateNoteAdjust === "function") info = gateNoteAdjust(info, g);   // brigade gate notes (gatenotes.js)
+    if (typeof gateNoteAdjust === "function") info = gateNoteAdjust(info, g);   // gate notes (gatenotes.js)
     if (vi === 0 || vi === ed.c.length - 1) { var nd = vi === 0 ? ed.u : ed.v; G.meta[nd].gate = info; }
     else ed.gate = info;
   });

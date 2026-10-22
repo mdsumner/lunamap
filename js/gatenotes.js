@@ -1,10 +1,10 @@
-// lunamap - gatenotes.js: the brigade's own notes on gates - which key opens it, whether the
-// brigade has that key, anything else worth knowing, and when it was last checked.
+// lunamap - gatenotes.js: your own notes on gates - which key opens it, whether you
+// have that key, anything else worth knowing, and when it was last checked.
 //   Tap a gate (Gates layer, or the dots on Road types), then "Gate note" in the pin panel.
 //   Notes stay on this device (localStorage) and are never uploaded. Export writes a GeoJSON
-//   file to share inside the brigade; Import merges one in (the newer note for a gate wins).
+//   file to share with your group; Import merges one in (the newer note for a gate wins).
 //   Gates with notes show a small key symbol from zoom 11.
-//   Routing: a gate the brigade has a key for costs about a minute instead of being avoided,
+//   Routing: a gate you have a key for costs about a minute instead of being avoided,
 //   and directions name the key ("passes 1 gate or barrier (gate - STT key)").
 // Gates are matched by theLIST Transport Node OBJECTID, or by position (within 10 m) if the
 // id has changed in a later data release.
@@ -28,7 +28,7 @@
   }
   function keyText(n) {
     if (!n) return "";
-    return (n.key ? n.key + (n.hasKey ? " key" : " key (brigade does not have it)") : n.hasKey ? "brigade has a key" : "no key noted");
+    return (n.key ? n.key + (n.hasKey ? " key" : " key (we don't have it)") : n.hasKey ? "we have a key" : "no key noted");
   }
   window.gateNoteFor = noteFor;
   // routing hook (route.js markGates): penalty and label for a gate, given its note
@@ -55,7 +55,7 @@
     Object.keys(notes).forEach(function (k) {
       var n = notes[k], ll = L.latLng(n.lat, n.lon); if (!b.contains(ll)) return;
       L.marker(ll, { icon: keyIcon, zIndexOffset: 200, title: "Gate note: " + keyText(n) + (n.note ? " - " + n.note : "") })
-        .on("click", function () { pickFeature(ll, { what: n.barrier ? titleCase(n.barrier) : "Gate", detail: "brigade gate note", gate: { id: n.id, type: n.barrier || "GATE", x: n.lon, y: n.lat } }, { line: true }); })
+        .on("click", function () { pickFeature(ll, { what: n.barrier ? titleCase(n.barrier) : "Gate", detail: "gate note", gate: { id: n.id, type: n.barrier || "GATE", x: n.lon, y: n.lat } }, { line: true }); })
         .addTo(marks);
     });
   }
@@ -75,7 +75,7 @@
     sheet = document.createElement("div"); sheet.id = "gnsheet"; sheet.className = "sheet";
     sheet.innerHTML = "<h2><span>Gate note</span><button id='gnclose' aria-label='Close'>x</button></h2>" +
       "<div id='gnwhat' class='small' style='margin-bottom:6px'></div>" +
-      "<label><input type='checkbox' id='gnhas'> The brigade has a key for this gate</label>" +
+      "<label><input type='checkbox' id='gnhas'> We have a key for this gate</label>" +
       "<div class='small' style='margin-top:6px'>Key (which one)</div>" +
       "<input id='gnkey' list='gnkeys' placeholder='e.g. STT, Parks, council, TFS master' style='width:100%'><datalist id='gnkeys'></datalist>" +
       "<div class='small' style='margin-top:6px'>Note</div>" +
@@ -85,8 +85,8 @@
       "<hr><div class='small'><b id='gncount'></b> on this device. Notes are kept on this phone only and never uploaded.</div>" +
       "<div class='acts'><button id='gnexport'>Export notes</button><button id='gnimport'>Import notes</button>" +
       "<input type='file' id='gnfile' accept='.geojson,.json,application/json,application/geo+json' style='display:none'></div>" +
-      "<p class='small' style='color:#666'>Export writes a GeoJSON file (it also opens in QGIS) to share inside the brigade. " +
-      "Keep it within the station network: do not post it publicly. Import merges a file in; for each gate the more recently " +
+      "<p class='small' style='color:#666'>Export writes a GeoJSON file (it also opens in QGIS) to share with your group. " +
+      "Keep it within your group: do not post it publicly. Import merges a file in; for each gate the more recently " +
       "checked note wins.</p>";
     document.body.appendChild(sheet);
     L.DomEvent.disableClickPropagation(sheet);
