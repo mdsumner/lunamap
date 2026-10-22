@@ -99,11 +99,11 @@ function lookupParcel(ll) {
   });
 }
 
-// parcel outline: orange normally, thick grey dashed while a route (also
-// orange-red) is on the map so the two are easy to tell apart
+// parcel outline: orange normally; while a route is on the map (orange-red, with a dashed
+// teal second way) a thin dotted grey line with a light fill, so it reads as a boundary, not a road
 function parcelHiStyle() {
   return (typeof routeInfo !== "undefined" && routeInfo && routeInfo.ok) ?
-    { color: "#555", weight: 5, opacity: 0.85, dashArray: "10 8", fill: true, fillColor: "#777", fillOpacity: 0.06 } :
+    { color: "#616161", weight: 2, opacity: 0.7, dashArray: "1 5", lineCap: "round", fill: true, fillColor: "#9e9e9e", fillOpacity: 0.08 } :
     { color: "#e65100", weight: 3, opacity: 1, dashArray: null, fill: true, fillColor: "#e65100", fillOpacity: 0.08 };
 }
 function restyleParcelHi() { parcelHi.eachLayer(function (g) { if (g.setStyle) g.setStyle(parcelHiStyle()); }); }
