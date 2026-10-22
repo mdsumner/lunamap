@@ -217,8 +217,45 @@ function nameWords(raw) {
   var s = String(raw).split(/\r?\n/)[0].toUpperCase().replace(/[^A-Z0-9' ]+/g, " ").replace(/\s+/g, " ").trim();
   return s ? s.split(" ").map(function (w) { return ROAD_WORDS[w] || w; }).join(" ") : "";
 }
-function roadSearch(raw) {
-  var name = nameWords(raw);
+// "browns road fern tree", "styx rd", "browns fern tree": split off a locality after the road
+// type word, or a trailing place name, so it can rank and filter results
+var ROAD_TYPE_FULL = {};
+Object.keys(ROAD_WORDS).forEach(function (k) { ROAD_TYPE_FULL[ROAD_WORDS[k]] = 1; });
+["WAY", "RISE", "VIEW", "WALK", "ROW", "MEWS", "HILL", "PATH", "LINK", "TRACK", "GARDENS", "SQUARE", "RIDGE", "GLADE", "BYPASS"]
+  .forEach(function (w) { ROAD_TYPE_FULL[w] = 1; });
+delete ROAD_TYPE_FULL.MOUNT; delete ROAD_TYPE_FULL.SOUTH; delete ROAD_TYPE_FULL.NORTH;
+var allPlaces = null;
+function loadAllPlaces() {
+  if (!allPlaces) allPlaces = fetch("data/osm-places-tas.json").then(function (r) { return r.json(); })
+    .then(function (d) { return d.places; }).catch(function () { allPlaces = null; return []; });
+  return allPlaces;
+}
+var LOC_TYPES = { city: 1, town: 1, village: 1, suburb: 1, hamlet: 1, locality: 1, neighbourhood: 1 };
+function nearestLocality(ps, lat, lon) {
+  var best = null, bd = 15000;
+  ps.forEach(function (p) { if (!LOC_TYPES[p[4]]) return; var d = map.distance([lat, lon], [p[2], p[3]]); if (d < bd) { bd = d; best = p[1]; } });
+  return best;
+}
+function splitQuery(raw, ps) {
+  var words = nameWords(raw).split(" ").filter(Boolean), c = map.getCenter();
+  var out = { name: words.join(" "), loc: "", locPt: null };
+  var i, k;
+  for (i = 1; i < words.length - 1; i++) if (ROAD_TYPE_FULL[words[i]]) { out.name = words.slice(0, i + 1).join(" "); out.loc = words.slice(i + 1).join(" "); break; }
+  if (!out.loc) for (k = 1; k < words.length; k++) {
+    var tail = words.slice(k).join(" ");
+    if (ps.some(function (p) { return String(p[1]).toUpperCase() === tail; })) { out.name = words.slice(0, k).join(" "); out.loc = tail; break; }
+  }
+  if (out.loc) {                      // the place of that name nearest the view
+    ps.forEach(function (p) {
+      if (String(p[1]).toUpperCase().indexOf(out.loc) !== 0) return;
+      var d = map.distance(c, [p[2], p[3]]);
+      if (!out.locPt || d < out.locPt.d) out.locPt = { d: d, ll: L.latLng(p[2], p[3]), name: p[1] };
+    });
+  }
+  return out;
+}
+function roadSearch(q, ps) {
+  var name = q.name;
   if (!name || name.length < 3 || /^[0-9]/.test(name)) return Promise.resolve([]);
   var url = LISTPUB + "TopographyAndRelief/MapServer/8/query?where=" + encodeURIComponent("UPPER(PRI_NAME) LIKE " + sqlq(name + "%")) +
     "&outFields=OBJECTID,PRI_NAME,TRAN_CLASS,SURFACE_TY&returnGeometry=true&outSR=4326&maxAllowableOffset=0.0002&geometryPrecision=5&f=json";
@@ -234,10 +271,10 @@ function roadSearch(raw) {
       // join pieces whose ends come within ~2 km into stretches (same name, different places stay apart)
       var fs = byName[nm], grp = fs.map(function (_, i) { return i; });
       function root(i) { while (grp[i] !== i) i = grp[i] = grp[grp[i]]; return i; }
-      var ends = fs.map(function (f) { var ps = f.geometry.paths; return [ps[0][0], ps[ps.length - 1][ps[ps.length - 1].length - 1]]; });
+      var ends = fs.map(function (f) { var ps2 = f.geometry.paths; return [ps2[0][0], ps2[ps2.length - 1][ps2[ps2.length - 1].length - 1]]; });
       for (var a = 0; a < fs.length; a++) for (var b = a + 1; b < fs.length; b++) {
         if (root(a) === root(b)) continue;
-        var near = ends[a].some(function (p) { return ends[b].some(function (q) { return map.distance([p[1], p[0]], [q[1], q[0]]) < 2000; }); });
+        var near = ends[a].some(function (p) { return ends[b].some(function (q2) { return map.distance([p[1], p[0]], [q2[1], q2[0]]) < 2000; }); });
         if (near) grp[root(a)] = root(b);
       }
       var clusters = {};
@@ -249,23 +286,31 @@ function roadSearch(raw) {
           for (var i = 1; i < ll.length; i++) len += map.distance(ll[i - 1], ll[i]); }); });
         var mid = bb.getCenter(), best = null;           // a point on the road near its middle
         lines.forEach(function (l) { l.forEach(function (x) { var d = map.distance(x, mid); if (!best || d < best.d) best = { d: d, x: x }; }); });
-        items.push({ label: titleCase(nm), kind: "road", lat: best.x[0], lon: best.x[1], lines: lines, bounds: bb,
-          sub: "road, " + fmtDist(len) + (surf.Unsealed || surf["4WD required"] ? (surf.Sealed ? ", partly unsealed" : ", unsealed") : "") });
+        var loc = nearestLocality(ps, best.x[0], best.x[1]);
+        items.push({ label: titleCase(nm), kind: "road", lat: best.x[0], lon: best.x[1], lines: lines, bounds: bb, locality: loc,
+          sub: (loc ? loc + ", " : "") + "road, " + fmtDist(len) + (surf.Unsealed || surf["4WD required"] ? (surf.Sealed ? ", partly unsealed" : ", unsealed") : "") });
       });
     });
     return items;
   }).catch(function () { return []; });
 }
-var allPlaces = null;
-function placeSearch(raw) {
+function placeSearch(raw, ps) {
   var name = nameWords(raw).toLowerCase();
-  if (!name || name.length < 3) return Promise.resolve([]);
-  if (!allPlaces) allPlaces = fetch("data/osm-places-tas.json").then(function (r) { return r.json(); })
-    .then(function (d) { return d.places; }).catch(function (e) { allPlaces = null; return []; });
-  return allPlaces.then(function (ps) {
-    return ps.filter(function (p) { return String(p[1]).toLowerCase().indexOf(name) === 0; }).slice(0, 8)
-      .map(function (p) { return { label: p[1], kind: "place", sub: String(p[4]).replace(/_/g, " "), lat: p[2], lon: p[3] }; });
+  if (!name || name.length < 3) return [];
+  return ps.filter(function (p) { return String(p[1]).toLowerCase().indexOf(name) === 0; }).slice(0, 8)
+    .map(function (p) { return { label: p[1], kind: "place", sub: String(p[4]).replace(/_/g, " "), lat: p[2], lon: p[3], locality: p[1] }; });
+}
+// order results: those in the locality asked for first (nearest to it), then nearest to the view
+function rankResults(items, q) {
+  var c = map.getCenter(), want = q.loc;
+  items.forEach(function (it) {
+    var ll = L.latLng(it.lat, it.lon);
+    it.d = map.distance(c, ll);
+    var loc = String(it.locality || (it.kind ? "" : String(it.label).split(",").slice(1).join(",")) || "").trim().toUpperCase();
+    it.inLoc = want ? (loc.indexOf(want) === 0 || (q.locPt && map.distance(q.locPt.ll, ll) < 4000)) : false;
+    it.key = q.locPt ? map.distance(q.locPt.ll, ll) : it.d;
   });
+  return items.sort(function (x, y) { return (x.inLoc === y.inLoc ? 0 : x.inLoc ? -1 : 1) || x.key - y.key; });
 }
 function showRoad(it) {
   hideResults(); document.getElementById("q").blur();
@@ -359,16 +404,25 @@ document.getElementById("goto").addEventListener("submit", function (ev) {
   if (!/[A-Za-z]{2,}/.test(q.value)) { toast("Could not read that location"); return; }
   toast("Searching...");
   var text = q.value;
-  Promise.all([addressSearch(text).catch(function () { return null; }), roadSearch(text), placeSearch(text)]).then(function (r3) {
-    var res = r3[0] || { items: [] }, c = map.getCenter();
+  loadAllPlaces().then(function (ps) {
+    var qq = splitQuery(text, ps);
+    return Promise.all([addressSearch(text).catch(function () { return null; }), roadSearch(qq, ps), placeSearch(text, ps)])
+      .then(function (r3) { r3.push(qq); return r3; });
+  }).then(function (r3) {
+    var res = r3[0] || { items: [] }, qq = r3[3];
     // a numbered address that matched wins; otherwise places, roads and streets together
     if (!(res.numMatched && res.items.length)) {
-      var extra = r3[2].concat(r3[1]);
-      extra.forEach(function (it) { it.d = map.distance(c, L.latLng(it.lat, it.lon)); });
-      // a road found by both searches: keep the road entry (it shows the whole road)
-      var roadNames = {}; r3[1].forEach(function (it) { roadNames[it.label.toUpperCase()] = 1; });
-      res.items = extra.concat(res.items.filter(function (it) { return !roadNames[String(it.label).split(",")[0].toUpperCase().replace(/ RD$/, " ROAD")]; }));
+      var roads = r3[1];
+      // a street from the address search that is also a road found here: keep the road (it shows the whole road)
+      var streets = res.items.filter(function (it) {
+        var nm = String(it.label).split(",")[0].toUpperCase(), base = nameWords(nm);
+        return !roads.some(function (r) { return r.label.toUpperCase() === base && map.distance([r.lat, r.lon], [it.lat, it.lon]) < 3000; });
+      });
+      res.items = rankResults(r3[2].concat(roads, streets), qq);
       if (!r3[0] || !r3[0].numMatched) res.wanted = r3[0] && r3[0].numMatched === false ? r3[0].wanted : null;
+      // a locality was given and exactly one result is in it: go straight there
+      var inLoc = res.items.filter(function (it) { return it.inLoc && it.kind !== "place"; });
+      if (qq.loc && inLoc.length === 1 && res.wanted === null) res.items = inLoc;
     }
     if (!res.items.length) { toast("Nothing found for \"" + text + "\""); return; }
     var one = res.items.length === 1 && (res.numMatched || res.wanted === null || res.wanted === undefined);
