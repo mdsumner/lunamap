@@ -205,6 +205,51 @@ function profileCSV(pts) {
     }).join("\n") + "\n";
 }
 
-window.lunamapProfile = { samplePoints: samplePoints, sampleDEM: sampleDEM, profileStats: profileStats,
+// Heights (metres, NaN outside the DEM) on an (n+1) x (n+1) grid of points spanning Web Mercator
+// tile z/x/y edge to edge, so neighbouring tiles share their edge values (contours join up).
+// Reads the overview that matches the spacing; positions go through MGA on a coarse grid.
+function tileHeights(z, x, y, n) {
+  function x2lon(xx) { return xx / Math.pow(2, z) * 360 - 180; }
+  function y2lat(yy) { var t = Math.PI - 2 * Math.PI * yy / Math.pow(2, z); return 180 / Math.PI * Math.atan(0.5 * (Math.exp(t) - Math.exp(-t))); }
+  var def = mgaDefs(55).mga94;
+  return openDEM().then(function (dem) {
+    var G = 9, grid = [];
+    for (var j = 0; j < G; j++) for (var i = 0; i < G; i++)
+      grid.push(proj4("EPSG:4326", def, [x2lon(x + i / (G - 1)), y2lat(y + j / (G - 1))]));
+    var minE = Infinity, maxE = -Infinity, minN = Infinity, maxN = -Infinity;
+    grid.forEach(function (p) { minE = Math.min(minE, p[0]); maxE = Math.max(maxE, p[0]); minN = Math.min(minN, p[1]); maxN = Math.max(maxN, p[1]); });
+    var ex1 = dem.x0 + dem.W * dem.dx, ey1 = dem.y0 - dem.H * dem.dy;
+    if (maxE < dem.x0 || minE > ex1 || maxN < ey1 || minN > dem.y0) return null;
+    var spacing = (maxE - minE) / n, k = 0;
+    while (k + 1 < dem.count && dem.dx * Math.pow(2, k + 1) <= spacing) k++;
+    return demLevel(dem, k).then(function (lv) {
+      var cell = dem.dx * lv.sx;
+      var c0 = Math.max(0, Math.floor((minE - dem.x0) / cell) - 1), c1 = Math.min(lv.w, Math.ceil((maxE - dem.x0) / cell) + 2);
+      var r0 = Math.max(0, Math.floor((dem.y0 - maxN) / cell) - 1), r1 = Math.min(lv.h, Math.ceil((dem.y0 - minN) / cell) + 2);
+      if (c1 - c0 < 2 || r1 - r0 < 2) return null;
+      return lv.img.readRasters({ window: [c0, r0, c1, r1], samples: [0], interleave: false }).then(function (rr) {
+        var band = rr[0], ww = c1 - c0, wh = r1 - r0, N1 = n + 1, out = new Float32Array(N1 * N1), any = false;
+        function val(cc, rw) { var v = band[rw * ww + cc]; return (v === undefined || isNaN(v) || v < -1000 || v > 10000) ? NaN : v; }
+        for (var py = 0; py < N1; py++) {
+          var fy = py / n * (G - 1), gj = Math.min(G - 2, Math.floor(fy)), ty = fy - gj;
+          for (var px = 0; px < N1; px++) {
+            var fx = px / n * (G - 1), gi = Math.min(G - 2, Math.floor(fx)), tx = fx - gi;
+            var a = grid[gj * G + gi], b = grid[gj * G + gi + 1], c = grid[(gj + 1) * G + gi], d = grid[(gj + 1) * G + gi + 1];
+            var E = (a[0] * (1 - tx) + b[0] * tx) * (1 - ty) + (c[0] * (1 - tx) + d[0] * tx) * ty;
+            var N = (a[1] * (1 - tx) + b[1] * tx) * (1 - ty) + (c[1] * (1 - tx) + d[1] * tx) * ty;
+            var fc = (E - dem.x0) / cell - 0.5 - c0, fr = (dem.y0 - N) / cell - 0.5 - r0;
+            var ci = Math.max(0, Math.min(ww - 2, Math.floor(fc))), ri = Math.max(0, Math.min(wh - 2, Math.floor(fr)));
+            var u = Math.max(0, Math.min(1, fc - ci)), v = Math.max(0, Math.min(1, fr - ri));
+            var h = (val(ci, ri) * (1 - u) + val(ci + 1, ri) * u) * (1 - v) + (val(ci, ri + 1) * (1 - u) + val(ci + 1, ri + 1) * u) * v;
+            out[py * N1 + px] = h; if (h === h) any = true;
+          }
+        }
+        return any ? { h: out, n: n, cell: cell } : null;
+      });
+    });
+  });
+}
+
+window.lunamapProfile = { tileHeights: tileHeights, samplePoints: samplePoints, sampleDEM: sampleDEM, profileStats: profileStats,
   profileSVG: profileSVG, profileCSV: profileCSV, credit: DEM_CREDIT,
   slopeStats: slopeStats, slopeClass: slopeClass, fmtGrade: fmtGrade, SLOPE_CLASSES: SLOPE_CLASSES };

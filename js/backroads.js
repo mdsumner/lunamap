@@ -106,7 +106,7 @@
       });
     });
   }
-  var legendCtl = L.control({ position: "bottomleft" });
+  var legendCtl = L.control({ position: "topright" });
   legendCtl.onAdd = function () {
     var d = L.DomUtil.create("div", "rtlegend");
     function sw(st) { return "<svg width='26' height='8'><line x1='1' y1='4' x2='25' y2='4' stroke='" + st.color + "' stroke-width='" +

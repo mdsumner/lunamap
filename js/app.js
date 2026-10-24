@@ -216,6 +216,7 @@ if (st.warnings) setHazard("warnings", true);
 if (st.history) setHazard("history", true);
 if (st.flamm) setHazard("flamm", true);
 if (st.roads && typeof setRoads === "function") setRoads(true);
+if (st.contours && typeof setContours === "function") setContours(true);
 (function () { var keep = ""; try { keep = localStorage.getItem("lunamap-explore") || ""; } catch (e) {} if (st.explore || keep) setExplore(true); })();
 setParcels(!st.noParcels);
 setGrid(!!st.grid);

@@ -167,3 +167,4 @@ body.drawing #panel { display:none !important; }
 #absheet .seg button { font-size:13px; }
 .wsym.gnkey { background:#f9a825; color:#000; border-radius:50%; border:2px solid #fff; }
 #gnsheet input[type=checkbox] { vertical-align:middle; }
+.ctstat a { color:#5d4037; text-decoration:none; font-weight:600; }
