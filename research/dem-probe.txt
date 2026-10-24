@@ -1,0 +1,40 @@
+image 0 457618 x 284791 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+image 1 228809 x 142396 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+image 2 114405 x 71198 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+image 3 57203 x 35599 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+image 4 28602 x 17800 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+image 5 14301 x 8900 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+image 6 7151 x 4450 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+image 7 3576 x 2225 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+image 8 1788 x 1113 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+image 9 894 x 557 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+image 10 447 x 279 tile 512 spp 1 bps undefined subfile undefined nodata -3.4028230607370965e+38
+origin [ -30597.398268200195, 5687852.900000001, 0 ] res [ 2, -2, 0 ] open+list 2911 ms
+Fern Tree z11 level 5 cell 64.0 window 229x228 valid 52212/52212 range -11.9 1262.9 784 ms
+Fern Tree z12 level 4 cell 32.0 window 229x228 valid 52212/52212 range 59.1 1264.7 766 ms
+Fern Tree z13 level 3 cell 16.0 window 229x228 valid 52212/52212 range 226.5 1239.8 805 ms
+Fern Tree z14 level 2 cell 8.0 window 229x228 valid 52212/52212 range 344.2 991.7 669 ms
+Fern Tree z15 level 1 cell 4.0 window 229x228 valid 52212/52212 range 369.4 693.5 603 ms
+Fern Tree z16 level 0 cell 2.0 window 229x228 valid 52212/52212 range 370.1 528.7 591 ms
+Fern Tree z17 level 0 cell 2.0 window 116x116 valid 13456/13456 range 399.5 477.6 405 ms
+Styx z11 level 5 cell 64.0 window 230x228 valid 52440/52440 range 103.4 1191.2 677 ms
+Styx z12 level 4 cell 32.0 window 229x228 valid 52212/52212 range 208.8 1045.7 1119 ms
+Styx z13 level 3 cell 16.0 window 229x228 valid 52212/52212 range 255.1 719.1 986 ms
+Styx z14 level 2 cell 8.0 window 229x229 valid 52441/52441 range 282.7 534.8 650 ms
+Styx z15 level 1 cell 4.0 window 229x229 valid 52441/52441 range 284.7 412.0 808 ms
+Styx z16 level 0 cell 2.0 window 229x228 valid 52212/52212 range 299.7 412.3 622 ms
+Styx z17 level 0 cell 2.0 window 117x116 valid 13572/13572 range 299.7 362.4 246 ms
+Ben Lomond z11 level 5 cell 64.0 window 235x234 valid 54990/54990 range 323.9 1567.4 989 ms
+Ben Lomond z12 level 4 cell 32.0 window 235x234 valid 54990/54990 range 417.1 1570.0 939 ms
+Ben Lomond z13 level 3 cell 16.0 window 235x234 valid 54990/54990 range 838.5 1570.9 897 ms
+Ben Lomond z14 level 2 cell 8.0 window 235x234 valid 54990/54990 range 1352.8 1571.6 1177 ms
+Ben Lomond z15 level 1 cell 4.0 window 235x234 valid 54990/54990 range 1437.0 1571.8 1314 ms
+Ben Lomond z16 level 0 cell 2.0 window 235x234 valid 54990/54990 range 1478.2 1539.5 923 ms
+Ben Lomond z17 level 0 cell 2.0 window 119x119 valid 14161/14161 range 1514.3 1539.5 703 ms
+Strahan z11 level 5 cell 64.0 window 236x235 valid 35962/55460 range -0.2 206.6 594 ms
+Strahan z12 level 4 cell 32.0 window 235x234 valid 53834/54990 range -0.2 206.4 739 ms
+Strahan z13 level 3 cell 16.0 window 235x234 valid 53836/54990 range -0.2 209.1 635 ms
+Strahan z14 level 2 cell 8.0 window 236x234 valid 50438/55224 range -0.2 130.6 927 ms
+Strahan z15 level 1 cell 4.0 window 235x235 valid 45751/55225 range -0.2 73.1 721 ms
+Strahan z16 level 0 cell 2.0 window 236x234 valid 55224/55224 range 2.4 53.4 600 ms
+Strahan z17 level 0 cell 2.0 window 120x119 valid 14280/14280 range 4.7 34.1 207 ms
