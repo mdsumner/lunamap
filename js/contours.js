@@ -21,10 +21,48 @@
 
   function interval(z) { return S.interval === "auto" ? (AUTO[Math.max(11, Math.min(19, z))] || 10) : +S.interval; }
   function highlights() { return String(S.highlight || "").split(/[ ,;]+/).filter(function (t) { return t !== ""; }).map(Number).filter(function (v) { return v === v; }); }
+  // geotiff.js and profile.js (which reads the DEM); waits until tileHeights is really there, since
+  // another module may have added the script tag without it having run yet
   function tools() {
-    if (!ready) ready = loadScript(GEOTIFF).then(function () { return loadScript("js/profile.js"); })
-      .catch(function (e) { ready = null; throw e; });
+    if (!ready) ready = loadScript(GEOTIFF).then(function () { return loadScript("js/profile.js"); }).then(function () {
+      // an older copy of profile.js (browser cache) has no tileHeights: load a fresh one
+      if (!(window.lunamapProfile && window.lunamapProfile.tileHeights)) return loadScript("js/profile.js?v=" + Date.now());
+    }).then(function () {
+      return new Promise(function (ok, fail) {
+        var t0 = Date.now();
+        (function wait() {
+          if (window.lunamapProfile && window.lunamapProfile.tileHeights) return ok();
+          if (Date.now() - t0 > 15000) return fail(new Error("elevation reader did not load"));
+          setTimeout(wait, 50);
+        })();
+      });
+    }).catch(function (e) { ready = null; throw e; });
     return ready;
+  }
+  // DEM reads, a few at a time, each retried twice; tiles that still fail are counted in the status box
+  var active = 0, queue = [], failed = 0, MAXQ = 4, memo = {}, memoKeys = [];
+  function heights(c) {
+    var key = c.z + "/" + c.x + "/" + c.y;
+    if (memo[key] !== undefined) return Promise.resolve(memo[key]);   // already read: settings changes redraw without re-reading
+    return new Promise(function (ok, fail) {
+      queue.push({ c: c, key: key, ok: function (t) {
+        memo[key] = t; memoKeys.push(key); if (memoKeys.length > 300) delete memo[memoKeys.shift()]; ok(t); }, fail: fail, tries: 0 });
+      setTimeout(pump, 0);       // after Leaflet has registered the tile, so wanted() can see it
+    });
+  }
+  function wanted(c) { return layer && map.hasLayer(layer) && !!layer._tiles[layer._tileCoordsToKey(c)]; }
+  function pump() {
+    while (active < MAXQ && queue.length) (function (job) {
+      if (!wanted(job.c)) { job.fail(new Error("not needed")); return; }   // panned away before its turn
+      active++;
+      tools().then(function () { return window.lunamapProfile.tileHeights(job.c.z, job.c.x, job.c.y, N); })
+        .then(function (t) { active--; job.ok(t); pump(); }, function (e) {
+          active--;
+          if (++job.tries <= 2) setTimeout(function () { queue.push(job); pump(); }, 800 * job.tries);
+          else { failed++; status(); job.fail(e); }
+          pump();
+        });
+    })(queue.shift());
   }
 
   // marching squares on the (N+1)^2 grid for one level -> polylines in grid units
@@ -76,7 +114,7 @@
     createTile: function (c, done) {
       var cv = document.createElement("canvas"), sz = this.getTileSize(), r = window.devicePixelRatio > 1 ? 2 : 1;
       cv.width = sz.x * r; cv.height = sz.y * r; cv.style.width = sz.x + "px"; cv.style.height = sz.y + "px";
-      tools().then(function () { return window.lunamapProfile.tileHeights(c.z, c.x, c.y, N); }).then(function (t) {
+      heights(c).then(function (t) {
         if (t) draw(cv.getContext("2d"), t, c.z, sz.x, r);
         done(null, cv);
       }).catch(function (e) { done(e, cv); });
@@ -148,14 +186,14 @@
     var d = L.DomUtil.create("div", "rtlegend ctstat");
     d.innerHTML = "<a href='#' id='ctset' title='Contour settings'></a>";
     L.DomEvent.disableClickPropagation(d);
-    d.querySelector("#ctset").onclick = function (e) { e.preventDefault(); openSheet(); };
+    d.querySelector("#ctset").onclick = function (e) { e.preventDefault(); if (failed) { failed = 0; rebuild(); return; } openSheet(); };
     return d;
   };
   function status() {
     var el = document.getElementById("ctset"); if (!el) return;
     var z = map.getZoom();
-    el.textContent = z < 11 ? "Contours: zoom in" : "Contours " + interval(z) + " m" + (S.interval === "auto" ? " (auto)" : "") +
-      (highlights().length ? ", highlight " + highlights().join(", ") : "") + " - settings";
+    el.textContent = z < 11 ? "Contours: zoom in (from zoom 11)" : "Contours " + interval(z) + " m" + (S.interval === "auto" ? " (auto)" : "") +
+      (highlights().length ? ", highlight " + highlights().join(", ") : "") + (failed ? ", " + failed + " tiles failed (tap to retry)" : "") + " - settings";
   }
   map.on("zoomend", status);
   function rebuild() { if (layer) layer.redraw(); status(); }
