@@ -211,7 +211,8 @@ function setPin(latlng) {
     .on("dragend", function () { writeHash(); lookupParcel(pin.getLatLng()); lookupMapbook(pin.getLatLng());
       if (typeof lookupHazards === "function") lookupHazards(pin.getLatLng());
       if (typeof lookupExtras === "function") lookupExtras(pin.getLatLng());
-      if (typeof pinMovedAB === "function") pinMovedAB(); });
+      if (typeof pinMovedAB === "function") pinMovedAB();
+      if (typeof lookupFoundLayers === "function") lookupFoundLayers(pin.getLatLng()); });
   else pin.setLatLng(latlng);
   clearRoute(); setFolded(false); parcelInfo = null; featureInfo = null; showCoords(latlng); writeHash();
   var lineSel = window.pinIsLine; window.pinIsLine = false;
@@ -221,6 +222,7 @@ function setPin(latlng) {
   if (typeof lookupHazards === "function") lookupHazards(latlng);
   if (typeof lookupExtras === "function") lookupExtras(latlng);
   if (typeof pinMovedAB === "function") pinMovedAB();
+  if (typeof lookupFoundLayers === "function") lookupFoundLayers(latlng);
 }
 // Pin panel: a short view (what most taps need) and a full view grouped by kind.
 var PANEL_GROUPS = [
@@ -236,7 +238,7 @@ function panelLayout(rows) {          // -> [{head} | row] in display order for 
   var byKey = {}; rows.forEach(function (r) { (byKey[rowBase(r.k)] = byKey[rowBase(r.k)] || []).push(r); });
   var out = [], used = {};
   if (!showMore) {
-    PANEL_SHORT.forEach(function (k) { (byKey[k] || []).forEach(function (r) { out.push(r); }); });
+    PANEL_SHORT.concat(window.extraShortKeys || []).forEach(function (k) { (byKey[k] || []).forEach(function (r) { out.push(r); }); });
     return out;
   }
   PANEL_GROUPS.forEach(function (g) {
@@ -250,7 +252,7 @@ function panelLayout(rows) {          // -> [{head} | row] in display order for 
 }
 function showCoords(ll) {
   var cr = coords(ll.lat, ll.lng);
-  var all = featureRows().concat(parcelRows(), typeof hazardRows === "function" ? hazardRows() : [], routeRows(), cr,
+  var all = featureRows().concat(parcelRows(), typeof hazardRows === "function" ? hazardRows() : [], typeof foundLayerRows === "function" ? foundLayerRows() : [], routeRows(), cr,
     mapbookRows(), typeof extraRows === "function" ? extraRows() : []);
   var layout = panelLayout(all);
   lastRows = layout.filter(function (r) { return !r.head; });
