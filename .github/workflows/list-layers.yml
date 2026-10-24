@@ -1,0 +1,24 @@
+# Catalogue theLIST's public map layers for the layer finder (data/list-layers.json).
+name: list-layers
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 4 3 * *"   # monthly
+
+permissions:
+  contents: write
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 scripts/list_layers.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898499+github-actions[bot]@users.noreply.github.com"
+          git add data/list-layers.json
+          git commit -m "Update theLIST layer catalogue" || exit 0
+          git push
