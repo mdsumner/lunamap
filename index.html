@@ -143,19 +143,21 @@
     <option value="g1000">MGA grid, 1 km</option>
     <option value="g100">MGA grid, 100 m</option>
     <option value="g10">MGA grid, 10 m</option>
+    <option value="gcustom">MGA grid, other spacing...</option>
     <option value="roads">Roads and tracks</option>
     <option value="parcels">Parcel boundaries</option>
     <option value="points">Map points (water, gates, stations)</option>
     <option value="off">Nothing (free drawing)</option>
   </select></label>
   <div id="dsnapmsg" class="small"></div>
+  <button id="dsnapset" type="button" style="display:none;font-size:12px">Change grid spacing</button>
   <div id="dcount" class="small"></div>
   <div class="acts">
     <button id="dexp-geojson">GeoJSON</button><button id="dexp-kml">KML</button><button id="dexp-gpx">GPX</button>
     <button id="dimport">Import...</button><button id="dclear">Clear all</button>
     <button id="dshare">Share sketch</button>
   </div>
-  <input id="dfile" type="file" accept=".geojson,.json,.kml,.gpx" hidden>
+  <input id="dfile" type="file" accept=".geojson,.json,.kml,.gpx,.csv,.txt,text/csv,text/plain" hidden>
 </div>
 
 <div id="toast"></div>

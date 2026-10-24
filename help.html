@@ -297,10 +297,16 @@ so you can check your reading.</p>
 move whole shapes, and delete. While drawing, tapping the map does not drop the pin.</p>
 <ul>
   <li><b>Snap to</b> (in the Draw panel) chooses what new points and vertices lock onto: other drawings (the default),
-    the MGA grid crossings every 1 km, 100 m or 10 m, theLIST roads and tracks (from zoom 13), parcel boundaries (street
+    the MGA grid crossings every 1 km, 100 m or 10 m or a spacing of your own (<b>other spacing...</b>, then <b>Change grid spacing</b> to change it; fine spacings need you zoomed in), theLIST roads and tracks (from zoom 13), parcel boundaries (street
     level), or the map points shown by Water, Gates and Stations - or nothing, for free drawing. The chosen layer shows
     faintly while you draw and refreshes as you move the map. Handy for laying out grid-aligned search areas, or tracing a
     road or a property boundary.</li>
+  <li><b>Exact coordinates</b>: rather than typing them vertex by vertex, put them in a file and use <b>Import...</b>.
+    A <code>.csv</code> with a header row needs lon and lat columns (or easting and northing: MGA94, or MGA2020 if the header
+    says 2020, with an optional zone column), plus an optional name or label column. A <code>.txt</code> (or a csv without a
+    header) can have one location per line in any form Go to understands: lon lat, lat lon, MGA, grid reference or DMS.
+    You then choose to join them into one line or keep them as separate points. For a single exact point, type it into
+    Go to instead. Imported coordinates are exact; snapping only applies to points you draw by hand.</li>
   <li>Tap a shape to select it: the Draw panel shows its length, or area and perimeter (points show coordinates and grid ref),
     and a <b>Label</b> field. Labels show on the map.</li>
   <li><b>Profile</b> (lines) reads the Tasmania 2 m elevation model along the line and draws an elevation profile:

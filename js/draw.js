@@ -317,11 +317,43 @@ function exportAs(fmt) {
 }
 
 // ---- import ----------------------------------------------------------------
+// Coordinates from a .csv or .txt file. With a header row, columns named lon/long/longitude/x and
+// lat/latitude/y, or easting/northing (MGA94, or MGA2020 if the header says 2020; zone column
+// optional), plus an optional name/label column. Without a header, each line is read like Go to
+// (lon lat, lat lon, MGA, grid reference, DMS). Then: separate points, or one line through them.
+function coordsToGeoJSON(txt) {
+  var lines = String(txt).split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean), pts = [];
+  if (!lines.length) throw new Error("the file is empty");
+  var sep = lines[0].indexOf("\t") >= 0 ? "\t" : lines[0].indexOf(";") >= 0 && lines[0].indexOf(",") < 0 ? ";" : ",";
+  var head = lines[0].split(sep).map(function (h) { return h.trim().toLowerCase().replace(/^"|"$/g, ""); });
+  function col(re) { for (var i = 0; i < head.length; i++) if (re.test(head[i])) return i; return -1; }
+  var hasHeader = head.some(function (h) { return /[a-z]{2,}/.test(h) && !/^[nsew]$/.test(h); }) && !parseLocationSafe(lines[0]);
+  if (hasHeader) {
+    var ix = col(/^(lon|long|longitude|lng|x)$/), iy = col(/^(lat|latitude|y)$/), ie = col(/^(e|east|easting|mga_?e.*)$/), iN = col(/^(n|north|northing|mga_?n.*)$/),
+        iz = col(/^(zone|mga_?zone)$/), il = col(/^(name|label|title|id|description|desc)$/), d2020 = /2020/.test(lines[0]);
+    if (!((ix >= 0 && iy >= 0) || (ie >= 0 && iN >= 0))) throw new Error("no lon/lat or easting/northing columns found");
+    var c = map.getCenter(), zone0 = Math.floor((c.lng + 180) / 6) + 1;
+    lines.slice(1).forEach(function (ln) {
+      var f = ln.split(sep).map(function (v) { return v.trim().replace(/^"|"$/g, ""); }), lon, lat;
+      if (ix >= 0 && iy >= 0) { lon = parseFloat(f[ix]); lat = parseFloat(f[iy]); }
+      else { var z = iz >= 0 ? parseInt(f[iz], 10) || zone0 : zone0, g = proj4(d2020 ? mgaDefs(z).mga2020 : mgaDefs(z).mga94, "EPSG:4326", [parseFloat(f[ie]), parseFloat(f[iN])]); lon = g[0]; lat = g[1]; }
+      if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) pts.push({ ll: [lon, lat], label: il >= 0 ? f[il] : "" });
+    });
+  } else lines.forEach(function (ln) { var r = parseLocationSafe(ln); if (r) pts.push({ ll: [r.latlng.lng, r.latlng.lat], label: "" }); });
+  if (!pts.length) throw new Error("no coordinates could be read");
+  var asLine = pts.length > 1 && confirm("Read " + pts.length + " coordinates. Join them into one line? (OK = a line, Cancel = separate points)");
+  if (asLine) return { type: "FeatureCollection", features: [{ type: "Feature", properties: {},
+    geometry: { type: "LineString", coordinates: pts.map(function (p) { return p.ll; }) } }] };
+  return { type: "FeatureCollection", features: pts.map(function (p) {
+    return { type: "Feature", properties: p.label ? { label: p.label } : {}, geometry: { type: "Point", coordinates: p.ll } }; }) };
+}
+function parseLocationSafe(s) { try { return parseLocation(s); } catch (e) { return null; } }
 var TOGEOJSON = "https://cdn.jsdelivr.net/npm/@tmcw/togeojson@7.1.2/dist/togeojson.umd.js";
 function importFile(file) {
   var name = file.name.toLowerCase();
   file.text().then(function (txt) {
     if (/\.(geo)?json$/.test(name)) return JSON.parse(txt);
+    if (/\.(csv|txt)$/.test(name)) return coordsToGeoJSON(txt);
     var dom = new DOMParser().parseFromString(txt, "text/xml");
     return loadScript(TOGEOJSON).then(function () {
       if (/\.kml$/.test(name)) return toGeoJSON.kml(dom);
@@ -463,14 +495,34 @@ function updateSnap() {
   map.pm.setGlobalOptions({ snappable: snapMode !== "off", snapDistance: 20 });
   if (!drawOn || snapMode === "drawn" || snapMode === "off") { refreshActiveSnap(); return; }
   var r;
-  if (snapMode.charAt(0) === "g") r = Promise.resolve(snapGrid(+snapMode.slice(1)));
+  if (snapMode === "gcustom") r = Promise.resolve(snapGrid(snapCustom));
+  else if (snapMode.charAt(0) === "g") r = Promise.resolve(snapGrid(+snapMode.slice(1)));
   else if (snapMode === "roads") r = snapRoads(seq);
   else if (snapMode === "parcels") r = snapParcels(seq);
   else r = Promise.resolve(snapPoints());
   r.then(function (m) { if (seq === snapSeq) { snapMsg(m); refreshActiveSnap(); } })
    .catch(function (e) { if (seq === snapSeq) snapMsg("Snap layer unavailable: " + e.message); });
 }
-document.getElementById("dsnap").addEventListener("change", function (e) { snapMode = e.target.value; updateSnap(); });
+// a grid spacing of your own (metres), remembered on this device
+var snapCustom = 25;
+try { snapCustom = +localStorage.getItem("lunamap-snap-custom") || 25; } catch (e) {}
+function customLabel() { var o = document.querySelector("#dsnap option[value=gcustom]"); if (o) o.textContent = "MGA grid, " + fmtSpacing(snapCustom) + " (your spacing)"; }
+function fmtSpacing(s) { return s >= 1000 ? s / 1000 + " km" : s + " m"; }
+function askCustom() {
+  var v = prompt("Snap grid spacing in metres (e.g. 5, 25, 50, 250):", String(snapCustom));
+  if (v === null) return false;
+  var n = parseFloat(String(v).replace(/[^0-9.]/g, ""));
+  if (!(n >= 0.5 && n <= 100000)) { toast("Spacing must be between 0.5 m and 100 km"); return false; }
+  snapCustom = n; try { localStorage.setItem("lunamap-snap-custom", String(n)); } catch (e) {}
+  customLabel(); return true;
+}
+customLabel();
+document.getElementById("dsnap").addEventListener("change", function (e) {
+  if (e.target.value === "gcustom" && !askCustom() && snapMode !== "gcustom") { e.target.value = snapMode; return; }
+  snapMode = e.target.value; updateSnap();
+  document.getElementById("dsnapset").style.display = snapMode === "gcustom" ? "" : "none";
+});
+document.getElementById("dsnapset").onclick = function () { if (askCustom()) updateSnap(); };
 map.on("moveend", function () { if (drawOn && snapMode !== "drawn" && snapMode !== "off") updateSnap(); });
 
 map.on("pm:create", function (e) {
