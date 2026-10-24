@@ -66,14 +66,14 @@
   }
   function removeLayer(i) {
     var a = added[i]; if (a.tiles) map.removeLayer(a.tiles);
-    added.splice(i, 1); store(); keys(); render(); if (pin) showCoords(pin.getLatLng());
+    added.splice(i, 1); store(); keys(); render(); mini(); if (pin) showCoords(pin.getLatLng());
   }
   function keys() { window.extraShortKeys = added.filter(function (a) { return a.geom !== "raster layer"; }).map(function (a) { return a.name; }); }
   function legendFor(a) {
     if (!legends[a.svc]) legends[a.svc] = fetch(ROOT + a.svc + "/legend?f=json").then(function (r) { return r.json(); }).catch(function () { return {}; });
     legends[a.svc].then(function (j) {
       var l = (j.layers || []).filter(function (x) { return x.layerId === a.id; })[0];
-      a.legend = l ? l.legend.slice(0, 12) : []; render();
+      a.legend = l ? l.legend.slice(0, 12) : []; render(); mini();
     });
   }
 
@@ -225,15 +225,42 @@
         "<p class='small' style='color:#666'>All public map layers from theLIST (State of Tasmania), drawn by theLIST's server. " +
         "Licences vary by layer; see theLIST for each dataset's terms. Layers you add are kept on this device.</p>";
       document.body.appendChild(sheet); L.DomEvent.disableClickPropagation(sheet); L.DomEvent.disableScrollPropagation(sheet);
-      sheet.querySelector("#lfclose").onclick = function () { sheet.style.display = "none"; };
+      sheet.querySelector("#lfclose").onclick = function () { sheet.style.display = "none"; mini(); };
       var t = null;
       sheet.querySelector("#lfq").oninput = function () { clearTimeout(t); t = setTimeout(function () { sheet._svc = undefined; sheet._here = null; render(); }, 200); };
       sheet.querySelector("#lfhere").onclick = whatsHere;
     }
-    sheet.style.display = "block"; render();
+    sheet.style.display = "block"; render(); mini();
+  }
+
+  // ---- compact key: with the sheet closed, added layers stay listed at the top right with their
+  // legend and opacity, small enough to leave the map clear; tap a name to open the full sheet
+  var miniCtl = L.control({ position: "topright" }), miniOpen = true;
+  miniCtl.onAdd = function () {
+    var d = L.DomUtil.create("div", "rtlegend lfmini");
+    L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+    return d;
+  };
+  function mini() {
+    var show = added.length && !(sheet && sheet.style.display === "block");
+    if (!show) { miniCtl.remove(); return; }
+    if (!miniCtl._map) miniCtl.addTo(map);
+    var d = miniCtl.getContainer();
+    d.innerHTML = "<div class='lfmhead'><a href='#' class='lfmtog'>" + (miniOpen ? "- " : "+ ") + "Layers (" + added.length + ")</a>" +
+      " <a href='#' class='lfmopen'>edit</a></div>" + (miniOpen ? added.map(function (a, i) {
+        return "<div class='lfmrow'><div class='lfmname' title='" + esc(a.name) + "'>" + esc(a.name) + "</div>" +
+          (a.legend && a.legend.length ? "<div class='lfleg'>" + a.legend.slice(0, 6).map(function (g) {
+            return "<span><img src='data:" + g.contentType + ";base64," + g.imageData + "' width='14' height='14' alt=''>" + esc(String(g.label || "").slice(0, 24)) + "</span>"; }).join("") +
+            (a.legend.length > 6 ? "<span>+" + (a.legend.length - 6) + " more</span>" : "") + "</div>" : "") +
+          "<input type='range' min='0' max='1' step='0.1' value='" + a.opacity + "' data-i='" + i + "' class='lfop' title='Opacity'></div>";
+      }).join("") : "");
+    d.querySelector(".lfmtog").onclick = function (e) { e.preventDefault(); miniOpen = !miniOpen; mini(); };
+    d.querySelector(".lfmopen").onclick = function (e) { e.preventDefault(); open(); };
+    [].forEach.call(d.querySelectorAll(".lfop"), function (r) { r.oninput = function () {
+      var a = added[+r.getAttribute("data-i")]; a.opacity = +r.value; a.tiles.setOpacity(a.opacity); store(); }; });
   }
   window.openLayerFinder = open;
   document.getElementById("layerfind").onclick = function () { if (typeof setMenu === "function") setMenu(null); open(); };
   added.forEach(function (a) { addTiles(a); legendFor(a); });
-  keys();
+  keys(); mini();
 })();
