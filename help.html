@@ -393,6 +393,14 @@ box marks the frame's footprint from the index. These are raw frames, not orthop
 theLIST's orthophoto, which is corrected to the ground. <b>Full scan</b> downloads the original high-resolution TIFF (large). Photos and index:
 Department of Natural Resources and Environment Tasmania, via theLIST.</p>
 
+<h3>Outline from photo</h3>
+<p>Tap a roof, a dam, a clearing or a paddock on the map and it is outlined for you by a small "segment anything" model
+  that runs on the phone (on the graphics chip where the browser supports WebGPU, otherwise on the CPU, more slowly).
+  Works best on <b>Aerial photo</b>, zoomed right in. You get the outline's area and the best-fitting rectangle's length
+  and width - handy for measuring a shed you forgot to measure. <b>Keep outline</b> or <b>Keep rectangle</b> saves it as a
+  drawing, so Draw shows its area and perimeter and it exports with your other drawings.</p>
+<p>The model (10-40 MB) downloads the first time and is then cached by the browser. Nothing is uploaded. Sizes are
+  approximate, about +/- 0.5 to 1 m zoomed in: roofs include the eaves, and tall things lean in aerial photos.</p>
 <h3>Archives near here</h3>
 <p><b>Tools &gt; Archives near here</b> (Explore) lists photographs, maps and plans, Public Works drawings (buildings, roads, bridges) and films in the Libraries
 Tasmania / Tasmanian Archives catalogue whose titles name a place near the pin (or the middle of the map). Nearby places with
