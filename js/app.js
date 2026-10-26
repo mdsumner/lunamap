@@ -222,3 +222,10 @@ setParcels(!st.noParcels);
 setGrid(!!st.grid);
 setLayer(st.layer || "topo");
 if (st.pin) { setPin(L.latLng(st.pin[0], st.pin[1])); if (st.route) findRoute({ fit: false, level: st.routeLevel }); }
+
+// coordinate datum (core.js): label the Tools button and apply the saved choice
+setDatum(DATUM);
+document.getElementById("datum").onclick = function () {
+  setDatum(DATUM === "94" ? "2020" : "94");
+  toast("Grid refs, MGA coordinates, the grid and snapping now use " + (DATUM === "94" ? "GDA94 (MGA94)" : "GDA2020 (MGA2020)"));
+};

@@ -99,14 +99,14 @@ show plus a link back to this exact view. <b>Share</b> opens your phone's share 
   <tr><td>Address</td><td>Property address of the land parcel under the pin (theLIST cadastre).
     The full view adds title (volume/folio), PID, tenure and area.</td></tr>
   <tr><td>Lon, Lat / Lat, Lon</td><td>Decimal degrees, both orders, for whichever the other end wants.</td></tr>
-  <tr><td>MGA94 z55</td><td>Easting and northing on the GDA94 grid.</td></tr>
+  <tr><td>MGA2020 z55</td><td>Easting and northing on the grid of the chosen datum (GDA2020 unless switched to GDA94 in Tools).</td></tr>
   <tr><td>Grid ref</td><td>6-figure grid reference (100 m square).</td></tr>
   <tr><td>Street atlas</td><td>Street atlas page and square, e.g. <code>SA-188-A7</code> - the reference usually given with a callout
     (urban and fringe areas only).</td></tr>
   <tr><td>Elevation</td><td>Height at the pin in metres above sea level (AHD), from the Tasmania 2 m elevation model.
     Needs signal; reads a small piece of the model for each new area.</td></tr>
   <tr><td>Map book</td><td>Map book page and square, e.g. <code>MB356 C4</code>.</td></tr>
-  <tr><td>MGA2020, DMS, Deg min</td><td>In the full view: MGA2020, degrees-minutes-seconds and degrees-decimal-minutes.</td></tr>
+  <tr><td>MGA94, DMS, Deg min</td><td>In the full view: the other datum's easting and northing, degrees-minutes-seconds and degrees-decimal-minutes.</td></tr>
 </table>
 
 <h2 id="goto">Go to: type or paste a location</h2>
@@ -129,7 +129,7 @@ show plus a link back to this exact view. <b>Share</b> opens your phone's share 
     pages with a suffix work too (<code>SA 226E B6</code>).</td></tr>
   <tr><td><code>MB356 C4</code>, <code>356c4</code></td><td>Map book square. <code>MB356</code> alone shows the whole page.</td></tr>
   <tr><td><code>147.3257, -42.8821</code></td><td>Longitude, latitude (or the other way round - it can tell in Tasmania).</td></tr>
-  <tr><td><code>526598 5252225</code></td><td>MGA easting and northing (MGA94 unless labelled MGA2020).</td></tr>
+  <tr><td><code>526598 5252225</code></td><td>MGA easting and northing, in the chosen datum (GDA2020 unless switched) unless labelled MGA94 or MGA2020.</td></tr>
   <tr><td><code>42 52 55.6 S 147 19 32.5 E</code></td><td>Degrees minutes seconds, or degrees and decimal minutes,
     with or without the symbols.</td></tr>
 </table>
@@ -302,8 +302,8 @@ move whole shapes, and delete. While drawing, tapping the map does not drop the 
     faintly while you draw and refreshes as you move the map. Handy for laying out grid-aligned search areas, or tracing a
     road or a property boundary.</li>
   <li><b>Exact coordinates</b>: rather than typing them vertex by vertex, put them in a file and use <b>Import...</b>.
-    A <code>.csv</code> with a header row needs lon and lat columns (or easting and northing: MGA94, or MGA2020 if the header
-    says 2020, with an optional zone column), plus an optional name or label column. A <code>.txt</code> (or a csv without a
+    A <code>.csv</code> with a header row needs lon and lat columns (or easting and northing: MGA2020 or MGA94 if the header says so,
+    otherwise the chosen datum, with an optional zone column), plus an optional name or label column. A <code>.txt</code> (or a csv without a
     header) can have one location per line in any form Go to understands: lon lat, lat lon, MGA, grid reference or DMS.
     You then choose to join them into one line or keep them as separate points. For a single exact point, type it into
     Go to instead. Imported coordinates are exact; snapping only applies to points you draw by hand.</li>
@@ -420,8 +420,11 @@ items are for private research; other uses need permission from Libraries Tasman
 <ul>
   <li>Coordinates are GDA2020, which matches GPS to well within a metre. MGA94 is converted with the standard
     7-parameter transformation (about 0.15 m).</li>
-  <li>Grid references and the grid overlay are on MGA2020. The difference from MGA94 is about 1.5 m, far less than a
-    100 m grid square.</li>
+  <li><b>Coordinates: GDA2020 / GDA94</b> (in Tools) sets the datum for grid references, the MGA rows, the grid overlay,
+    snapping, and how unlabelled eastings and northings are read in Go to and imports. GDA2020 is the default and matches
+    phone GPS; switch to GDA94 to work with older maps and records. The two differ by about 1.5-2 m in Tasmania - no
+    difference to a 6- or 8-figure grid reference, but it matters at 1 m. Map images (basemaps, aerial photos) are pictures
+    and are not moved by the switch. The choice is kept on this device and printed in the header of a printed map.</li>
   <li>Parcel boundaries are indicative only, not survey boundaries.</li>
   <li>Data can be incomplete (for example gates and water assets on private land) - it is only as good as the
     public datasets behind it.</li>

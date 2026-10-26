@@ -20,7 +20,7 @@ function buildGrid() {
   if (!gridOn || map.getZoom() < 7) { glabels.innerHTML = ""; return; }   // MGA grid only makes sense close in
   var c = map.getCenter();
   var zone = Math.floor((c.lng + 180) / 6) + 1;
-  var def = mgaDefs(zone).mga2020;
+  var def = datumDef(zone);
   var b = map.getBounds().pad(0.5), sz = map.getSize();
   // MGA extent of the (padded) view from a ring of edge samples
   var minE = Infinity, maxE = -Infinity, minN = Infinity, maxN = -Infinity;

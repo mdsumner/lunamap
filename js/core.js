@@ -46,19 +46,42 @@ function fmtDDM(v, pos, neg) {
   return d + DEG + " " + (m < 10 ? "0" : "") + m.toFixed(3) + "' " + h;
 }
 
+// The coordinate datum for everything shown and typed: grid refs, MGA rows, the MGA grid, snapping,
+// and how unlabelled eastings/northings are read in Go to and imports. GDA2020 (current national
+// datum, matches phone GPS to a few tenths of a metre) or GDA94 (older maps and records). They differ
+// by about 1.5-1.8 m in Tasmania: no effect on 6- or 8-figure grid refs, but it matters at 1 m.
+// Kept on this device. Map tiles are pictures and are not moved by this setting.
+var DATUM = "2020";
+try { DATUM = localStorage.getItem("lunamap-datum") === "94" ? "94" : "2020"; } catch (e) {}
+function datumKey() { return DATUM === "94" ? "mga94" : "mga2020"; }
+function datumName() { return DATUM === "94" ? "MGA94" : "MGA2020"; }
+function datumDef(zone) { return mgaDefs(zone)[datumKey()]; }
+function setDatum(d) {
+  DATUM = d === "94" ? "94" : "2020";
+  try { localStorage.setItem("lunamap-datum", DATUM); } catch (e) {}
+  var b = document.getElementById("datum"); if (b) b.textContent = "Coordinates: GDA" + (DATUM === "94" ? "94" : "2020");
+  PANEL_GROUPS[2][1] = ["Lon, Lat", "Lat, Lon", "Grid ref", datumName(), "Elevation", DATUM === "94" ? "MGA2020" : "MGA94", "DMS", "Deg min"];
+  if (typeof buildGrid === "function") buildGrid();
+  if (typeof updateSnap === "function" && typeof drawOn !== "undefined" && drawOn) updateSnap();
+  if (pin) showCoords(pin.getLatLng());
+}
 function coords(lat, lon) {
   var zone = Math.floor((lon + 180) / 6) + 1;
   var d = mgaDefs(zone);
   var g20 = proj4("EPSG:4326", d.mga2020, [lon, lat]);
   var g94 = proj4("EPSG:4326", d.mga94, [lon, lat]);
-  // 6-figure grid reference: 100 m digits of easting and northing (MGA2020)
-  var gr = pad(Math.floor(g20[0] / 100) % 1000, 3) + " " + pad(Math.floor(g20[1] / 100) % 1000, 3);
+  // 6-figure grid reference: 100 m digits of easting and northing, in the chosen datum
+  var gm = DATUM === "94" ? g94 : g20;
+  var gr = pad(Math.floor(gm[0] / 100) % 1000, 3) + " " + pad(Math.floor(gm[1] / 100) % 1000, 3);
+  var r94 = { k: "MGA94 z" + zone, v: Math.round(g94[0]) + " E  " + Math.round(g94[1]) + " N" },
+      r20 = { k: "MGA2020 z" + zone, v: Math.round(g20[0]) + " E  " + Math.round(g20[1]) + " N" };
+  (DATUM === "94" ? r20 : r94).extra = true;
   return [
     { k: "Lon, Lat",   v: lon.toFixed(6) + ", " + lat.toFixed(6) },
     { k: "Lat, Lon",   v: lat.toFixed(6) + ", " + lon.toFixed(6) },
-    { k: "MGA94 z" + zone,   v: Math.round(g94[0]) + " E  " + Math.round(g94[1]) + " N" },
+    DATUM === "94" ? r94 : r20,
     { k: "Grid ref",   v: gr },
-    { k: "MGA2020 z" + zone, v: Math.round(g20[0]) + " E  " + Math.round(g20[1]) + " N", extra: true },
+    DATUM === "94" ? r20 : r94,
     { k: "DMS",        v: fmtDMS(lat, "N", "S") + "  " + fmtDMS(lon, "E", "W"), extra: true },
     { k: "Deg min",    v: fmtDDM(lat, "N", "S") + "  " + fmtDDM(lon, "E", "W"), extra: true }
   ];
@@ -228,7 +251,7 @@ function setPin(latlng) {
 var PANEL_GROUPS = [
   ["", ["Feature", "Gate note", "Route", "Second way"]],
   ["Property", ["Address", "Name", "Title", "PID", "Parcel", "Area"]],
-  ["Location", ["Lon, Lat", "Lat, Lon", "MGA94", "Grid ref", "Elevation", "MGA2020", "DMS", "Deg min"]],
+  ["Location", ["Lon, Lat", "Lat, Lon", "Grid ref", "MGA2020", "Elevation", "MGA94", "DMS", "Deg min"]],
   ["Map references", ["Street atlas", "Map book"]],
   ["Fire", ["Fire danger", "Wind", "Wind next 12 h", "Wind observed", "Flammability", "Vegetation", "Fire history", "Nearest fire station"]]
 ];
@@ -363,7 +386,7 @@ document.getElementById("pinme").onclick = function () {
 document.getElementById("print").onclick = function () {
   var bb = map.getBounds();
   document.getElementById("printhead").textContent =
-    basemapName(sel.value) + "  |  " + new Date().toLocaleString("en-AU") + "  |  view " +
+    basemapName(sel.value) + "  |  grid " + datumName() + "  |  " + new Date().toLocaleString("en-AU") + "  |  view " +
     bb.getSouth().toFixed(4) + "," + bb.getWest().toFixed(4) + " to " +
     bb.getNorth().toFixed(4) + "," + bb.getEast().toFixed(4) + "  |  " + location.href;
   setTimeout(function () { window.print(); }, 50);

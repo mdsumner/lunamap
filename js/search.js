@@ -13,7 +13,7 @@ function parseLocation(raw) {
   var hint = "", m = line.match(/^\s*([A-Za-z][^:]*):(.*)$/);
   if (m) { hint = m[1].toLowerCase(); line = m[2]; }
   if (/[A-Za-z]{2,}/.test(line)) return null;           // words: an address, not a coordinate
-  var datum = /2020/.test(hint) ? "mga2020" : "mga94";
+  var datum = /2020/.test(hint) ? "mga2020" : /94/.test(hint) ? "mga94" : datumKey();
   var zoneHint = (hint.match(/z\s*(\d{2})/) || [])[1];
   var s = line.replace(/[\u00b0\u00ba\u02da\u2032\u2033'"`:]/g, " ").replace(/[\u2212\u2013]/g, "-").toUpperCase();
   var toks = s.match(/-?\d+(?:\.\d+)?|[NSEW]/g) || [];
@@ -35,7 +35,7 @@ function parseLocation(raw) {
     if (/^\d+$/.test(digits) && digits.length % 2 === 0) {
       var h = digits.length / 2, unit = Math.pow(10, 5 - h);
       var er = +digits.slice(0, h) * unit, nr = +digits.slice(h) * unit;
-      var cm = proj4("EPSG:4326", defs.mga2020, [c.lng, c.lat]);
+      var cm = proj4("EPSG:4326", defs[datum], [c.lng, c.lat]);
       function near(r, cv) {           // candidate in the 100 km square closest to the view centre
         var best = null;
         for (var k = Math.floor(cv / 1e5) - 1; k <= Math.floor(cv / 1e5) + 1; k++) {
@@ -44,8 +44,8 @@ function parseLocation(raw) {
         }
         return best;
       }
-      return fromMGA(near(er, cm[0]), near(nr, cm[1]), defs.mga2020,
-        "Grid ref " + digits.slice(0, h) + " " + digits.slice(h) + " (MGA2020 z" + zone + ", centre of " + unit + " m square)");
+      return fromMGA(near(er, cm[0]), near(nr, cm[1]), defs[datum],
+        "Grid ref " + digits.slice(0, h) + " " + digits.slice(h) + " (" + (datum === "mga94" ? "MGA94" : "MGA2020") + " z" + zone + ", centre of " + unit + " m square)");
     }
   }
 

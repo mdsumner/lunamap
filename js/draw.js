@@ -330,7 +330,7 @@ function coordsToGeoJSON(txt) {
   var hasHeader = head.some(function (h) { return /[a-z]{2,}/.test(h) && !/^[nsew]$/.test(h); }) && !parseLocationSafe(lines[0]);
   if (hasHeader) {
     var ix = col(/^(lon|long|longitude|lng|x)$/), iy = col(/^(lat|latitude|y)$/), ie = col(/^(e|east|easting|mga_?e.*)$/), iN = col(/^(n|north|northing|mga_?n.*)$/),
-        iz = col(/^(zone|mga_?zone)$/), il = col(/^(name|label|title|id|description|desc)$/), d2020 = /2020/.test(lines[0]);
+        iz = col(/^(zone|mga_?zone)$/), il = col(/^(name|label|title|id|description|desc)$/), d2020 = /2020/.test(lines[0]) ? true : /94/.test(lines[0]) ? false : DATUM !== "94";
     if (!((ix >= 0 && iy >= 0) || (ie >= 0 && iN >= 0))) throw new Error("no lon/lat or easting/northing columns found");
     var c = map.getCenter(), zone0 = Math.floor((c.lng + 180) / 6) + 1;
     lines.slice(1).forEach(function (ln) {
@@ -428,7 +428,7 @@ function refreshActiveSnap() {
   if (s && map.pm.Draw[s] && map.pm.Draw[s]._createSnapList) map.pm.Draw[s]._createSnapList();
 }
 function snapGrid(s) {
-  var c = map.getCenter(), zone = Math.floor((c.lng + 180) / 6) + 1, def = mgaDefs(zone).mga2020;
+  var c = map.getCenter(), zone = Math.floor((c.lng + 180) / 6) + 1, def = datumDef(zone);
   var b = map.getBounds().pad(0.2), e0 = Infinity, e1 = -Infinity, n0 = Infinity, n1 = -Infinity;
   [[b.getWest(), b.getSouth()], [b.getEast(), b.getSouth()], [b.getEast(), b.getNorth()], [b.getWest(), b.getNorth()]].forEach(function (q) {
     var m = proj4("EPSG:4326", def, q); e0 = Math.min(e0, m[0]); e1 = Math.max(e1, m[0]); n0 = Math.min(n0, m[1]); n1 = Math.max(n1, m[1]);
@@ -447,7 +447,7 @@ function snapGrid(s) {
   // reach far enough that every spot is within range of a crossing (half the diagonal), within reason
   var px = map.latLngToContainerPoint(ll(e0, n0)).distanceTo(map.latLngToContainerPoint(ll(e0 + s, n0)));
   map.pm.setGlobalOptions({ snapDistance: Math.max(20, Math.min(60, Math.ceil(px * 0.72))) });
-  return "Snapping to MGA zone " + zone + " grid crossings every " + (s >= 1000 ? s / 1000 + " km" : s + " m");
+  return "Snapping to " + datumName() + " zone " + zone + " grid crossings every " + (s >= 1000 ? s / 1000 + " km" : s + " m");
 }
 function viewBox(pad) { var b = map.getBounds().pad(pad); return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]; }
 function snapRoads(seq) {
