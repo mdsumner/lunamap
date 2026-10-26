@@ -171,7 +171,7 @@
       var area = ringArea(outline);
       var L1 = sides ? Math.max(sides[0], sides[1]) : 0, W1 = sides ? Math.min(sides[0], sides[1]) : 0;
       status("Outlined (model confidence " + Math.round(r.scores[bi] * 100) + "%)." + (sides ? " Best-fit rectangle about " + fmtM(L1) + " x " + fmtM(W1) +
-        " (" + Math.round(L1 * W1) + " m²)." : "") + (area ? " Outline area " + Math.round(area) + " m²." : "") +
+        " (" + Math.round(L1 * W1) + " m2)." : "") + (area ? " Outline area " + Math.round(area) + " m2." : "") +
         " Keep it as a drawing, or tap again.");
       document.getElementById("olkeep").style.display = ""; document.getElementById("olrect").style.display = rll ? "" : "none";
     }).catch(function (e) { status("Outline failed: " + e.message); })
