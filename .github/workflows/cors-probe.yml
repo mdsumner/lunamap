@@ -1,0 +1,28 @@
+# Research: do theLIST tile and export endpoints allow browsers to read the pixels (CORS)?
+name: cors-probe
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: |
+          B=https://services.thelist.tas.gov.au/arcgis/rest/services
+          {
+          for u in \
+            "$B/Basemaps/Orthophoto/MapServer/tile/17/94963/118486" \
+            "$B/Basemaps/AerialPhoto2025/MapServer/tile/17/94963/118486" \
+            "$B/Basemaps/Topographic/MapServer/tile/17/94963/118486" \
+            "$B/Basemaps/Tasmap100K/MapServer/tile/12/2967/3702" \
+            "$B/Public/TopographyAndRelief/MapServer/export?bbox=16390000,-5300000,16391000,-5299000&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&f=image" ; do
+            echo "== $u"
+            curl -s -D - -o /tmp/body -H "Origin: https://mdsumner.github.io" "$u" | grep -iE "^(HTTP|access-control|content-type|content-length|cache-control)" || true
+            echo "bytes $(wc -c < /tmp/body)"
+          done
+          } | tee research/cors-probe.txt
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898499+github-actions[bot]@users.noreply.github.com"
+          git add research/cors-probe.txt && git commit -m "Research: CORS probe" && git push || true
