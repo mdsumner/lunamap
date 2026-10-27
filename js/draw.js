@@ -45,7 +45,7 @@ function fmtLen(m) { return m < 100 ? m.toFixed(1) + " m" : m < 1000 ? Math.roun
 function fmtArea(m2) {
   return m2 < 100 ? m2.toFixed(1) + " m2" : m2 < 10000 ? Math.round(m2) + " m2" : (m2 / 10000).toFixed(m2 < 1e6 ? 2 : 1) + " ha";
 }
-function llToC(ll) { return [+ll.lng.toFixed(6), +ll.lat.toFixed(6)]; }
+function llToC(ll) { return [+ll.lng.toFixed(8), +ll.lat.toFixed(8)]; }
 function measure(layer) {
   var k = kindOf(layer);
   if (k === "point") {
