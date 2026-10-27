@@ -181,3 +181,6 @@ body.drawing #panel { display:none !important; }
 .lfmini .lfmrow { border-top:1px solid #ddd; padding-top:3px; margin-top:3px; }
 .lfmini .lfmname { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .lfmini .lfleg { font-size:10px; gap:1px 6px; } .lfmini .lfop { width:100%; margin:2px 0 0; }
+/* desktop: a crosshair over the map (a click drops the pin, so aim like it), the hand only while dragging */
+.leaflet-container.leaflet-grab, .leaflet-container .leaflet-grab { cursor: crosshair; }
+.leaflet-dragging .leaflet-grab, .leaflet-dragging .leaflet-grab .leaflet-interactive, .leaflet-dragging .leaflet-marker-draggable { cursor: grabbing; }
