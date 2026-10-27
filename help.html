@@ -301,6 +301,10 @@ move whole shapes, and delete. While drawing, tapping the map does not drop the 
     level), or the map points shown by Water, Gates and Stations - or nothing, for free drawing. The chosen layer shows
     faintly while you draw and refreshes as you move the map. Handy for laying out grid-aligned search areas, or tracing a
     road or a property boundary.</li>
+  <li><b>Copy shape</b> (selected shape) and <b>Copy all</b> put drawings on the clipboard as code, in lon/lat
+    (EPSG:4326), in the format chosen beside Copy all: <b>R: terra::vect()</b>, <b>R: sf</b>, <b>Python: geopandas</b>,
+    plain <b>WKT</b> or <b>GeoJSON</b>. Paste into R or Python and run it; labels come along as a column. A terra SpatVector
+    holds one geometry type, so a mix of points, lines and polygons comes out as a list by kind. The text is plain ASCII.</li>
   <li><b>Exact coordinates</b>: rather than typing them vertex by vertex, put them in a file and use <b>Import...</b>.
     A <code>.csv</code> with a header row needs lon and lat columns (or easting and northing: MGA2020 or MGA94 if the header says so,
     otherwise the chosen datum, with an optional zone column), plus an optional name or label column. A <code>.txt</code> (or a csv without a

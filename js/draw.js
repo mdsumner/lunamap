@@ -549,6 +549,58 @@ document.getElementById("ddelete").onclick = function () {
 };
 document.getElementById("dclose").onclick = function () { setDraw(false); };
 document.getElementById("dexp-geojson").onclick = function () { exportAs("geojson"); };
+
+// ---- copy as code ----------------------------------------------------------------
+// Drawings to the clipboard as R (terra or sf), Python (geopandas), WKT or GeoJSON, in lon/lat
+// (EPSG:4326). Text is kept ASCII (other characters in labels become \u escapes, valid in R,
+// Python and JSON strings). The chosen format is remembered on this device.
+var COPY_KEY = "lunamap-copy-format";
+try { var cf = localStorage.getItem(COPY_KEY); if (cf) document.getElementById("dcopyfmt").value = cf; } catch (e) {}
+document.getElementById("dcopyfmt").onchange = function (e) { try { localStorage.setItem(COPY_KEY, e.target.value); } catch (er) {} };
+function asciiStr(s) {           // a double-quoted string literal, ASCII only
+  return '"' + String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/[\u0000-\u001f\u007f-\uffff]/g,
+    function (c) { return "\\u" + ("000" + c.charCodeAt(0).toString(16)).slice(-4); }) + '"';
+}
+function num(v) { return String(+v.toFixed(7)); }
+function wktOf(g) {
+  function pt(c) { return num(c[0]) + " " + num(c[1]); }
+  function ring(r) { return "(" + r.map(pt).join(", ") + ")"; }
+  switch (g.type) {
+    case "Point": return "POINT (" + pt(g.coordinates) + ")";
+    case "LineString": return "LINESTRING " + ring(g.coordinates);
+    case "Polygon": return "POLYGON (" + g.coordinates.map(ring).join(", ") + ")";
+    case "MultiLineString": return "MULTILINESTRING (" + g.coordinates.map(ring).join(", ") + ")";
+    case "MultiPolygon": return "MULTIPOLYGON (" + g.coordinates.map(function (p) { return "(" + p.map(ring).join(", ") + ")"; }).join(", ") + ")";
+  }
+  return "GEOMETRYCOLLECTION EMPTY";
+}
+function copyDrawings(layers) {
+  if (!layers.length) { toast("Nothing drawn yet"); return; }
+  var feats = layers.map(function (l) { var g = l.toGeoJSON(7); return { label: (l.feature && l.feature.properties.label) || "", kind: kindOf(l), geom: g.geometry }; });
+  var fmt = document.getElementById("dcopyfmt").value, wkts = feats.map(function (f) { return asciiStr(wktOf(f.geom)); });
+  var labels = "c(" + feats.map(function (f) { return asciiStr(f.label); }).join(", ") + ")";
+  var kinds = "c(" + feats.map(function (f) { return asciiStr(f.kind); }).join(", ") + ")";
+  var text, n = feats.length;
+  var mixed = feats.some(function (f) { return f.kind !== feats[0].kind; });
+  if (fmt === "terra") text = n === 1 && !feats[0].label ? "terra::vect(" + wkts[0] + ", crs = \"EPSG:4326\")\n" :
+    // a SpatVector holds one geometry type, so mixed drawings become a list by kind
+    (mixed ? "x <- " : "terra::vect(") + "data.frame(label = " + labels + ", kind = " + kinds + ",\n  wkt = c(" + wkts.join(",\n    ") + "))" +
+    (mixed ? "\nv <- lapply(split(x, x$kind), terra::vect, geom = \"wkt\", crs = \"EPSG:4326\")\n" : ",\n  geom = \"wkt\", crs = \"EPSG:4326\")\n");
+  else if (fmt === "sf") text = n === 1 && !feats[0].label ? "sf::st_as_sfc(" + wkts[0] + ", crs = 4326)\n" :
+    "sf::st_as_sf(data.frame(label = " + labels + ", kind = " + kinds + ",\n  wkt = c(" + wkts.join(",\n    ") + ")),\n  wkt = \"wkt\", crs = 4326)\n";
+  else if (fmt === "py") text = "import geopandas as gpd\nfrom shapely import wkt\ngdf = gpd.GeoDataFrame({\"label\": [" +
+    feats.map(function (f) { return asciiStr(f.label); }).join(", ") + "], \"kind\": [" + feats.map(function (f) { return asciiStr(f.kind); }).join(", ") +
+    "]},\n  geometry=[wkt.loads(s) for s in [" + wkts.join(",\n    ") + "]], crs=\"EPSG:4326\")\n";
+  else if (fmt === "wkt") text = feats.map(function (f) { return wktOf(f.geom); }).join("\n") + "\n";
+  else text = JSON.stringify({ type: "FeatureCollection", features: feats.map(function (f) {
+    return { type: "Feature", properties: { label: f.label, kind: f.kind }, geometry: f.geom }; }) }).replace(/[\u007f-\uffff]/g,
+    function (c) { return "\\u" + ("000" + c.charCodeAt(0).toString(16)).slice(-4); }) + "\n";
+  copy(text);
+  toast("Copied " + n + (n === 1 ? " shape" : " shapes") + " as " + document.getElementById("dcopyfmt").selectedOptions[0].textContent);
+}
+document.getElementById("dcopyone").onclick = function () { if (drawSel) copyDrawings([drawSel]); };
+document.getElementById("dcopyall").onclick = function () { copyDrawings(drawn.getLayers()); };
+window.lunamapCopy = { wktOf: wktOf, asciiStr: asciiStr };
 document.getElementById("dexp-kml").onclick = function () { exportAs("kml"); };
 document.getElementById("dexp-gpx").onclick = function () { exportAs("gpx"); };
 document.getElementById("dimport").onclick = function () { document.getElementById("dfile").click(); };
