@@ -65,7 +65,16 @@ function measure(layer) {
       if (i === 0) perim += lineLen(c.concat([c[0]]));
     });
   });
-  return "Area " + fmtArea(area) + ", perimeter " + fmtLen(perim);
+  var fit = "";
+  if (polys.length === 1 && window.lunamapOutline && area < 1e6) {      // the smallest rectangle around it, any orientation
+    var ring = polys[0][0].map(llToC), lat0 = ring[0][1] * Math.PI / 180, kx = 111320 * Math.cos(lat0), ky = 110574;
+    var r = window.lunamapOutline.minRect(ring.map(function (c) { return [c[0] * kx, c[1] * ky]; }));
+    if (r) {
+      var a = Math.hypot(r[1][0] - r[0][0], r[1][1] - r[0][1]), b = Math.hypot(r[2][0] - r[1][0], r[2][1] - r[1][1]);
+      fit = "; fits in " + fmtLen(Math.max(a, b)) + " x " + fmtLen(Math.min(a, b));
+    }
+  }
+  return "Area " + fmtArea(area) + ", perimeter " + fmtLen(perim) + fit;
 }
 
 // ---- labels, styling, selection -------------------------------------------
