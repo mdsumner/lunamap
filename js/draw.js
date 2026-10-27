@@ -40,8 +40,10 @@ function ringAreaM2(ring) {      // spherical polygon area of a [lon, lat] ring
   }
   return Math.abs(s * R * R / 2);
 }
+// measurements of drawn shapes keep the detail a small shape needs (fmtDist rounds to 10 m, for routes)
+function fmtLen(m) { return m < 100 ? m.toFixed(1) + " m" : m < 1000 ? Math.round(m) + " m" : (m / 1000).toFixed(m < 10000 ? 2 : 1) + " km"; }
 function fmtArea(m2) {
-  return m2 < 10000 ? Math.round(m2) + " m2" : (m2 / 10000).toFixed(m2 < 1e6 ? 2 : 1) + " ha";
+  return m2 < 100 ? m2.toFixed(1) + " m2" : m2 < 10000 ? Math.round(m2) + " m2" : (m2 / 10000).toFixed(m2 < 1e6 ? 2 : 1) + " ha";
 }
 function llToC(ll) { return [+ll.lng.toFixed(6), +ll.lat.toFixed(6)]; }
 function measure(layer) {
@@ -53,7 +55,7 @@ function measure(layer) {
   if (k === "line") {
     var lines = layer.getLatLngs(); if (!Array.isArray(lines[0])) lines = [lines];
     var len = 0; lines.forEach(function (l) { len += lineLen(l.map(llToC)); });
-    return "Length " + fmtDist(len);
+    return "Length " + fmtLen(len);
   }
   var polys = layer.getLatLngs(); if (!Array.isArray(polys[0][0])) polys = [polys];
   var area = 0, perim = 0;
@@ -63,7 +65,7 @@ function measure(layer) {
       if (i === 0) perim += lineLen(c.concat([c[0]]));
     });
   });
-  return "Area " + fmtArea(area) + ", perimeter " + fmtDist(perim);
+  return "Area " + fmtArea(area) + ", perimeter " + fmtLen(perim);
 }
 
 // ---- labels, styling, selection -------------------------------------------
