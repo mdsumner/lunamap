@@ -1,0 +1,61 @@
+# Harvest named peaks, hills and tall landmarks in Tasmania from OpenStreetMap for the
+# "What am I looking at?" horizon view: [name, lat, lon, ele (m or null), kind].
+name: osm-peaks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 3 2 * *"   # monthly
+
+permissions:
+  contents: write
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Query Overpass
+        run: |
+          cat > q.overpassql <<'Q'
+          [out:json][timeout:180];
+          area["ISO3166-2"="AU-TAS"][admin_level=4]->.tas;
+          (
+            node["natural"~"^(peak|volcano|hill)$"]["name"](area.tas);
+            node["man_made"~"^(tower|mast|communications_tower|lighthouse)$"]["name"](area.tas);
+          );
+          out;
+          Q
+          curl -sS --fail --retry 3 --retry-delay 20 -A "lunamap (github.com/mdsumner/lunamap)" \
+            --data-urlencode "data@q.overpassql" https://overpass-api.de/api/interpreter -o raw.json
+      - name: Compact
+        run: |
+          mkdir -p data
+          python3 - <<'PY'
+          import json, datetime, re
+          raw = json.load(open("raw.json"))
+          def ele(t):
+              m = re.match(r"^\s*(-?\d+(?:\.\d+)?)", t.get("ele", "") or "")
+              return round(float(m.group(1))) if m else None
+          rows = []
+          for e in raw["elements"]:
+              t = e.get("tags", {})
+              if e.get("type") != "node" or "name" not in t: continue
+              kind = t.get("natural") or t.get("man_made")
+              name = t["name"].encode("ascii", "ignore").decode().strip()
+              if not name: continue
+              rows.append([name, round(e["lat"], 5), round(e["lon"], 5), ele(t), kind])
+          rows.sort()
+          out = {"source": "OpenStreetMap peaks, hills and named towers in Tasmania, via Overpass API",
+                 "licence": "Open Database License (ODbL) 1.0 - (c) OpenStreetMap contributors - https://www.openstreetmap.org/copyright",
+                 "harvested": datetime.date.today().isoformat(), "fields": ["name", "lat", "lon", "ele", "kind"], "peaks": rows}
+          open("data/osm-peaks-tas.json", "w").write(json.dumps(out, ensure_ascii=True, separators=(",", ":")) + "\n")
+          print(len(rows), "features")
+          PY
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/osm-peaks-tas.json
+          git diff --cached --quiet || git commit -m "Update OSM peaks for Tasmania"
+          git push
