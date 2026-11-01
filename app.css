@@ -184,3 +184,4 @@ body.drawing #panel { display:none !important; }
 /* desktop: a crosshair over the map (a click drops the pin, so aim like it), the hand only while dragging */
 .leaflet-container.leaflet-grab, .leaflet-container .leaflet-grab { cursor: crosshair; }
 .leaflet-dragging .leaflet-grab, .leaflet-dragging .leaflet-grab .leaflet-interactive, .leaflet-dragging .leaflet-marker-draggable { cursor: grabbing; }
+.wsym.wc { background:#00838f; color:#fff; border-radius:4px; }
