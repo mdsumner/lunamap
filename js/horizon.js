@@ -80,6 +80,7 @@
       // peaks: visible if nothing nearer on their own ray stands higher
       var vis = [];
       peaks.forEach(function (p) {
+        if (!p[0]) return;                      // unnamed lookouts: nothing to label
         var q = proj4("EPSG:4326", def, [p[2], p[1]]), dx = q[0] - E, dy = q[1] - N, dist = Math.hypot(dx, dy);
         if (dist < 150 || dist > S.range) return;
         var zp = z(q[0], q[1], dist); if (p[3] !== null && p[3] > zp) zp = Math.max(zp, Math.min(p[3], zp + 30));
@@ -167,7 +168,7 @@
     var info = document.getElementById("hzinfo");
     if (h) {
       var p = h.p;
-      info.textContent = p.name + " (" + (p.kind === "hill" ? "hill" : p.kind === "peak" || p.kind === "volcano" ? "peak" : p.kind.replace(/_/g, " ")) + "), " + p.ele +
+      info.textContent = p.name + " (" + (p.kind === "hill" ? "hill" : p.kind === "peak" || p.kind === "volcano" ? "peak" : p.kind === "viewpoint" ? "lookout" : p.kind.replace(/_/g, " ")) + "), " + p.ele +
         " m, " + fmtDist(p.dist) + " away, bearing " + Math.round(p.az) + " deg.";
       info.dataset.lat = p.lat; info.dataset.lon = p.lon; info.dataset.txt = p.name;
       document.getElementById("hzmap").style.display = "";
