@@ -1,5 +1,6 @@
-# Harvest named peaks, hills and tall landmarks in Tasmania from OpenStreetMap for the
-# "What am I looking at?" horizon view: [name, lat, lon, ele (m or null), kind].
+# Harvest named peaks, hills and tall landmarks, and lookouts (tourism=viewpoint, named or not),
+# in Tasmania from OpenStreetMap for the horizon view and the Lookouts layer:
+# [name, lat, lon, ele (m or null), kind].
 name: osm-peaks
 
 on:
@@ -23,6 +24,7 @@ jobs:
           (
             node["natural"~"^(peak|volcano|hill)$"]["name"](area.tas);
             node["man_made"~"^(tower|mast|communications_tower|lighthouse)$"]["name"](area.tas);
+            node["tourism"="viewpoint"](area.tas);
           );
           out;
           Q
@@ -40,13 +42,13 @@ jobs:
           rows = []
           for e in raw["elements"]:
               t = e.get("tags", {})
-              if e.get("type") != "node" or "name" not in t: continue
-              kind = t.get("natural") or t.get("man_made")
-              name = t["name"].encode("ascii", "ignore").decode().strip()
-              if not name: continue
+              if e.get("type") != "node": continue
+              kind = "viewpoint" if t.get("tourism") == "viewpoint" else (t.get("natural") or t.get("man_made"))
+              name = (t.get("name") or "").encode("ascii", "ignore").decode().strip()
+              if not name and kind != "viewpoint": continue     # unnamed lookouts are kept, with an empty name
               rows.append([name, round(e["lat"], 5), round(e["lon"], 5), ele(t), kind])
           rows.sort()
-          out = {"source": "OpenStreetMap peaks, hills and named towers in Tasmania, via Overpass API",
+          out = {"source": "OpenStreetMap peaks, hills, named towers and lookouts in Tasmania, via Overpass API",
                  "licence": "Open Database License (ODbL) 1.0 - (c) OpenStreetMap contributors - https://www.openstreetmap.org/copyright",
                  "harvested": datetime.date.today().isoformat(), "fields": ["name", "lat", "lon", "ele", "kind"], "peaks": rows}
           open("data/osm-peaks-tas.json", "w").write(json.dumps(out, ensure_ascii=True, separators=(",", ":")) + "\n")
