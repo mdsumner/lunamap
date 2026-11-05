@@ -17,7 +17,7 @@ self.addEventListener("install", function (e) {
   self.skipWaiting();
   e.waitUntil(caches.open(SHELL).then(function (c) {
     return c.addAll(["./", "help.html", "app.css", "js/core.js", "js/search.js", "js/grid.js",
-      "js/layers.js", "js/route.js", "js/hazards.js", "js/extras.js", "js/wind.js", "js/windrose.js", "js/model3d.js", "js/gebco.js", "js/terrain3d.js", "js/aerials.js", "js/archives.js", "js/roadpack.js", "js/backroads.js", "js/gatenotes.js", "js/contours.js", "js/layerfinder.js", "js/outline.js", "js/horizon.js", "js/toilets.js", "js/lookouts.js", "js/app.js", "js/draw.js", "js/profile.js", "data/osm-places-tas.json", "data/bom-stations-tas.json", "data/windrose-ferntree.json", "data/toilets-tas.json", "data/osm-peaks-tas.json"].concat(CDN)).catch(function () {});
+      "js/layers.js", "js/route.js", "js/hazards.js", "js/extras.js", "js/wind.js", "js/windrose.js", "js/model3d.js", "js/gebco.js", "js/terrain3d.js", "js/aerials.js", "js/archives.js", "js/roadpack.js", "js/backroads.js", "js/gatenotes.js", "js/contours.js", "js/layerfinder.js", "js/outline.js", "js/horizon.js", "js/toilets.js", "js/lookouts.js", "js/burn.js", "js/app.js", "js/draw.js", "js/profile.js", "data/osm-places-tas.json", "data/bom-stations-tas.json", "data/windrose-ferntree.json", "data/toilets-tas.json", "data/osm-peaks-tas.json"].concat(CDN)).catch(function () {});
   }));
 });
 

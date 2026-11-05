@@ -167,6 +167,27 @@ var FlammTiles = L.TileLayer.extend({
       "&bboxSR=3857&imageSR=3857&size=" + ts.x + "," + ts.y + "&format=png32&transparent=true&dpi=96&f=image" + lyr;
   }
 });
+// Print-style preview for the wall map: two hatched levels (see the wall map hatching notes).
+// The server draws the hatch (esriSFS styles), so spacing is in screen pixels, not paper millimetres.
+var FLAM_STYLE = "tint", flamTint = flamDynamic;
+function flamHatchJSON(foldMH) {
+  function sym(style, col) { return { type: "esriSFS", style: style, color: col.concat(255), outline: { type: "esriSLS", style: "esriSLSSolid", color: col.concat(255), width: 1.2 } }; }
+  var l1 = sym("esriSFSForwardDiagonal", [216, 67, 21]), l2 = sym("esriSFSDiagonalCross", [142, 0, 0]);
+  var infos = [{ value: "H", label: "high", symbol: l1 }, { value: "VH", label: "very high", symbol: l2 }];
+  if (foldMH) infos.unshift({ value: "MH", label: "moderately high", symbol: l1 });
+  return JSON.stringify([{ id: TASVEG_FIRE, source: { type: "mapLayer", mapLayerId: TASVEG_FIRE },
+    definitionExpression: foldMH ? FLAM_WHERE : "FLAMMAB IN ('H','VH')",
+    drawingInfo: { renderer: { type: "uniqueValue", field1: "FLAMMAB", uniqueValueInfos: infos } } }]);
+}
+function setFlamStyle(mode) {
+  FLAM_STYLE = mode;
+  flamDynamic = mode === "tint" ? flamTint : flamHatchJSON(mode === "hatch-mh");
+  flamTiles.dynamic = true; flamTiles.setOpacity(mode === "tint" ? 0.4 : 0.95);
+  var b = document.getElementById("flamhatch");
+  if (b) b.textContent = "Flammability: " + (mode === "tint" ? "tint" : mode === "hatch" ? "hatch H, VH" : "hatch MH+H, VH");
+  if (mode !== "tint" && !HAZ.flamm.on) setHazard("flamm", true);
+  flamTiles.redraw();
+}
 var flamTiles = new FlammTiles("", { tileSize: 512, minZoom: 12, maxZoom: 19, zIndex: 3, opacity: 0.4,
   attribution: "TASVEG 4.0 &copy; State of Tasmania" });
 flamTiles.on("tileerror", function () { if (flamTiles.dynamic) { flamTiles.dynamic = false; flamTiles.redraw(); } });
@@ -230,3 +251,8 @@ function setHazard(name, on) {
 Object.keys(HAZ).forEach(function (k) {
   document.getElementById(HAZ[k].btn).onclick = function () { setHazard(k, !HAZ[k].on); };
 });
+
+// Explore: cycle tint -> hatch (H, VH) -> hatch (MH folded into H, VH) -> tint
+(function () { var b = document.getElementById("flamhatch"); if (b) b.onclick = function () {
+  setFlamStyle(FLAM_STYLE === "tint" ? "hatch" : FLAM_STYLE === "hatch" ? "hatch-mh" : "tint");
+  toast(FLAM_STYLE === "tint" ? "Flammability back to the tint" : "Flammability as print hatching (preview; zoom 12 or closer)"); }; })();

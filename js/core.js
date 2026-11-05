@@ -236,7 +236,8 @@ function setPin(latlng) {
       if (typeof lookupExtras === "function") lookupExtras(pin.getLatLng());
       if (typeof pinMovedAB === "function") pinMovedAB();
       if (typeof lookupFoundLayers === "function") lookupFoundLayers(pin.getLatLng());
-      if (typeof lookupToilet === "function") lookupToilet(pin.getLatLng()); });
+      if (typeof lookupToilet === "function") lookupToilet(pin.getLatLng());
+      if (typeof lookupBurn === "function") lookupBurn(pin.getLatLng()); });
   else pin.setLatLng(latlng);
   clearRoute(); setFolded(false); parcelInfo = null; featureInfo = null; showCoords(latlng); writeHash();
   var lineSel = window.pinIsLine; window.pinIsLine = false;
@@ -248,6 +249,7 @@ function setPin(latlng) {
   if (typeof pinMovedAB === "function") pinMovedAB();
   if (typeof lookupFoundLayers === "function") lookupFoundLayers(latlng);
   if (typeof lookupToilet === "function") lookupToilet(latlng);
+  if (typeof lookupBurn === "function") lookupBurn(latlng);
 }
 // Pin panel: a short view (what most taps need) and a full view grouped by kind.
 var PANEL_GROUPS = [
@@ -255,9 +257,9 @@ var PANEL_GROUPS = [
   ["Property", ["Address", "Name", "Title", "PID", "Parcel", "Area"]],
   ["Location", ["Lon, Lat", "Lat, Lon", "Grid ref", "MGA2020", "Elevation", "MGA94", "DMS", "Deg min"]],
   ["Map references", ["Street atlas", "Map book"]],
-  ["Fire", ["Fire danger", "Wind", "Wind next 12 h", "Wind observed", "Flammability", "Vegetation", "Fire history", "Nearest fire station"]]
+  ["Fire", ["Fire danger", "Wind", "Wind next 12 h", "Wind observed", "Flammability", "Vegetation", "Fire history", "Nearest fire station", "Burn window"]]
 ];
-var PANEL_SHORT = ["Feature", "Gate note", "Nearest toilet", "Address", "Route", "Second way", "Lon, Lat", "Grid ref", "Fire danger", "Wind", "Flammability", "Nearest fire station"];
+var PANEL_SHORT = ["Feature", "Gate note", "Nearest toilet", "Address", "Route", "Second way", "Lon, Lat", "Grid ref", "Fire danger", "Wind", "Flammability", "Nearest fire station", "Burn window"];
 function rowBase(k) { return String(k).replace(/ z\d+$/, ""); }
 function panelLayout(rows) {          // -> [{head} | row] in display order for the current view
   var byKey = {}; rows.forEach(function (r) { (byKey[rowBase(r.k)] = byKey[rowBase(r.k)] || []).push(r); });
@@ -277,7 +279,7 @@ function panelLayout(rows) {          // -> [{head} | row] in display order for 
 }
 function showCoords(ll) {
   var cr = coords(ll.lat, ll.lng);
-  var all = featureRows().concat(parcelRows(), typeof hazardRows === "function" ? hazardRows() : [], typeof foundLayerRows === "function" ? foundLayerRows() : [], typeof toiletRows === "function" ? toiletRows() : [], routeRows(), cr,
+  var all = featureRows().concat(parcelRows(), typeof hazardRows === "function" ? hazardRows() : [], typeof foundLayerRows === "function" ? foundLayerRows() : [], typeof toiletRows === "function" ? toiletRows() : [], typeof burnRows === "function" ? burnRows() : [], routeRows(), cr,
     mapbookRows(), typeof extraRows === "function" ? extraRows() : []);
   var layout = panelLayout(all);
   lastRows = layout.filter(function (r) { return !r.head; });
