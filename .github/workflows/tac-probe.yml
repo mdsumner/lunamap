@@ -1,4 +1,4 @@
-# Research: how is the palawa kani place names map built? Output kept as a run artifact, not committed.
+# Research: how is the palawa kani place names map built? Prints a summary to the log; nothing committed.
 name: tac-probe
 on: workflow_dispatch
 permissions:
@@ -10,28 +10,18 @@ jobs:
       - run: |
           mkdir -p out && cd out
           UA="Mozilla/5.0 (X11; Linux x86_64) lunamap-research"
-          curl -sSL -A "$UA" -D map.hdr -o map.html https://tacinc.com.au/pulingina-to-lutruwita-tasmania-place-names/map || true
-          curl -sSL -A "$UA" -o policy.pdf https://tacinc.com.au/the-policy-and-protocol-for-use-of-palawa-kani-aboriginal-language/ || true
-          # follow script, iframe and obvious data URLs found in the page
-          grep -oE '(src|href|data-[a-z-]+)="[^"]+"' map.html | sed -E 's/^[^"]*"//; s/"$//' | sort -u > refs.txt
-          grep -oE 'https?://[^"'"'"' )<>]+\.(json|geojson|js|kml|csv)[^"'"'"' )<>]*' map.html | sort -u >> refs.txt
-          n=0
-          while read -r u; do
-            case "$u" in //*) u="https:$u";; /*) u="https://tacinc.com.au$u";; http*) ;; *) continue;; esac
-            case "$u" in *.css*|*.png*|*.jpg*|*.svg*|*.woff*|*.ico*|*fonts.g*) continue;; esac
-            n=$((n+1)); [ $n -gt 60 ] && break
-            f=$(printf '%03d' $n)
-            echo "$f $u" >> fetched.txt
-            curl -sSL -m 30 -A "$UA" -o "$f.body" "$u" || true
-          done < refs.txt
-          # second pass: data URLs referenced inside fetched js
-          cat *.body 2>/dev/null | grep -oE 'https?://[^"'"'"' )<>]+\.(json|geojson|mp3|m4a|wav)[^"'"'"' )<>]*' | sort -u | head -40 > refs2.txt || true
-          cat *.body 2>/dev/null | grep -oE '"/?[a-zA-Z0-9_/.-]+\.(json|geojson)"' | sort -u | head -40 >> refs2.txt || true
+          B=https://tacinc.com.au/pulingina-to-lutruwita-tasmania-place-names
+          curl -sSL -A "$UA" -o index.html "$B/map"
+          js=$(grep -oE 'assets/index-[^"]+\.js' index.html | head -1)
+          curl -sSL -A "$UA" -o app.js "$B/$js"; ls -la
+          echo '=== libs'; grep -oE '(maplibre|mapbox|leaflet|openlayers|ol/|deck\.gl|cesium|protomaps|pmtiles|tailwind|vue|react|svelte)[a-zA-Z.-]{0,20}' app.js | sort | uniq -c | sort -rn | head -30
+          echo '=== urls'; grep -oE 'https?://[^"'"'"'`) \\]+' app.js | sort | uniq -c | sort -rn | head -80
+          echo '=== paths'; grep -oE '["'"'"'`](\.?/)?[a-zA-Z0-9_/.{}$-]*\.(json|geojson|pmtiles|mp3|m4a|wav|ogg|png|webp|jpg)["'"'"'`]' app.js | sort -u | head -60
+          echo '=== api-ish'; grep -oE '["'"'"'`][^"'"'"'`]{0,60}(api|graphql|wp-json|endpoint|supabase|firebase|airtable|sheets)[^"'"'"'`]{0,60}["'"'"'`]' app.js | sort -u | head -40
+          echo '=== imports'; grep -oE 'assets/[A-Za-z0-9_.-]+\.(js|json)' app.js | sort -u | head -40
+          echo '=== keys'; grep -oE '(name|title|placeName|english|palawa|audio|pronunciation|lat|lng|longitude|latitude|coordinates)[A-Za-z_]{0,12}:' app.js | sort | uniq -c | sort -rn | head -40
+          for a in $(grep -oE 'assets/[A-Za-z0-9_.-]+\.(js|json)' app.js | sort -u | head -15); do curl -sSL -A "$UA" -o "$(basename $a)" "$B/$a"; done
           ls -la
-          echo '=== map.hdr'; cat map.hdr; echo '=== map.html'; cat map.html; echo; echo '=== fetched'; cat fetched.txt || true
-          pip -q install pdfminer.six >/dev/null 2>&1 && echo '=== policy' && pdf2txt.py policy.pdf | tr -s '\n' | head -150 || true
-      - uses: actions/upload-artifact@v4
-        with:
-          name: tac-probe
-          path: out
-          retention-days: 3
+          echo '=== urls-in-chunks'; cat *.js *.json 2>/dev/null | grep -oE 'https?://[^"'"'"'`) \\]+' | sort | uniq -c | sort -rn | head -60
+          echo '=== sample-feature'; for f in *.json; do echo "-- $f"; head -c 800 "$f"; echo; done 2>/dev/null
+          grep -oE '\{[^{}]{0,40}(lat|latitude)[^{}]{0,300}\}' app.js | head -3
