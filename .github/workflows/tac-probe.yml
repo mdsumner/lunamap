@@ -1,4 +1,4 @@
-# Research: how is the palawa kani place names map built? Prints a summary to the log; nothing committed.
+# Research: shape of the palawa kani place names API (counts, field names, CORS). Prints a summary to the log; nothing committed.
 name: tac-probe
 on: workflow_dispatch
 permissions:
@@ -8,20 +8,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          mkdir -p out && cd out
           UA="Mozilla/5.0 (X11; Linux x86_64) lunamap-research"
-          B=https://tacinc.com.au/pulingina-to-lutruwita-tasmania-place-names
-          curl -sSL -A "$UA" -o index.html "$B/map"
-          js=$(grep -oE 'assets/index-[^"]+\.js' index.html | head -1)
-          curl -sSL -A "$UA" -o app.js "$B/$js"; ls -la
-          echo '=== libs'; grep -oE '(maplibre|mapbox|leaflet|openlayers|ol/|deck\.gl|cesium|protomaps|pmtiles|tailwind|vue|react|svelte)[a-zA-Z.-]{0,20}' app.js | sort | uniq -c | sort -rn | head -30
-          echo '=== urls'; grep -oE 'https?://[^"'"'"'`) \\]+' app.js | sort | uniq -c | sort -rn | head -80
-          echo '=== paths'; grep -oE '["'"'"'`](\.?/)?[a-zA-Z0-9_/.{}$-]*\.(json|geojson|pmtiles|mp3|m4a|wav|ogg|png|webp|jpg)["'"'"'`]' app.js | sort -u | head -60
-          echo '=== api-ish'; grep -oE '["'"'"'`][^"'"'"'`]{0,60}(api|graphql|wp-json|endpoint|supabase|firebase|airtable|sheets)[^"'"'"'`]{0,60}["'"'"'`]' app.js | sort -u | head -40
-          echo '=== imports'; grep -oE 'assets/[A-Za-z0-9_.-]+\.(js|json)' app.js | sort -u | head -40
-          echo '=== keys'; grep -oE '(name|title|placeName|english|palawa|audio|pronunciation|lat|lng|longitude|latitude|coordinates)[A-Za-z_]{0,12}:' app.js | sort | uniq -c | sort -rn | head -40
-          for a in $(grep -oE 'assets/[A-Za-z0-9_.-]+\.(js|json)' app.js | sort -u | head -15); do curl -sSL -A "$UA" -o "$(basename $a)" "$B/$a"; done
-          ls -la
-          echo '=== urls-in-chunks'; cat *.js *.json 2>/dev/null | grep -oE 'https?://[^"'"'"'`) \\]+' | sort | uniq -c | sort -rn | head -60
-          echo '=== sample-feature'; for f in *.json; do echo "-- $f"; head -c 800 "$f"; echo; done 2>/dev/null
-          grep -oE '\{[^{}]{0,40}(lat|latitude)[^{}]{0,300}\}' app.js | head -3
+          W=https://tacinc.com.au/wp-json
+          for u in "$W/wp/v2/location?per_page=100&page=1&acf_format=standard&_fields=id,slug,title,acf" "$W/wp/v2/river?per_page=100&page=1&_fields=id,slug,title,modified,acf&acf_format=standard" "$W/options/all"; do
+            echo "== $u"
+            curl -sS -A "$UA" -D h.txt -o b.json -H "Origin: https://mdsumner.github.io" "$u"
+            grep -iE "^(HTTP|access-control|x-wp-total|x-wp-totalpages|content-type)" h.txt
+            python3 - <<'PY'
+          import json
+          d=json.load(open('b.json'))
+          if isinstance(d,list):
+              print('items',len(d))
+              a=d[0].get('acf',{})
+              print('acf keys', {k:type(v).__name__ for k,v in a.items()})
+              for k,v in a.items():
+                  s=json.dumps(v); print(' ',k, s[:160])
+              print('title', d[0].get('title'))
+              # coverage of fields across items
+              from collections import Counter
+              c=Counter(k for x in d for k,v in (x.get('acf') or {}).items() if v not in (None,'',False,[]))
+              print('nonempty', dict(c))
+          else:
+              print('keys', list(d)[:40])
+          PY
+          done
