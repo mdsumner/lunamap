@@ -60,6 +60,7 @@ and can keep maps for use without signal.</p>
   <a href="#layers">Layers</a>
   <a href="#grid">Grid refs</a>
   <a href="#draw">Draw</a>
+  <a href="#track">Record track</a>
   <a href="#offline">Offline</a>
   <a href="#share">Share and print</a>
   <a href="#install">Install</a>
@@ -356,6 +357,27 @@ move whole shapes, and delete. While drawing, tapping the map does not drop the 
     add them twice. Positions are kept to about 1 m. A few shapes make a short link; if a sketch is too big for a link it
     says so - export a file instead.</li>
   <li><b>Clear all</b> deletes every drawn shape on this device.</li>
+</ul>
+
+<h2 id="track">Record track</h2>
+<p><b>Tools &gt; Record track</b> records where you go while lunamap is open, using the phone's location
+(it asks permission the first time). Tap <b>Record</b>; the orange line and the <b>REC</b> badge at the top show progress,
+and <b>Pause</b> / <b>Stop and save</b> finish it. Tracks are kept on this device only.</p>
+<ul>
+<li><b>Keep the screen on.</b> Phones only give a web page its location while the page is open and on screen. lunamap asks the
+phone to keep the screen awake while recording, where the phone allows it. If the page goes to the background the track just has a gap
+(a new segment starts after two minutes). For all-day or background logging, use the OwnTracks app instead (below).</li>
+<li><b>What is kept:</b> a fix is skipped when its accuracy is worse than 50 m, and kept when you have moved at least 5 m
+(or half the accuracy) or a minute has passed. Each fix has time, position, accuracy, and height, speed and heading when the
+phone gives them. Change these under <b>Settings</b>.</li>
+<li><b>Using a track:</b> show it on the map, save it as <b>GPX</b>, <b>GeoJSON</b> or <b>CSV</b> (UTC times), <b>Copy</b> it as
+R (terra or sf: points with time, plus a line per segment), Python (geopandas) or CSV text, or <b>To drawing</b> to measure it and see
+its profile.</li>
+<li><b>Import GPX...</b> brings in a track from any GPS logger, or an export from your own OwnTracks Recorder.</li>
+<li><b>Send to my server:</b> if you run an <a href="https://owntracks.org/booklet/">OwnTracks Recorder</a>, lunamap can post each kept
+fix to it as an OwnTracks location message (HTTP mode, with your user name, device name and password), and <b>Send</b> a saved track
+afterwards. Fixes made without signal wait on the phone and go later. Your server has to allow this site (CORS). Nothing is sent
+unless you set this up.</li>
 </ul>
 
 <h2 id="offline">Offline maps</h2>
