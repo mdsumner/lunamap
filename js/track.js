@@ -206,7 +206,31 @@
     }).catch(function (e) { toast("Could not open the drawing tools: " + e.message); });
   }
 
-  // ---- import GPX (any logger, or an OwnTracks Recorder export) ------------------------------
+  // ---- import GPX (any logger) or GeoJSON (an OwnTracks Recorder export, or a lunamap track) ----
+  // GeoJSON: points with a time (OwnTracks Recorder format=geojson: properties tst or isotst), or lines
+  function geojsonSegs(gj) {
+    var pts = [], segs = [];
+    (gj.features || []).forEach(function (f) {
+      var g = f && f.geometry, p = (f && f.properties) || {}; if (!g) return;
+      var t = p.tst ? p.tst * 1000 : Date.parse(p.isotst || p.time || p.timestamp || "");
+      if (g.type === "Point") pts.push([isNaN(t) ? 0 : t, r7(g.coordinates[1]), r7(g.coordinates[0]), p.acc || 0,
+        g.coordinates[2] !== undefined ? g.coordinates[2] : (p.alt !== undefined ? p.alt : null), null, null]);
+      var ls = g.type === "LineString" ? [g.coordinates] : g.type === "MultiLineString" ? g.coordinates : [];
+      ls.forEach(function (l, i) { var tt = p.times && p.times[i];
+        segs.push(l.map(function (c, k) { var x = tt ? Date.parse(tt[k]) : NaN;
+          return [isNaN(x) ? 0 : x, r7(c[1]), r7(c[0]), 0, c[2] !== undefined ? c[2] : null, null, null]; })); });
+    });
+    pts.sort(function (a, b) { return a[0] - b[0]; });
+    if (pts.length) segs.unshift(pts);
+    return { segs: segs, name: (gj.features && gj.features[0] && gj.features[0].properties && gj.features[0].properties.name) || "" };
+  }
+  function importFile(text, fname) {
+    if (/\.(geo)?json$/i.test(fname) || /^\s*\{/.test(text)) {
+      var r; try { r = geojsonSegs(JSON.parse(text)); } catch (e) { toast("Could not read " + fname + ": " + e.message); return; }
+      return addImported(r.segs, r.name, fname);
+    }
+    importGPX(text, fname);
+  }
   function importGPX(text, fname) {
     var doc = new DOMParser().parseFromString(text, "application/xml"), segs = [];
     var trk = doc.getElementsByTagName("trkseg");
@@ -220,13 +244,17 @@
       });
       if (g.length) segs.push(g);
     });
+    var nm = doc.getElementsByTagName("name")[0];
+    addImported(segs, nm && nm.textContent.trim(), fname);
+  }
+  function addImported(segs, name, fname) {
+    segs = segs.filter(function (g) { return g.length; });
     if (!segs.length) { toast("No track points in " + fname); return; }
     var t0 = segs[0][0][0] || Date.now(), id = t0, a = index(), n0 = segs.reduce(function (q, g) { return q + g.length; }, 0);
     if (segs[0][0][0] && a.some(function (x) { var o = loadT(x.id); return o && o.segs.length && Math.floor(o.segs[0][0][0] / 1000) === Math.floor(t0 / 1000) && count(o) === n0; })) {
       toast("Already have that track"); return; }
     while (a.some(function (x) { return x.id === id; })) id++;
-    var nm = doc.getElementsByTagName("name")[0];
-    var t = { id: id, name: (nm && nm.textContent.trim()) || fname.replace(/\.gpx$/i, ""), segs: segs };
+    var t = { id: id, name: name || fname.replace(/\.(gpx|geojson|json)$/i, ""), segs: segs };
     if (saveT_(t)) { shown[id] = true; refreshShown(); render(); toast("Imported " + count(t) + " points");
       try { map.fitBounds(shownLayers[id].getBounds(), { maxZoom: 16 }); } catch (e) {} }
   }
@@ -293,8 +321,8 @@
       sheet.innerHTML = "<h2><span>Track</span><button id='trclose' aria-label='Close'>x</button></h2>" +
         "<div id='trstat' class='small'></div>" +
         "<div class='acts'><button id='trrec' type='button'>Record</button><button id='trstop' type='button'>Stop and save</button>" +
-        "<button id='trimp' type='button'>Import GPX...</button></div>" +
-        "<input id='trfile' type='file' accept='.gpx,application/gpx+xml' hidden>" +
+        "<button id='trimp' type='button'>Import...</button></div>" +
+        "<input id='trfile' type='file' accept='.gpx,.geojson,.json,application/gpx+xml,application/geo+json' hidden>" +
         "<p class='small' style='color:#666'>Kept on this device. The phone only gives a web page its location while the page is open, " +
         "so leave lunamap on screen while recording (for all-day or background logging use the OwnTracks app).</p>" +
         "<div id='trlist' class='small'></div>" +
@@ -320,7 +348,7 @@
       sheet.querySelector("#trimp").onclick = function () { sheet.querySelector("#trfile").click(); };
       sheet.querySelector("#trfile").onchange = function () {
         var f = this.files && this.files[0]; this.value = ""; if (!f) return;
-        f.text().then(function (t) { importGPX(t, f.name); });
+        f.text().then(function (t) { importFile(t, f.name); });
       };
       [].forEach.call(sheet.querySelectorAll("input[data-k]"), function (inp) {
         var k = inp.getAttribute("data-k"); inp.value = S[k];
@@ -367,6 +395,6 @@
     var t0 = loadT(open_.id); if (t0) { cur = t0; paused = true; cur.segs.push([]); drawLive(); status(); toast("A track was still recording: open Track to resume or stop it"); }
   } } catch (e) {}
 
-  window.lunamapTrack = { gpx: gpx, csv: csv, geojson: geojson, code: code, importGPX: importGPX, payload: payload, hav: hav,   // for testing
+  window.lunamapTrack = { gpx: gpx, csv: csv, geojson: geojson, code: code, importGPX: importGPX, importFile: importFile, payload: payload, hav: hav,   // for testing
     _set: function (t) { cur = t; }, _onFix: onFix, _cur: function () { return cur; }, stop: stop, start: start, settings: S };
 })();
