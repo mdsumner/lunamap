@@ -28,6 +28,8 @@ jobs:
           cat *.body 2>/dev/null | grep -oE 'https?://[^"'"'"' )<>]+\.(json|geojson|mp3|m4a|wav)[^"'"'"' )<>]*' | sort -u | head -40 > refs2.txt || true
           cat *.body 2>/dev/null | grep -oE '"/?[a-zA-Z0-9_/.-]+\.(json|geojson)"' | sort -u | head -40 >> refs2.txt || true
           ls -la
+          echo '=== map.hdr'; cat map.hdr; echo '=== map.html'; cat map.html; echo; echo '=== fetched'; cat fetched.txt || true
+          pip -q install pdfminer.six >/dev/null 2>&1 && echo '=== policy' && pdf2txt.py policy.pdf | tr -s '\n' | head -150 || true
       - uses: actions/upload-artifact@v4
         with:
           name: tac-probe
