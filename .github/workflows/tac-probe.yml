@@ -1,0 +1,35 @@
+# Research: how is the palawa kani place names map built? Output kept as a run artifact, not committed.
+name: tac-probe
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          mkdir -p out && cd out
+          UA="Mozilla/5.0 (X11; Linux x86_64) lunamap-research"
+          curl -sSL -A "$UA" -D map.hdr -o map.html https://tacinc.com.au/pulingina-to-lutruwita-tasmania-place-names/map || true
+          curl -sSL -A "$UA" -o policy.pdf https://tacinc.com.au/the-policy-and-protocol-for-use-of-palawa-kani-aboriginal-language/ || true
+          # follow script, iframe and obvious data URLs found in the page
+          grep -oE '(src|href|data-[a-z-]+)="[^"]+"' map.html | sed -E 's/^[^"]*"//; s/"$//' | sort -u > refs.txt
+          grep -oE 'https?://[^"'"'"' )<>]+\.(json|geojson|js|kml|csv)[^"'"'"' )<>]*' map.html | sort -u >> refs.txt
+          n=0
+          while read -r u; do
+            case "$u" in //*) u="https:$u";; /*) u="https://tacinc.com.au$u";; http*) ;; *) continue;; esac
+            case "$u" in *.css*|*.png*|*.jpg*|*.svg*|*.woff*|*.ico*|*fonts.g*) continue;; esac
+            n=$((n+1)); [ $n -gt 60 ] && break
+            f=$(printf '%03d' $n)
+            echo "$f $u" >> fetched.txt
+            curl -sSL -m 30 -A "$UA" -o "$f.body" "$u" || true
+          done < refs.txt
+          # second pass: data URLs referenced inside fetched js
+          cat *.body 2>/dev/null | grep -oE 'https?://[^"'"'"' )<>]+\.(json|geojson|mp3|m4a|wav)[^"'"'"' )<>]*' | sort -u | head -40 > refs2.txt || true
+          cat *.body 2>/dev/null | grep -oE '"/?[a-zA-Z0-9_/.-]+\.(json|geojson)"' | sort -u | head -40 >> refs2.txt || true
+          ls -la
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tac-probe
+          path: out
+          retention-days: 3
